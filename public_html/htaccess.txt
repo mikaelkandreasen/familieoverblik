@@ -1,0 +1,124 @@
+# ── Ugeplan ────────────────────────────────────────────────────────
+# Lægges i samme mappe som index.html.
+#
+# Beskyttelsen hviler på mod_rewrite, ikke på Require/Deny. Dette webhotel
+# har ikke mod_authz_core, og de to skrivemåder for adgangskontrol skifter
+# mellem Apache 2.2 og 2.4 — mod_rewrite opfører sig ens i begge.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Tving HTTPS. Nøglen i config.js sendes med hver forespørgsel, og over
+  # almindelig HTTP ville den ligge åbent på netværket.
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # PIN-login foran index.html/overblik.html. Samme mod_rewrite-teknik som
+  # resten af filen, fordi mod_authz_core mangler (se note ovenfor) — en
+  # rigtig Basic Auth-opsætning er ikke testet til at virke her.
+  # Cookien 'ugeplan_ok' sættes af login.php efter korrekt PIN og holder i
+  # 180 dage. Uden den rigtige værdi sendes man til login.php i stedet.
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^(index\.html|overblik\.html|billeder\.html|gaest-wifi\.html|vaelger\.html|backlog\.html)?$ login.php?to=$1 [L,QSA]
+
+  # Kalendere-dialogens API (kalendere.php). Kalenderlinks er reelt
+  # adgangskoder, saa uden PIN-cookien svares 403, foer PHP overhovedet
+  # koerer. kalendere.php tjekker cookien en gang til — to laase. Vaerdien
+  # skal vaere den samme som ovenfor og i ugeplan-lib/gate.php.
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^indkob\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^elpris\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^strava\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^tegneserie\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^billeder\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^bil\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^info\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^tema\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^wifi\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^joke\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^vejr\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^sprog\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^oversaet\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^sikkerhedskopi\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^totp\.php(/|$) - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^backlog\.php(/|$) - [F,L]
+  # config.js indeholder læsenøglen til api.php. Uden denne regel kunne enhver på netværket hente den og læse alle data uden at logge ind.
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^config\.js$ - [F,L]
+  RewriteCond %{HTTP_COOKIE} !ugeplan_ok=__GATE_TOKEN__ [NC]
+  RewriteRule ^kalendere\.php(/|$) - [F,L]
+
+  # Filtyper der aldrig skal kunne hentes. Data og konfiguration hører til
+  # uden for webroot — men en fejlplaceret fil skal ikke koste dig nøglerne.
+  RewriteRule \.(json|log|ics|md|py|ps1|tmp|bak|sql)$ - [F,L]
+
+  # Sikkerhedskopier og editor-rester. Reglen ovenfor er ankret med $ og
+  # rammer derfor kun filer der ENDER paa .bak — en kopi som
+  # "overblik.html.bak-2026-09-08" gled forbi baade den OG PIN-login'et
+  # ovenfor, som kun daekker index.html/overblik.html. Den slags fil ville
+  # altsaa udlevere hele sidens kilde uden PIN.
+  RewriteRule \.(bak|orig|old|save|swp|copy)([-._~].*)?$ - [F,L]
+
+  # Mapper der aldrig skal kunne nås, uanset hvor de er endt
+  RewriteRule ^(data|ugeplan-lib|ugeplan-data)(/|$) - [F,L]
+</IfModule>
+
+# Samme spærring en gang til, hvis mod_rewrite mod forventning slås fra.
+# Begge skrivemåder er med, fordi Apache 2.2 og 2.4 bruger hver sin.
+<FilesMatch "\.(json|log|ics|md|py|ps1|tmp|bak|sql)$|\.(bak|orig|old|save|swp|copy)([-._~].*)?$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Ingen mappelisting
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+
+  # script-src og style-src skal have 'unsafe-inline': både script- og
+  # style-blokken står inde i index.html, og uden den ville siden være tom.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://featureassets.gocomics.com https://assets.gocomics.com https://assets.amuniversal.com; connect-src 'self'; frame-ancestors 'none'"
+
+  # index.html og config.js må ikke caches — ellers viser skærmen en gammel
+  # version efter en opdatering, indtil nogen rydder browserens cache. Samme
+  # regel for manifestet: hvis det ligger fast i browserens cache, opdages
+  # nye ikoner/farver aldrig efter en installation.
+  <FilesMatch "\.(html|js|webmanifest)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+# Sikkerhedskopien kan være stor (billeder): højere grænser kun for den ene fil (mod_php).
+<Files "sikkerhedskopi.php">
+  php_value upload_max_filesize 2048M
+  php_value post_max_size 2060M
+  php_value max_execution_time 900
+  php_value memory_limit 256M
+</Files>
