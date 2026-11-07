@@ -1,0 +1,97 @@
+# Bygger Docker-billederne og lægger dem i GitHub Container Registry (ghcr.io), så Dockhand kan hente dem.
+# Kører, når du laver en udgave (Releases → Draft a new release → tag v3.x.y), hver mandag nat, og når du trykker Actions → Byg billeder → Run workflow.
+name: Byg billeder
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+  # Hver mandag nat: byg samme version igen, så sikkerhedsrettelser i php, python og alpine kommer med (Dockhand ser et nyt billede)
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  proev:
+    name: Prøver
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prøv opstartsprogrammet og scripts
+        run: |
+          python3 tests/test_bootstrap.py
+          python3 tests/test_scripts.py
+          python3 tests/test_totp.py
+          python3 tests/test_backlog.py
+          sudo python3 tests/test_rettigheder.py
+
+  billeder:
+    name: Byg ${{ matrix.billede }}
+    needs: proev
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        billede: [web, aula, bil, cron, frameo]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Navne og versioner
+        id: v
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "major=${VERSION%%.*}" >> "$GITHUB_OUTPUT"
+          echo "repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/familieoverblik-${{ matrix.billede }}" >> "$GITHUB_OUTPUT"
+      # aula og bil bygges først på Python 3.15, og på 3.14, hvis et bibliotek ikke kan bygges dér (aula 1.x kræver mindst 3.14)
+      - name: Byg (Python 3.15)
+        id: py315
+        if: matrix.billede == 'aula' || matrix.billede == 'bil'
+        continue-on-error: true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/${{ matrix.billede }}/Dockerfile
+          build-args: |
+            PYTHON_VERSION=3.15
+            VERSION=${{ steps.v.outputs.version }}
+          push: true
+          tags: |
+            ${{ steps.v.outputs.repo }}:${{ steps.v.outputs.version }}
+            ${{ steps.v.outputs.repo }}:${{ steps.v.outputs.major }}
+            ${{ steps.v.outputs.repo }}:latest
+      - name: Byg (Python 3.14)
+        if: (matrix.billede == 'aula' || matrix.billede == 'bil') && steps.py315.outcome != 'success'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/${{ matrix.billede }}/Dockerfile
+          build-args: |
+            PYTHON_VERSION=3.14
+            VERSION=${{ steps.v.outputs.version }}
+          push: true
+          tags: |
+            ${{ steps.v.outputs.repo }}:${{ steps.v.outputs.version }}
+            ${{ steps.v.outputs.repo }}:${{ steps.v.outputs.major }}
+            ${{ steps.v.outputs.repo }}:latest
+      - name: Byg
+        if: matrix.billede != 'aula' && matrix.billede != 'bil'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/${{ matrix.billede }}/Dockerfile
+          build-args: |
+            VERSION=${{ steps.v.outputs.version }}
+          push: true
+          tags: |
+            ${{ steps.v.outputs.repo }}:${{ steps.v.outputs.version }}
+            ${{ steps.v.outputs.repo }}:${{ steps.v.outputs.major }}
+            ${{ steps.v.outputs.repo }}:latest
