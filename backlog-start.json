@@ -1,0 +1,77 @@
+{
+ "format": 1,
+ "punkter": [
+  {
+   "titel": "Backlog-side i appen",
+   "beskrivelse": "Siden, du kigger på nu: log idéer, stem, kommentér, skift status og hent eller læg ind som Markdown, CSV eller JSON.",
+   "kategori": "andet",
+   "prioritet": "P1",
+   "status": "Færdig",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Tømningskalender fra Renosyd (Skanderborg)",
+   "beskrivelse": "Vis tømning for en valgt adresse og mind om det aftenen før. Datoerne ligger bag en login-portal. Afklaring først: bruger og adgangskode eller MitID, findes en «Hent kalender»-knap (iCal), og er der en app? Er det kun MitID, laver vi en egen tidsplan (startdato og interval pr. fraktion).",
+   "kategori": "kalender",
+   "prioritet": "P2",
+   "status": "Idé",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Åben visning med PIN kun til indstillinger og sikkerhedskopi",
+   "beskrivelse": "Forsiden åbner uden login (til væg-skærmen), men alt, der kan ændre eller hente noget, kræver PIN. Ca. 1 dag.",
+   "kategori": "sikkerhed",
+   "prioritet": "P3",
+   "status": "Idé",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Opskrift til https (reverse proxy)",
+   "beskrivelse": "Caddy eller Traefik foran siden, så PIN og koder ikke sendes ukrypteret. Nødvendigt, hvis gæster eller ukendte enheder er på samme net.",
+   "kategori": "sikkerhed",
+   "prioritet": "P3",
+   "status": "Idé",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Login pr. enhed",
+   "beskrivelse": "Hver enhed får sin egen cookie, så en tabt tablet kan tilbagekaldes alene. 1 til 2 dage.",
+   "kategori": "sikkerhed",
+   "prioritet": "P4",
+   "status": "Idé",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Aula-login i browseren",
+   "beskrivelse": "Vise MitID-QR-koderne på en side i stedet for i en terminal. Afhænger af, at aula-biblioteket kan give QR-data uden terminalen. Usikkert.",
+   "kategori": "andet",
+   "prioritet": "P4",
+   "status": "Idé",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Billedgalleri fra skyen til pauseskærmen",
+   "beskrivelse": "Droppet for nu. Familien bruger både iPhone og Android. Researchen siger: Immich passer bedst (begge slags telefoner uploader automatisk, og Immich laver selv de mindre udgaver). Delt iCloud-album kun for iPhone, Syncthing har ingen iPhone-app. Google Fotos kan ikke bruges (API'et er lukket), Google Drive udløber efter 7 dage uden servicekonto. Se BACKLOG.md.",
+   "kategori": "billeder",
+   "prioritet": "P4",
+   "status": "Droppet",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  },
+  {
+   "titel": "Flere elbiler: Kia, Audi, VW og Tesla",
+   "beskrivelse": "Kun til fremtiden. Kia: samme bibliotek som Hyundai. VW og Audi: kun via EU's dataportal (skrivebeskyttet, ca. hvert 15. minut). Tesla: Fleet API med betaling efter forbrug. Kører du Home Assistant, er den korteste vej at læse bilerne derfra.",
+   "kategori": "bil",
+   "prioritet": "P4",
+   "status": "Idé",
+   "af": "Udvikling",
+   "oprettet": "2026-11-07"
+  }
+ ]
+}

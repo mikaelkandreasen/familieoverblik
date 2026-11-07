@@ -1,0 +1,67 @@
+# Familieoverblik 3 til Dockhand: hele løsningen som ÉN stak, uden SSH og uden filer på NUC'en.
+#
+# 1. I Dockhand: Stacks → Create → navn «familieoverblik» → indsæt denne fil.
+# 2. Miljøvariabler på stakken (de eneste, du skal sætte):
+#      FAMILIE_REGISTER   ghcr.io/dit-github-brugernavn   (med små bogstaver; her ligger billederne efter byggen, se GUIDE-V3.md)
+#      FAMILIE_VERSION    3                                (valgfri: 3 = nyeste 3.x, eller fx 3.0.1 for en bestemt)
+#      FAMILIE_PORT       8085                             (valgfri, standard 8085)
+#      FAMILIE_LAN_IP     192.168.1.50                     (valgfri, men ANBEFALET: så kan siden kun nås på dit eget netværk)
+# 3. Deploy. Åbn http://<NUC-IP>:8085, og følg guiden. Opsætningskoden står i web-containerens log.
+#
+# Alle dine data (indstillinger, billeder, nøgler, PIN, historik) ligger i volumet familieoverblik-data. Det overlever opdateringer.
+# Opdatering = Redeploy (eller Dockhands auto-opdatering), fordi billederne hentes fra et register.
+name: familieoverblik
+
+services:
+  web:
+    image: ${FAMILIE_REGISTER:?Sæt FAMILIE_REGISTER, fx ghcr.io/dit-github-brugernavn}/familieoverblik-web:${FAMILIE_VERSION:-3}
+    # Bundet til NUC'ens LAN-adresse, hvis du sætter FAMILIE_LAN_IP. Lav ALDRIG en port-forward i routeren til porten.
+    ports: ["${FAMILIE_LAN_IP:-0.0.0.0}:${FAMILIE_PORT:-8085}:80"]
+    environment:
+      TZ: ${TZ:-Europe/Copenhagen}
+    volumes:
+      - familieoverblik-data:/var/www/ugeplan-data
+    restart: unless-stopped
+
+  # Henter vejr, kalendere, tegneserie m.m. hver time
+  cron:
+    image: ${FAMILIE_REGISTER}/familieoverblik-cron:${FAMILIE_VERSION:-3}
+    depends_on: [web]
+    environment:
+      TZ: ${TZ:-Europe/Copenhagen}
+    volumes:
+      - familieoverblik-data:/data:ro
+    restart: unless-stopped
+
+  # Henter skema og ugebreve fra Aula hver morgen kl. 07:00. Første login laves i containerens terminal (Dockhand):
+  #   aula --username DIT-MITID-BRUGERNAVN login
+  aula:
+    image: ${FAMILIE_REGISTER}/familieoverblik-aula:${FAMILIE_VERSION:-3}
+    depends_on: [web]
+    environment:
+      TZ: ${TZ:-Europe/Copenhagen}
+    volumes:
+      - familieoverblik-data:/data
+      - familieoverblik-aula-login:/root/.config/aula
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Batteriniveau fra din Hyundai (login udfyldes under Opsætning → Familie og forbindelser)
+  bil:
+    image: ${FAMILIE_REGISTER}/familieoverblik-bil:${FAMILIE_VERSION:-3}
+    depends_on: [web]
+    environment:
+      TZ: ${TZ:-Europe/Copenhagen}
+    volumes:
+      - familieoverblik-data:/data
+    restart: unless-stopped
+
+volumes:
+  familieoverblik-data:
+  # Vil du tage dine data med fra version 2 uden at hente en sikkerhedskopi? Erstat linjen ovenfor med:
+  #   familieoverblik-data:
+  #     driver: local
+  #     driver_opts: { type: none, o: bind, device: /sti/til/klar-til-upload/ugeplan-data }
+  # (stien skal findes på NUC'en). Den nemmeste vej er dog Opsætning → Sikkerhedskopi → Gendan fra en zip af ugeplan-data.
+  familieoverblik-aula-login:

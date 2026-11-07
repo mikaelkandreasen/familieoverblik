@@ -1,0 +1,18 @@
+# EKSPERIMENT: henter billeder fra en Frameo-ramme over ADB til pauseskærmens billedmappe. En separat stak i Dockhand.
+# Kræver FAMILIE_REGISTER og FRAMEO_IP (rammens faste adresse), og at hovedstakken «familieoverblik» findes (samme volume).
+name: familieoverblik-frameo
+
+services:
+  frameo:
+    image: ${FAMILIE_REGISTER:?Sæt FAMILIE_REGISTER}/familieoverblik-frameo:${FAMILIE_VERSION:-3}
+    environment:
+      FRAMEO_IP: ${FRAMEO_IP:?Sæt FRAMEO_IP til rammens adresse}
+      FRAMEO_STI: ${FRAMEO_STI:-/sdcard/Frameo}
+      FRAMEO_MINUTTER: ${FRAMEO_MINUTTER:-30}
+    volumes:
+      - familieoverblik_familieoverblik-data:/data
+    restart: unless-stopped
+
+volumes:
+  familieoverblik_familieoverblik-data:
+    external: true       # det volume, hovedstakken har lavet (stakkens navn + volumenavn)
