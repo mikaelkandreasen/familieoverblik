@@ -267,10 +267,15 @@ def boernblok(sv):
     linjer = [f"    {{\"name\": {json.dumps(b['navn'], ensure_ascii=False)}, \"calendar_id\": {b['calendar_id']}}}," + ("   # TODO: udfyld calendar_id (Opsætning → Familie)" if not b["calendar_id"] else "") for b in sv["boern"]]
     return "CHILDREN = [\n" + "\n".join(linjer) + "\n]\n"
 
+SKJULT = {"htaccess.txt": ".htaccess"}          # filer, der ligger i projektet uden punktum i navnet (en browser-upload til GitHub tager ikke filer med punktum med) og skrives ud med det rigtige navn
+
+def ud_navn(f): return SKJULT.get(f, f)
+
 def _traer(src, dst, erstat, skip=()):
     for rod, _, filer in os.walk(src):
         for f in filer:
-            s = os.path.join(rod, f); rel = os.path.relpath(s, src)
+            if f == ".htaccess" and "htaccess.txt" in filer: continue          # den synlige udgave har forrang
+            s = os.path.join(rod, f); rel = os.path.join(os.path.relpath(rod, src), ud_navn(f)) if rod != src else ud_navn(f)
             if rel in skip: continue
             d = os.path.join(dst, rel)
             os.makedirs(os.path.dirname(d), exist_ok=True)
@@ -322,8 +327,9 @@ def sikr_data():
     skel = os.path.join(SKABELON, "data")
     for rod, _, filer in os.walk(skel):
         for f in filer:
-            s = os.path.join(rod, f); d = os.path.join(DATA, os.path.relpath(s, skel))
-            if f == ".gitkeep" or os.path.exists(d): continue
+            if f == ".htaccess" and "htaccess.txt" in filer: continue
+            s = os.path.join(rod, f); d = os.path.join(DATA, os.path.relpath(rod, skel), ud_navn(f)) if rod != skel else os.path.join(DATA, ud_navn(f))
+            if f == ".gitkeep" or (os.path.exists(d) and ud_navn(f) != ".htaccess"): continue          # spærrefilen skrives altid, så en gammel udgave ikke bliver stående
             os.makedirs(os.path.dirname(d), exist_ok=True); shutil.copyfile(s, d)
     for m in MAPPER: os.makedirs(os.path.join(DATA, m), exist_ok=True)
     os.makedirs(os.path.join(DATA, "private", "aula-state"), exist_ok=True)

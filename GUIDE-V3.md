@@ -22,7 +22,7 @@ GitHub (dit repo)  ──bygger──▶  GitHub Container Registry  ──hente
 
 1. Opret en konto på github.com, og tryk **New repository**. Navn fx `familieoverblik`. **Private** er fint.
 2. Pak zip-filen ud på din computer. Åbn dit nye repo, og tryk **Add file → Upload files**. Træk **indholdet** af den udpakkede mappe ind (ikke selve zip-filen). GitHub tager højst 100 filer ad gangen, så upload i to omgange: først alle mapper undtagen `public_html`, så `public_html` for sig. Tryk **Commit changes** hver gang.
-3. Mappen `.github` er skjult på mange computere og følger ikke altid med. Tjek, at der findes en fil `.github/workflows/billeder.yml` i repoet. Gør der ikke, så tryk **Add file → Create new file**, skriv `.github/workflows/billeder.yml` som filnavn (skråstregerne laver mapperne), og indsæt indholdet fra filen i zip-mappen. Commit.
+3. **Workflowet:** Mappen `.github` (som starter med punktum) kan ikke uploades i en browser. Åbn derfor filen `github-workflow/billeder.yml` i dit repo, og kopiér hele indholdet. Tryk **Add file → Create new file**, skriv `.github/workflows/billeder.yml` som filnavn (skråstregerne laver mapperne), indsæt indholdet, og tryk **Commit changes**. Alternativt: Actions → **set up a workflow yourself**, omdøb filen til `billeder.yml`, og indsæt indholdet.
 
 ### 1.2 Byg billederne
 
@@ -125,6 +125,7 @@ Dine data bliver. Webcontaineren skriver siderne og konfigurationen ud igen ved 
 | Symptom | Prøv |
 |---|---|
 | Dockhand kan ikke hente billederne («pull access denied», «manifest unknown») | Er pakkerne offentlige, eller er registeret tilføjet med token (1.3)? Er `FAMILIE_REGISTER` med små bogstaver? Har jobbet i Actions været grønt? |
+| «Prøver» er rødt efter få sekunder | Åbn jobbet → trinnet «Prøv opstartsprogrammet og scripts», og læs de sidste linjer. Oftest mangler der filer i repoet. Tjek fanen **Code**: der skal være mapperne `docker`, `public_html`, `ugeplan-lib`, `ugeplan-data` (med filen `htaccess.txt`), `sprog`, `tests` og `vaerktoej` samt `compose.yaml` og `VERSION`. Uploads fra en browser tager ikke filer med punktum med, og mapper, der er tomme, findes ikke i Git. |
 | Jobbet i Actions er rødt | Åbn jobbet, og send mig de sidste 30 linjer. «Prøver» er rødt = en prøve fejlede. aula/bil rød på begge Python-versioner = et bibliotek kan ikke bygges. |
 | Siden åbner ikke | Dockhand → web → Logs. Står der en Python-fejl fra `bootstrap.py`, så send den. |
 | Du finder ikke opsætningskoden | Logs for **web**, øverst efter en genstart. Står den ikke dér, er opsætningen allerede gennemført (så brug PIN-koden). |

@@ -1,0 +1,20 @@
+# Nødbremse. Denne mappe hører hjemme UDEN FOR webroot, og ligger den der,
+# bliver denne fil aldrig læst af nogen. Men skulle mappen ende inde i
+# webroot, er det den her, der forhindrer at dine ugebreve kan hentes.
+#
+# mod_rewrite står først, fordi det er det eneste modul, vi ved er til stede.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^ - [F,L]
+</IfModule>
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
+
+Options -Indexes

@@ -16,6 +16,20 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.3.1] – 2026-11-07
+
+### Rettet
+- **Bygningen fejlede, hvis filer og mapper, der starter med punktum, ikke kom med i GitHub.** En upload i browseren tager dem ikke med. Det gjaldt de tre spærrefiler `.htaccess` (web, `ugeplan-lib` og `ugeplan-data`) og `.gitkeep`-filerne, og dermed var `ugeplan-data` en tom mappe, som Git ikke gemmer.
+  Resultatet var, at jobbet «Prøver» fejlede efter få sekunder, og at Docker-billederne ikke ville kunne bygges (og ville mangle spærrefilerne).
+  - Spærrefilerne hedder nu `htaccess.txt` i projektet og skrives ud som `.htaccess` ved opstart. Ligger begge, vinder `htaccess.txt`.
+  - Spærrefilen i `ugeplan-data` skrives nu ved hver opstart, så en gammel udgave ikke bliver stående.
+  - `ugeplan-data` indeholder mindst én synlig fil. `.gitkeep`-filerne er væk (mapperne laves af opstartsprogrammet).
+  - En synlig kopi af GitHub-workflowet ligger i `github-workflow/billeder.yml`, til at kopiere ind i GitHubs editor (mappen `.github` kan ikke uploades i en browser).
+  - Ny prøve `tests/test_skjulte_filer.py` kører hele opstarten i en kopi uden nogen skjulte filer.
+
+### Opdatering fra 3.3.0
+Upload filerne til dit repo igen (de nye overskriver de gamle), og kør **Actions → Byg billeder → Run workflow**. Du skal ikke ændre workflowet. De `.htaccess`-filer, du eventuelt selv har lavet i repoet, kan slettes (de bruges ikke, hvis `htaccess.txt` findes).
+
 ## [3.3.0] – 2026-11-07
 
 ### Tilføjet
