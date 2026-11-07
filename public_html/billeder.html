@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Billeder · Familieoverblik</title>
+<script>
+/* Farverne fra tema.php, husket i browseren, så siden ikke blinker i standardfarver. Samme blok i alle sider. */
+(function(){try{var t=JSON.parse(localStorage.getItem("familieoverblik-tema")||"null");if(t&&t.vars){var r=document.documentElement.style;for(var k in t.vars){if(/^--[a-z0-9-]+$/.test(k)&&/^#[0-9a-fA-F]{6}$/.test(t.vars[k]))r.setProperty(k,t.vars[k]);}}}catch(e){}})();
+</script>
+<style>
+/* Egen lille side: den deler kun config.js (nøglen) og billeder.php med resten af Familieoverblik. */
+:root{
+  --paper:#E9ECEE; --card:#FFFFFF; --ink:#14202C; --ink-soft:#5E6A75; --rule:#D6DBE0;
+  --ok:#1A5929; --fejl:#B91C1C; --accent:#14202C; --on-accent:#FFFFFF; --radius:4px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --paper:#10161B; --card:#1A222A; --ink:#E8ECEF; --ink-soft:#9AA6B0; --rule:#2C3742; --ok:#6CCB86; --fejl:#F38B8B; --accent:#E8ECEF; --on-accent:#10161B; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);line-height:1.45;padding:0 0 40px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--rule);background:var(--card)}
+header h1{font-size:18px;margin:0;flex:1 1 auto}
+header a{color:inherit;font-size:14px}
+main{max-width:860px;margin:0 auto;padding:18px}
+.kort{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+h2{font-size:15px;margin:0 0 10px}
+p{margin:6px 0}
+.lille{font-size:13px;color:var(--ink-soft)}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:18px;text-align:center;border:2px dashed var(--rule);border-radius:var(--radius);cursor:pointer;transition:background .12s,border-color .12s}
+.drop.over{border-color:var(--accent);background:rgba(127,127,127,.12)}
+.drop b{font-size:16px}
+.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.valg{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:12px}
+select,button{font:inherit;color:inherit}
+select{min-height:44px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card)}
+button{min-height:44px;padding:0 16px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);cursor:pointer}
+button.hoved{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+.resume{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:14px 0 8px;font-size:14px}
+.bar{height:8px;border-radius:4px;background:rgba(127,127,127,.2);overflow:hidden;flex:1 1 160px;min-width:120px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+ul.kø{list-style:none;margin:0;padding:0}
+ul.kø li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--rule)}
+ul.kø img{width:46px;height:46px;object-fit:cover;border-radius:3px;background:rgba(127,127,127,.2);flex:0 0 auto}
+.navn{flex:1 1 auto;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navn small{display:block;color:var(--ink-soft);font-size:12px;white-space:normal}
+.status{flex:0 0 auto;font-size:13px;text-align:right;max-width:46%}
+.status.faerdig{color:var(--ok)} .status.fejl{color:var(--fejl)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:10px}
+.tile{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:rgba(127,127,127,.2)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile button{position:absolute;top:3px;right:3px;min-width:40px;min-height:40px;padding:0 6px;border:none;border-radius:4px;background:rgba(0,0,0,.62);color:#fff;font-size:18px;line-height:1}
+code{font-size:12.5px;background:rgba(127,127,127,.16);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+footer{text-align:center;font-size:12px;color:var(--ink-soft);padding:6px 16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Billeder til pauseskærmen</h1>
+  <a href="overblik.html">← Oversigten</a>
+  <a href="index.html">Opsætning</a>
+</header>
+
+<main>
+  <section class="kort">
+    <h2>Tilføj billeder</h2>
+    <label class="drop" id="drop" for="fil">
+      <b>Træk billeder hertil</b>
+      <span class="lille">eller tryk her for at vælge flere ad gangen (jpg, png, webp og de fleste andre billedtyper)</span>
+      <input type="file" id="fil" accept="image/*" multiple>
+    </label>
+    <div class="valg">
+      <label>Størrelse:
+        <select id="stoerrelse" aria-label="Størrelse">
+          <option value="1920" selected>Gør mindre (1920 punkter, anbefalet)</option>
+          <option value="2560">Gør mindre (2560 punkter)</option>
+          <option value="original">Behold originalen (jpg, png og webp, højst 15 MB)</option>
+        </select>
+      </label>
+      <button type="button" id="mappe-knap">Vælg en hel mappe</button>
+      <input type="file" id="mappe" webkitdirectory multiple hidden>
+    </div>
+    <p class="lille">Billederne gøres mindre i browseren, før de sendes, så de fylder lidt og vises hurtigt. De bliver på dit netværk.</p>
+
+    <div class="resume" id="resume" hidden aria-live="polite">
+      <span id="resumeTekst"></span>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i id="bar"></i></div>
+      <button type="button" id="igen" hidden>Prøv de mislykkede igen</button>
+      <button type="button" id="ryd" hidden>Ryd listen</button>
+    </div>
+    <p class="lille" id="note" aria-live="polite"></p>
+    <ul class="kø" id="kø"></ul>
+  </section>
+
+  <section class="kort">
+    <h2>Billeder i pauseskærmen</h2>
+    <p class="lille" id="antal">Henter …</p>
+    <div class="grid" id="grid"></div>
+    <p class="lille">Du kan også lægge billeder direkte i mappen <code>ugeplan-data/billeder/</code> på NUC'en (fx med Syncthing eller en netværksmappe). Filnavne må kun have bogstaverne a-z, tal, punktum, understreg og bindestreg (ingen mellemrum, æ, ø eller å), og kun jpg, png og webp vises. Tid og rækkefølge for pauseskærmen rettes under Opsætning.</p>
+  </section>
+</main>
+<footer id="ver">Familieoverblik</footer>
+
+<script type="module">
+import { API_KEY } from "./config.js";
+const HEAD = { "X-Ugeplan-Key": API_KEY };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ── Kerne: rene funktioner, uden adgang til siden (så de kan prøves for sig) ─────────────────
+const BI_MAX_BYTES = 15_000_000;          // samme grænse som billeder.php
+const BI_TYPER = ["image/jpeg", "image/png", "image/webp"];
+const BI_ENDELSER = /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif|tiff?)$/i;
+
+const biNoegle = f => `${f.name}|${f.size}|${f.lastModified ?? 0}`;
+const biErBillede = f => !!f && ((f.type || "").startsWith("image/") || BI_ENDELSER.test(f.name || ""));
+// Decimale enheder (1 MB = 1.000.000 byte), som grænsen på 15 MB i billeder.php.
+function biBytes(n){
+  if (n < 1000) return `${n} B`;
+  if (n < 1_000_000) return `${Math.round(n / 1000)} kB`;
+  return `${(n / 1_000_000).toFixed(1).replace(".", ",")} MB`;
+}
+
+/** Nye filer til køen: kun billeder, ingen der allerede står der. Returnerer {nye, sprunget}. */
+function biFiltrer(filer, eksisterende){
+  const set = new Set(eksisterende.map(x => biNoegle(x.fil))), nye = [], sprunget = [];
+  for (const f of filer){
+    if (!biErBillede(f)){ sprunget.push(`${f.name}: ikke et billede`); continue; }
+    const n = biNoegle(f);
+    if (set.has(n)){ sprunget.push(`${f.name}: står allerede på listen`); continue; }
+    set.add(n);
+    nye.push({ fil: f, status: "venter", besked: "" });
+  }
+  return { nye, sprunget };
+}
+
+/** En forståelig tekst ud fra et mislykket svar fra billeder.php. */
+function biFejltekst(status, data, fallback = ""){
+  if (data && data.error) return String(data.error);
+  if (status === 403) return "Log ind igen (åbn siden på ny).";
+  if (status === 404) return "billeder.php findes ikke på serveren endnu.";
+  if (status === 413) return "Billedet er for stort.";
+  if (status === 415) return "Kun jpg, png og webp kan bruges.";
+  return fallback || `HTTP ${status}`;
+}
+
+/** Klar til upload: som den er (jpg/png/webp under grænsen), eller gjort mindre. */
+async function biForbered(fil, valg, formindsk){
+  if (valg === "original"){
+    if (BI_TYPER.includes(fil.type)){
+      if (fil.size > BI_MAX_BYTES) throw new Error(`Filen er ${biBytes(fil.size)}. Højst ${biBytes(BI_MAX_BYTES)} uden formindskelse.`);
+      return fil;
+    }
+    return formindsk(fil, 4096);               // andre typer (fx HEIC) skal konverteres alligevel
+  }
+  return formindsk(fil, Number(valg) || 1920);
+}
+
+/**
+ * Kør køen. Højst `samtidige` ad gangen. sendFn(blob) skal lykkes eller kaste en Error med en tekst.
+ * onOpdater() kaldes, hver gang noget ændrer sig. Returnerer {ok, fejl}.
+ */
+async function biKoer(koe, { valg, formindsk, sendFn, onOpdater = () => {}, samtidige = 2 }){
+  let ok = 0, fejl = 0, naeste = 0;
+  const arbejdere = Array.from({ length: Math.min(samtidige, koe.length) }, async () => {
+    while (true){
+      const i = naeste++;
+      if (i >= koe.length) return;
+      const x = koe[i];
+      if (x.status !== "venter") continue;
+      x.status = "arbejder"; x.besked = "Gør klar …"; onOpdater();
+      try {
+        const blob = await biForbered(x.fil, valg, formindsk);
+        x.besked = "Sender …"; onOpdater();
+        await sendFn(blob);
+        x.status = "faerdig"; x.besked = "Sendt ✓"; ok++;
+      } catch (e){
+        x.status = "fejl"; x.besked = (e && e.message) || "Mislykkedes"; fejl++;
+      }
+      onOpdater();
+    }
+  });
+  await Promise.all(arbejdere);
+  return { ok, fejl };
+}
+// ── Slut på kernen ───────────────────────────────────────────────────────────────────────────
+
+// Gør et billede mindre i browseren (jpeg). Rettes efter billedets egen retning (EXIF).
+async function formindsk(fil, maxSide = 1920, kvalitet = 0.86){
+  const bmp = await createImageBitmap(fil, { imageOrientation: "from-image" });
+  const s = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * s)), h = Math.max(1, Math.round(bmp.height * s));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  c.getContext("2d").drawImage(bmp, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", kvalitet));
+  if (!blob) throw new Error("Kunne ikke læse billedet (måske et format, denne browser ikke kan åbne).");
+  return blob;
+}
+
+async function send(blob){
+  let r;
+  try {
+    r = await fetch("billeder.php?action=upload", {
+      method: "POST", headers: { ...HEAD, "Content-Type": blob.type || "application/octet-stream" },
+      body: blob, cache: "no-store", credentials: "same-origin",
+    });
+  } catch { throw new Error("Kunne ikke nå serveren."); }
+  let data = null;
+  try { data = await r.json(); } catch {}
+  if (!r.ok) throw new Error(biFejltekst(r.status, data));
+}
+
+// ── Siden ──
+const koe = [];
+let kører = false;
+
+function tegnKoe(){
+  const antal = koe.length;
+  $("resume").hidden = antal === 0;
+  $("kø").innerHTML = koe.map(x => {
+    const url = x._url ??= URL.createObjectURL(x.fil);
+    return `<li><img src="${url}" alt="" loading="lazy"><span class="navn">${esc(x.fil.name)}<small>${esc(biBytes(x.fil.size))}</small></span>
+      <span class="status ${x.status}">${x.status === "venter" ? "Venter" : esc(x.besked)}</span></li>`;
+  }).join("");
+  const klar = koe.filter(x => x.status === "faerdig").length, fejl = koe.filter(x => x.status === "fejl").length;
+  const faerdige = klar + fejl;
+  $("resumeTekst").textContent = `${klar} af ${antal} sendt` + (fejl ? ` · ${fejl} mislykkedes` : "");
+  $("bar").style.width = antal ? `${Math.round(faerdige / antal * 100)}%` : "0%";
+  $("bar").parentElement.setAttribute("aria-valuenow", antal ? String(Math.round(faerdige / antal * 100)) : "0");
+  $("igen").hidden = !fejl || kører;
+  $("ryd").hidden = kører || antal === 0;
+}
+
+async function koer(){
+  if (kører) return;
+  kører = true; tegnKoe();
+  try { await biKoer(koe, { valg: $("stoerrelse").value, formindsk, sendFn: send, onOpdater: tegnKoe }); }
+  finally { kører = false; tegnKoe(); }
+  await hentListe();
+}
+
+function tilfoej(filer){
+  const { nye, sprunget } = biFiltrer(Array.from(filer || []), koe);
+  koe.push(...nye);
+  // Det der springes over, står i sin egen linje, så oversigten over køen ikke overskriver det.
+  $("note").textContent = sprunget.length
+    ? `Sprang ${sprunget.length} over: ${sprunget.slice(0, 3).join(" · ")}${sprunget.length > 3 ? " …" : ""}` : "";
+  tegnKoe();
+  if (nye.length) koer();
+}
+
+// Træk og slip. Slip uden for zonen skal ikke få browseren til at åbne billedet i stedet.
+const zone = $("drop");
+for (const t of ["dragover", "drop"]) window.addEventListener(t, e => e.preventDefault());
+["dragenter", "dragover"].forEach(t => zone.addEventListener(t, () => zone.classList.add("over")));
+["dragleave", "drop"].forEach(t => zone.addEventListener(t, () => zone.classList.remove("over")));
+zone.addEventListener("drop", e => tilfoej(e.dataTransfer ? e.dataTransfer.files : []));
+$("fil").addEventListener("change", e => { tilfoej(e.target.files); e.target.value = ""; });
+$("mappe-knap").addEventListener("click", () => $("mappe").click());
+$("mappe").addEventListener("change", e => { tilfoej(e.target.files); e.target.value = ""; });
+$("igen").addEventListener("click", () => { koe.forEach(x => { if (x.status === "fejl"){ x.status = "venter"; x.besked = ""; } }); koer(); });
+$("ryd").addEventListener("click", () => { koe.forEach(x => x._url && URL.revokeObjectURL(x._url)); koe.length = 0; $("note").textContent = ""; tegnKoe(); });
+window.addEventListener("beforeunload", e => { if (kører){ e.preventDefault(); e.returnValue = ""; } });
+
+// Billederne på serveren
+const VIS_MAX = 60;
+async function hentListe(){
+  try {
+    const r = await fetch("billeder.php?action=liste", { headers: HEAD, cache: "no-store", credentials: "same-origin" });
+    const d = await r.json().catch(() => null);
+    if (!r.ok) throw new Error(biFejltekst(r.status, d));
+    const n = d.filer.length;
+    $("antal").textContent = n ? `${n} billede${n === 1 ? "" : "r"} (højst ${d.maxFiler})${n > VIS_MAX ? `. De ${VIS_MAX} nyeste vises her.` : "."}` : "Der er ingen billeder endnu.";
+    $("grid").innerHTML = d.filer.slice(0, VIS_MAX).map(f =>
+      `<div class="tile"><img loading="lazy" alt="" src="billeder.php?action=hent&amp;id=${encodeURIComponent(f.id)}"><button type="button" data-slet="${esc(f.id)}" aria-label="Slet billedet">&times;</button></div>`).join("");
+  } catch (e){
+    $("antal").textContent = e.message;
+  }
+}
+
+$("grid").addEventListener("click", async e => {
+  const k = e.target.closest("[data-slet]");
+  if (!k) return;
+  if (!k.dataset.sikker){ k.dataset.sikker = "1"; k.textContent = "Slet?"; return; }       // to tryk
+  try {
+    const r = await fetch("billeder.php?action=slet", { method: "POST", headers: { ...HEAD, "Content-Type": "application/json" },
+      body: JSON.stringify({ id: k.dataset.slet }), cache: "no-store", credentials: "same-origin" });
+    if (!r.ok) throw new Error(biFejltekst(r.status, await r.json().catch(() => null)));
+    await hentListe();
+  } catch (err){ $("antal").textContent = err.message; }
+});
+
+import("./sprog.js").then(m => m.startSprog({ HEAD, container: document.querySelector("header") })).catch(e => console.error("sprog:", e));
+
+fetch("info.php?del=version", { headers: HEAD, cache: "no-store", credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(v => {
+  if (v && v.version) $("ver").textContent = `Familieoverblik v${v.version}`;
+}).catch(() => {});
+
+// Farverne fra tema.php (husket i browseren af scriptet i <head>)
+fetch("tema.php", { headers: HEAD, cache: "no-store", credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(d => {
+  const vars = d && d.vars && typeof d.vars === "object" ? d.vars : {};
+  const st = document.documentElement.style;
+  for (const n of ["--paper", "--card", "--ink", "--ink-soft", "--rule", "--accent"]){
+    if (typeof vars[n] === "string" && /^#[0-9a-f]{6}$/i.test(vars[n])) st.setProperty(n, vars[n]); else st.removeProperty(n);
+  }
+  try { localStorage.setItem("familieoverblik-tema", JSON.stringify({ vars })); } catch {}
+}).catch(() => {});
+
+hentListe();
+</script>
+</body>
+</html>

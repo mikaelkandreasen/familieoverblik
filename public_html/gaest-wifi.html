@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Gæste-wifi · Familieoverblik</title>
+<script>
+/* Farverne fra tema.php, husket i browseren, så siden ikke blinker i standardfarver. Samme blok i alle sider. */
+(function(){try{var t=JSON.parse(localStorage.getItem("familieoverblik-tema")||"null");if(t&&t.vars){var r=document.documentElement.style;for(var k in t.vars){if(/^--[a-z0-9-]+$/.test(k)&&/^#[0-9a-fA-F]{6}$/.test(t.vars[k]))r.setProperty(k,t.vars[k]);}}}catch(e){}})();
+</script>
+<style>
+:root{--paper:#E9ECEE;--card:#FFFFFF;--ink:#14202C;--ink-soft:#5E6A75;--rule:#D6DBE0;--accent:#14202C;--fejl:#B91C1C;--radius:4px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--paper:#10161B;--card:#1A222A;--ink:#E8ECEF;--ink-soft:#9AA6B0;--rule:#2C3742;--accent:#E8ECEF;--fejl:#F38B8B}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);line-height:1.45}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--rule);background:var(--card)}
+header h1{font-size:18px;margin:0;flex:1 1 auto}
+header a{color:inherit;font-size:14px}
+main{max-width:560px;margin:0 auto;padding:18px}
+.kort{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);padding:18px;margin-bottom:16px;text-align:center}
+#qr{width:min(78vw,360px);margin:0 auto}
+#qr svg{display:block;width:100%;height:auto;background:#fff;border-radius:6px}
+.navn{font-size:22px;font-weight:600;margin:14px 0 2px;overflow-wrap:anywhere}
+.lille{font-size:13px;color:var(--ink-soft)}
+.kode{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;overflow-wrap:anywhere;margin-top:6px}
+button,select,input{font:inherit;color:inherit}
+button{min-height:44px;padding:0 16px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);cursor:pointer;margin:4px}
+button.hoved{background:var(--accent);color:var(--card);border-color:var(--accent)}
+form{text-align:left}
+label{display:block;margin:10px 0 3px;font-size:14px}
+input[type=text],input[type=password],select{width:100%;min-height:44px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper)}
+.fejl{color:var(--fejl);min-height:1.4em;margin:8px 0 0;font-size:14px}
+.raekke{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+[hidden]{display:none!important}
+@media print{header,.raekke,#ver,#redigerKort,#note{display:none}body{background:#fff}.kort{border:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Gæste-wifi</h1>
+  <a href="overblik.html">← Oversigten</a>
+</header>
+<main>
+  <section class="kort" id="visKort" hidden>
+    <div id="qr" aria-live="polite"></div>
+    <div class="navn" id="navn"></div>
+    <div class="lille" id="sik"></div>
+    <div class="kode" id="kode" hidden></div>
+    <p class="lille">Åbn kameraet på telefonen, og peg det på koden. Så spørger telefonen, om den skal oprette forbindelse.</p>
+    <div class="raekke">
+      <button type="button" id="vis">Vis adgangskoden</button>
+      <button type="button" id="print">Udskriv</button>
+      <button type="button" id="rediger">Skift netværk</button>
+    </div>
+  </section>
+
+  <section class="kort" id="redigerKort" hidden>
+    <form id="form" novalidate>
+      <label for="ssid">Netværkets navn</label>
+      <input type="text" id="ssid" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label for="sikkerhed">Sikkerhed</label>
+      <select id="sikkerhed">
+        <option value="WPA">WPA, WPA2 eller WPA3 (de fleste)</option>
+        <option value="WEP">WEP (gammelt)</option>
+        <option value="nopass">Åbent, uden adgangskode</option>
+      </select>
+      <div id="kodeBlok">
+        <label for="kodeFelt">Adgangskode</label>
+        <input type="text" id="kodeFelt" maxlength="63" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <label><input type="checkbox" id="skjult"> Skjult netværk (navnet vises ikke)</label>
+      <p class="fejl" id="fejl" role="alert"></p>
+      <div class="raekke">
+        <button type="submit" class="hoved">Gem og vis koden</button>
+        <button type="button" id="annuller" hidden>Annuller</button>
+        <button type="button" id="slet" hidden>Glem netværket</button>
+      </div>
+    </form>
+    <p class="lille" id="note">Brug dit GÆSTENETVÆRK, ikke dit eget. Adgangskoden gemmes på NUC'en i klartekst, og ses af alle, der kender PIN-koden til siden. QR-koden tegnes i browseren, så ingen tjeneste uden for huset ser den.</p>
+  </section>
+</main>
+<footer class="lille" id="ver" style="text-align:center;padding:6px 16px 24px">Familieoverblik</footer>
+
+<script type="module">
+import { API_KEY } from "./config.js";
+import { qrSvg } from "./qr.js";
+const HEAD = { "X-Ugeplan-Key": API_KEY };
+const $ = id => document.getElementById(id);
+
+// ── Kerne: rene funktioner ───────────────────────────────────────────
+/** Tegnene \ ; , " : skal have en omvendt skråstreg foran i WIFI:-teksten, ellers læses navnet forkert. */
+const wifiEsk = s => String(s).replace(/([\\;,":])/g, "\\$1");
+/** Teksten telefonerne læser: WIFI:T:WPA;S:navn;P:kode;H:false;; */
+function wifiTekst({ ssid, kode, sikkerhed, skjult }){
+  const t = ["WPA", "WEP", "nopass"].includes(sikkerhed) ? sikkerhed : "WPA";
+  return `WIFI:T:${t};S:${wifiEsk(ssid)};${t === "nopass" ? "" : `P:${wifiEsk(kode)};`}H:${skjult ? "true" : "false"};;`;
+}
+/** Samme regler som wifi.php. Returnerer en fejltekst eller "". */
+function wifiFejl({ ssid, kode, sikkerhed }){
+  const bytes = new TextEncoder().encode(ssid || "").length;
+  if (bytes < 1 || bytes > 32) return "Netværkets navn skal være mellem 1 og 32 byte.";
+  if (/[\u0000-\u001f\u007f]/.test((ssid || "") + (kode || ""))) return "Navn og adgangskode må ikke indeholde styretegn.";
+  if (sikkerhed === "WPA" && ((kode || "").length < 8 || (kode || "").length > 63)) return "En WPA-adgangskode skal være mellem 8 og 63 tegn.";
+  if (sikkerhed === "WEP" && !/^(?:[\s\S]{5}|[\s\S]{13}|[0-9a-fA-F]{10}|[0-9a-fA-F]{26})$/u.test(kode || "")) return "En WEP-nøgle er 5 eller 13 tegn, eller 10 eller 26 hex-cifre.";
+  return "";
+}
+// ── Slut på kernen ───────────────────────────────────────────────────
+
+async function api(metode, sti, body){
+  const r = await fetch(sti, { method: metode, headers: body ? { ...HEAD, "Content-Type": "application/json" } : HEAD, body: body ? JSON.stringify(body) : undefined, cache: "no-store", credentials: "same-origin" });
+  let d = null; try { d = await r.json(); } catch {}
+  if (!r.ok) throw new Error((d && d.error) || (r.status === 404 ? "wifi.php findes ikke på serveren endnu." : r.status === 403 ? "Log ind igen (åbn siden på ny)." : `HTTP ${r.status}`));
+  return d;
+}
+
+let net = null;
+function vis(n){
+  net = n;
+  $("redigerKort").hidden = true; $("visKort").hidden = false;
+  $("navn").textContent = n.ssid;
+  $("sik").textContent = n.sikkerhed === "nopass" ? "Åbent netværk" : n.sikkerhed === "WEP" ? "WEP" : "WPA";
+  $("kode").textContent = n.kode; $("kode").hidden = true; $("vis").textContent = "Vis adgangskoden"; $("vis").hidden = n.sikkerhed === "nopass";
+  try { $("qr").innerHTML = qrSvg(wifiTekst(n), { ecl: "M", titel: `QR-kode til wifi ${n.ssid}` }); }
+  catch (e){ $("qr").textContent = "Kunne ikke lave QR-koden: " + e.message; }
+}
+function rediger(n, kanAnnullere){
+  $("visKort").hidden = true; $("redigerKort").hidden = false;
+  $("ssid").value = n.ssid || ""; $("sikkerhed").value = n.sikkerhed || "WPA"; $("kodeFelt").value = n.kode || ""; $("skjult").checked = !!n.skjult;
+  $("kodeBlok").hidden = $("sikkerhed").value === "nopass";
+  $("annuller").hidden = !kanAnnullere; $("slet").hidden = !kanAnnullere; $("fejl").textContent = "";
+}
+$("sikkerhed").addEventListener("change", () => { $("kodeBlok").hidden = $("sikkerhed").value === "nopass"; });
+$("vis").addEventListener("click", () => { const h = $("kode").hidden; $("kode").hidden = !h; $("vis").textContent = h ? "Skjul adgangskoden" : "Vis adgangskoden"; });
+$("print").addEventListener("click", () => window.print());
+$("rediger").addEventListener("click", () => rediger(net, true));
+$("annuller").addEventListener("click", () => vis(net));
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = { ssid: $("ssid").value, kode: $("sikkerhed").value === "nopass" ? "" : $("kodeFelt").value, sikkerhed: $("sikkerhed").value, skjult: $("skjult").checked };
+  const f = wifiFejl(v);
+  if (f){ $("fejl").textContent = f; return; }
+  try { vis(await api("POST", "wifi.php", v)); } catch (err){ $("fejl").textContent = err.message; }
+});
+$("slet").addEventListener("click", async () => {
+  if (!$("slet").dataset.sikker){ $("slet").dataset.sikker = "1"; $("slet").textContent = "Tryk igen for at glemme"; return; }
+  delete $("slet").dataset.sikker; $("slet").textContent = "Glem netværket";
+  try { await api("POST", "wifi.php?action=slet", {}); net = null; rediger({}, false); } catch (err){ $("fejl").textContent = err.message; }
+});
+
+try {
+  const n = await api("GET", "wifi.php");
+  if (n.gemt) vis(n); else rediger(n, false);
+} catch (err){ rediger({}, false); $("fejl").textContent = err.message; }
+
+import("./sprog.js").then(m => m.startSprog({ HEAD, container: document.querySelector("header") })).catch(e => console.error("sprog:", e));
+
+fetch("info.php?del=version", { headers: HEAD, cache: "no-store", credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(v => { if (v && v.version) $("ver").textContent = `Familieoverblik v${v.version}`; }).catch(() => {});
+</script>
+</body>
+</html>

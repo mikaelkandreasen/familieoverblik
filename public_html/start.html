@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Opsætning · Familieoverblik</title>
+<style>
+:root{--paper:#E9ECEE;--card:#FFFFFF;--ink:#14202C;--ink-soft:#5E6A75;--rule:#D6DBE0;--accent:#14202C;--fejl:#B91C1C;--ok:#1A5929;--radius:4px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--paper:#10161B;--card:#1A222A;--ink:#E8ECEF;--ink-soft:#9AA6B0;--rule:#2C3742;--accent:#E8ECEF;--fejl:#F38B8B;--ok:#6CCB86}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:20px}
+h1{font-size:24px;margin:8px 0 4px}
+h2{font-size:16px;margin:22px 0 6px}
+.kort{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);padding:16px;margin:14px 0}
+.lille{font-size:13px;color:var(--ink-soft)}
+label{display:block;margin:10px 0 3px;font-size:14px}
+input,select,button{font:inherit;color:inherit}
+input[type=text],input[type=password],input[type=number],select{width:100%;min-height:44px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper)}
+.to{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.barn{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.pers{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.5fr) auto;gap:8px;margin:6px 0;align-items:center}
+.pers.med-id{grid-template-columns:minmax(0,2fr) minmax(0,1.5fr) minmax(0,1.3fr) auto}
+@media (max-width:520px){.pers,.pers.med-id{grid-template-columns:1fr 1fr}}
+h3{font-size:14px;margin:14px 0 2px;color:var(--ink-soft)}
+.check{display:flex;align-items:center;gap:8px;margin:12px 0 4px}
+.check input{width:auto;min-height:0}
+.pers button{min-height:44px;min-width:44px;padding:0}
+button{min-height:46px;padding:0 18px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);cursor:pointer}
+button.hoved{background:var(--accent);color:var(--card);border-color:var(--accent);font-weight:600;width:100%;margin-top:14px}
+.fejl{color:var(--fejl);min-height:1.4em;margin:8px 0 0}
+.pin{font-size:44px;letter-spacing:.2em;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;margin:10px 0}
+.kode{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.15em;text-transform:uppercase}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Velkommen til Familieoverblik</h1>
+  <p class="lille">Det tager to minutter. Alt kan ændres bagefter under Opsætning. Intet forlader dit netværk, før du selv slår noget til.</p>
+
+  <form id="form" novalidate>
+    <div class="kort">
+      <h2>1. Opsætningskode</h2>
+      <p class="lille">Koden står i containerens log: Dockhand → <i>familieoverblik</i> → <i>web</i> → <i>Logs</i>. Linjen hedder «Opsætningskode». Den sikrer, at det er dig, der sætter op.</p>
+      <label for="kode">Opsætningskode</label>
+      <input type="text" id="kode" class="kode" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="fx K7M2-X9PQ">
+    </div>
+
+    <div class="kort">
+      <h2>2. Familien</h2>
+      <p class="lille">Fornavne, som de står i Aula (børnene). De bruges til farver og til at finde de rigtige breve. Op til 4 voksne og 8 børn. <b>Fødselsdag</b> er valgfri: <i>dd.mm</i> eller <i>dd.mm.åååå</i> (med årstal vises alderen). På dagen får skærmen flag og fødselsdagstema.</p>
+      <h3>Voksne</h3>
+      <div id="voksne"></div>
+      <button type="button" id="tilfoejVoksen">+ Tilføj voksen</button>
+      <h3>Børn</h3>
+      <div id="boern"></div>
+      <button type="button" id="tilfoejBarn">+ Tilføj barn</button>
+      <label class="check"><input type="checkbox" id="fdTema" checked> Flag og fødselsdagstema på familiens fødselsdage</label>
+      <p class="lille">calendar_id kan udfyldes senere (Opsætning → Familie og forbindelser). Det er kolonnen «ID» fra <i>aula profile</i>.</p>
+    </div>
+
+    <div class="kort">
+      <h2>3. PIN-kode til siderne</h2>
+      <p class="lille">4 til 8 cifre. Alle i familien skriver den første gang, de åbner siden på en ny enhed.</p>
+      <div class="barn"><input type="text" id="pin" inputmode="numeric" maxlength="8" autocomplete="off" aria-label="PIN-kode"><button type="button" id="pinLav">Lav en tilfældig</button></div>
+    </div>
+
+    <div class="kort">
+      <h2>4. Sted og tid</h2>
+      <p class="lille">Bruges til vejret. Standard er Aarhus. Du kan finde dit sted i kort-app'en: tryk på dit hus og læs koordinaterne.</p>
+      <div class="to"><div><label for="lat">Breddegrad</label><input type="text" id="lat" inputmode="decimal" value="56.1629"></div><div><label for="lon">Længdegrad</label><input type="text" id="lon" inputmode="decimal" value="10.2039"></div></div>
+      <label for="tz">Tidszone</label>
+      <input type="text" id="tz" value="Europe/Copenhagen" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="kort">
+      <h2>5. Forbindelser (valgfrit, kan vente)</h2>
+      <p class="lille">Aula og oversættelse bruger disse. Du kan lade felterne stå tomme og udfylde dem senere.</p>
+      <label for="mitid">MitID-brugernavn (til Aula)</label>
+      <input type="text" id="mitid" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label for="anthropic">Anthropic API-nøgle (til Aula-breve og «Oversæt siden»)</label>
+      <input type="password" id="anthropic" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+    </div>
+
+    <p class="fejl" id="fejl" role="alert"></p>
+    <button type="submit" class="hoved">Sæt Familieoverblik op</button>
+  </form>
+
+  <section class="kort" id="faerdig" hidden>
+    <h2>Færdig</h2>
+    <p>Din PIN-kode er:</p>
+    <div class="pin" id="visPin"></div>
+    <p class="lille">Skriv den ned. Du skal bruge den på hver enhed, første gang. Den kan ændres under Opsætning.</p>
+    <p><b>Næste skridt:</b> Åbn oversigten, og skriv PIN-koden. Aula-login (kræver MitID) laver du bagefter i Dockhand: <i>familieoverblik</i> → <i>aula</i> → <i>Terminal</i>, og skriv <code>aula --username DIT-MITID-BRUGERNAVN login</code>.</p>
+    <button type="button" class="hoved" id="gaa">Åbn oversigten</button>
+  </section>
+</main>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+
+// ── Kerne: rene funktioner ───────────────────────────────────────────
+const MAX_VOKSNE = 4, MAX_BOERN = 8;
+/** «14.03», «14.03.1985» (også 1.3 og bindestreg eller skråstreg) → «14.03[.1985]», eller {fejl}. Tomt er gyldigt. Samme regler som serveren. */
+function fdNorm(x){
+  const t = String(x ?? "").trim();
+  if (!t) return { v: "" };
+  const m = /^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{4}))?$/.exec(t);
+  if (!m) return { fejl: "skriv dato som dd.mm eller dd.mm.åååå (fx 14.03 eller 14.03.1985)" };
+  const d = +m[1], mo = +m[2], y = m[3] ? +m[3] : null, test = new Date(Date.UTC(y || 2000, mo - 1, d));
+  if (test.getUTCDate() !== d || test.getUTCMonth() !== mo - 1) return { fejl: `den dato findes ikke (${t})` };
+  if (y !== null){
+    const nu = new Date();
+    if (y > nu.getFullYear() || test > nu) return { fejl: "fødselsdagen kan ikke ligge i fremtiden" };
+    if (y < 1900) return { fejl: "årstallet skal være 1900 eller senere" };
+  }
+  return { v: `${String(d).padStart(2, "0")}.${String(mo).padStart(2, "0")}${y ? "." + y : ""}` };
+}
+/** Det, der sendes til serveren, ud fra felterne. Returnerer {payload} eller {fejl}. Serveren validerer alt igen. */
+function bygPayload(f){
+  const navn = x => String(x || "").trim();
+  const personer = (liste, hvad) => {
+    const ud = [];
+    for (const p of liste || []){
+      if (!navn(p.navn)){ if (navn(p.fd) || navn(p.cid)) return { fejl: `En ${hvad} har fødselsdag eller calendar_id, men intet navn.` }; continue; }
+      const fd = fdNorm(p.fd);
+      if (fd.fejl) return { fejl: `Fødselsdag for ${navn(p.navn)}: ${fd.fejl}.` };
+      const x = { navn: navn(p.navn), foedselsdag: fd.v };
+      if ("cid" in p){
+        const cid = navn(p.cid);
+        if (cid && !/^\d+$/.test(cid)) return { fejl: `calendar_id for ${navn(p.navn)} skal være et helt tal (eller tomt).` };
+        x.calendar_id = cid ? Number(cid) : 0;
+      }
+      ud.push(x);
+    }
+    return { ud };
+  };
+  const v = personer(f.voksne, "voksen"); if (v.fejl) return v;
+  const b = personer(f.boern, "barn"); if (b.fejl) return b;
+  if (!v.ud.length) return { fejl: "Skriv mindst én voksen." };
+  if (!b.ud.length) return { fejl: "Skriv mindst ét barn." };
+  if (v.ud.length > MAX_VOKSNE) return { fejl: `Højst ${MAX_VOKSNE} voksne.` };
+  if (b.ud.length > MAX_BOERN) return { fejl: `Højst ${MAX_BOERN} børn.` };
+  const ids = [...v.ud, ...b.ud].map(x => x.navn.toLowerCase());
+  if (new Set(ids).size !== ids.length) return { fejl: "To personer må ikke have samme navn." };
+  if (ids.includes("alle")) return { fejl: "«Alle» er forbeholdt filteret på skærmen. Vælg et andet navn." };
+  if (!/^\d{4,8}$/.test(navn(f.pin))) return { fejl: "PIN-koden skal være 4 til 8 cifre." };
+  const lat = Number(String(f.lat).replace(",", ".")), lon = Number(String(f.lon).replace(",", "."));
+  if (!navn(f.lat) || !navn(f.lon) || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return { fejl: "Breddegrad (−90 til 90) og længdegrad (−180 til 180) skal være tal." };
+  if (!navn(f.kode)) return { fejl: "Skriv opsætningskoden fra containerens log." };
+  const payload = { kode: navn(f.kode), sv: { voksne: v.ud, boern: b.ud, fodselsdagstema: f.tema !== false }, pin: navn(f.pin), sted: { lat, lon, tidszone: navn(f.tz) || "Europe/Copenhagen" } };
+  const h = {};
+  if (navn(f.mitid)) h.mitid_brugernavn = navn(f.mitid);
+  if (navn(f.anthropic)) h.anthropic_noegle = navn(f.anthropic);
+  if (Object.keys(h).length) payload.hemmeligheder = h;
+  return { payload };
+}
+/** Tilfældig PIN med n cifre, uden skævhed. */
+function tilfaeldigPin(n = 6, rng = crypto){
+  let ud = "";
+  const a = new Uint32Array(1), graense = Math.floor(0x100000000 / 10) * 10;
+  while (ud.length < n){ do { rng.getRandomValues(a); } while (a[0] >= graense); ud += String(a[0] % 10); }
+  return ud;
+}
+const tomPerson = barn => barn ? { navn: "", fd: "", cid: "" } : { navn: "", fd: "" };
+/** HTML til rækkerne. Navne og datoer escapes; fjern-knappen findes kun, når der er mere end én. */
+function raekkerHtml(liste, type){
+  const e = x => String(x ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const hvad = type === "voksne" ? "Voksen" : "Barn";
+  return liste.map((p, i) => `<div class="pers${type === "boern" ? " med-id" : ""}" data-lst="${type}" data-i="${i}">
+    <input type="text" data-f="navn" maxlength="30" autocomplete="off" value="${e(p.navn)}" placeholder="${hvad} ${i + 1}${i ? " (valgfri)" : ""}" aria-label="${hvad} ${i + 1}, fornavn">
+    <input type="text" data-f="fd" inputmode="numeric" autocomplete="off" value="${e(p.fd)}" placeholder="fødselsdag dd.mm.åååå" aria-label="${hvad} ${i + 1}, fødselsdag">
+    ${type === "boern" ? `<input type="text" data-f="cid" inputmode="numeric" autocomplete="off" value="${e(p.cid)}" placeholder="calendar_id" aria-label="${hvad} ${i + 1}, calendar_id">` : ""}
+    ${liste.length > 1 ? `<button type="button" data-fjern aria-label="Fjern ${hvad.toLowerCase()} ${i + 1}">×</button>` : "<span></span>"}</div>`).join("");
+}
+// ── Slut på kernen ───────────────────────────────────────────────────
+
+const stat = { voksne: [tomPerson(false)], boern: [tomPerson(true)] };
+function tegnPersoner(){
+  $("voksne").innerHTML = raekkerHtml(stat.voksne, "voksne"); $("boern").innerHTML = raekkerHtml(stat.boern, "boern");
+  $("tilfoejVoksen").disabled = stat.voksne.length >= MAX_VOKSNE; $("tilfoejBarn").disabled = stat.boern.length >= MAX_BOERN;
+}
+for (const id of ["voksne", "boern"]){
+  $(id).addEventListener("input", e => { const d = e.target.dataset, r = e.target.closest && e.target.closest("[data-lst]"); const l = r ? r.dataset.lst : d.lst, i = Number(r ? r.dataset.i : d.i); if (stat[l] && stat[l][i] && d.f) stat[l][i][d.f] = e.target.value; });
+  $(id).addEventListener("click", e => { const k = e.target.closest && e.target.closest("[data-fjern]"); const r = k && k.closest("[data-lst]"); if (!r) return; stat[r.dataset.lst].splice(Number(r.dataset.i), 1); tegnPersoner(); });
+}
+$("tilfoejVoksen").addEventListener("click", () => { if (stat.voksne.length < MAX_VOKSNE){ stat.voksne.push(tomPerson(false)); tegnPersoner(); } });
+$("tilfoejBarn").addEventListener("click", () => { if (stat.boern.length < MAX_BOERN){ stat.boern.push(tomPerson(true)); tegnPersoner(); } });
+tegnPersoner();
+$("pinLav").addEventListener("click", () => { $("pin").value = tilfaeldigPin(6); });
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("fejl").textContent = "";
+  const f = { kode: $("kode").value, voksne: stat.voksne, boern: stat.boern, tema: $("fdTema").checked,
+    pin: $("pin").value, lat: $("lat").value, lon: $("lon").value, tz: $("tz").value, mitid: $("mitid").value, anthropic: $("anthropic").value };
+  const r = bygPayload(f);
+  if (r.fejl){ $("fejl").textContent = r.fejl; return; }
+  try {
+    const svar = await fetch("instans.php?action=start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r.payload), cache: "no-store" });
+    let d = null; try { d = await svar.json(); } catch {}
+    if (!svar.ok || !d || !d.ok) throw new Error((d && d.fejl) || (svar.status === 404 ? "Serveren er ikke klar endnu. Prøv igen om lidt." : `HTTP ${svar.status}`));
+    $("form").hidden = true; $("faerdig").hidden = false; $("visPin").textContent = d.pin || r.payload.pin;
+    $("anthropic").value = "";
+  } catch (err){ $("fejl").textContent = err.message; }
+});
+$("gaa").addEventListener("click", () => { location.href = "overblik.html"; });
+</script>
+</body>
+</html>

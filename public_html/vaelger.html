@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Tilfældig vælger · Familieoverblik</title>
+<script>
+/* Farverne fra tema.php, husket i browseren, så siden ikke blinker i standardfarver. Samme blok i alle sider. */
+(function(){try{var t=JSON.parse(localStorage.getItem("familieoverblik-tema")||"null");if(t&&t.vars){var r=document.documentElement.style;for(var k in t.vars){if(/^--[a-z0-9-]+$/.test(k)&&/^#[0-9a-fA-F]{6}$/.test(t.vars[k]))r.setProperty(k,t.vars[k]);}}}catch(e){}})();
+</script>
+<style>
+:root{--paper:#E9ECEE;--card:#FFFFFF;--ink:#14202C;--ink-soft:#5E6A75;--rule:#D6DBE0;--accent:#14202C;--radius:4px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--paper:#10161B;--card:#1A222A;--ink:#E8ECEF;--ink-soft:#9AA6B0;--rule:#2C3742;--accent:#E8ECEF}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);line-height:1.45}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--rule);background:var(--card)}
+header h1{font-size:18px;margin:0;flex:1 1 auto}
+header a{color:inherit;font-size:14px}
+main{max-width:980px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){main{grid-template-columns:1fr}}
+.kort{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);padding:16px}
+h2{font-size:15px;margin:0 0 8px}
+.hjul{position:relative;width:min(100%,480px);margin:0 auto;aspect-ratio:1}
+canvas{width:100%;height:100%;display:block}
+.pil{position:absolute;left:50%;top:-6px;width:0;height:0;margin-left:-14px;border-left:14px solid transparent;border-right:14px solid transparent;border-top:30px solid var(--accent);filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.resultat{min-height:3.2em;text-align:center;font-size:26px;font-weight:600;margin:12px 0 4px;overflow-wrap:anywhere}
+.resultat.lille{font-size:18px}
+.lille{font-size:13px;color:var(--ink-soft)}
+button,select,textarea,input{font:inherit;color:inherit}
+button{min-height:44px;padding:0 16px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);cursor:pointer;margin:3px}
+button.hoved{background:var(--accent);color:var(--card);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+textarea{width:100%;min-height:210px;padding:10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper);resize:vertical}
+select,input[type=number]{min-height:40px;padding:0 8px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper)}
+label.valg{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:14px}
+.raekke{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+ol{margin:6px 0 0 20px;padding:0}li{margin:3px 0}
+#historik li{font-size:14px}
+.fejl{color:#B91C1C;min-height:1.3em;font-size:14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Tilfældig vælger</h1><a href="overblik.html">← Oversigten</a></header>
+<main>
+  <section class="kort">
+    <div class="hjul" id="hjulBoks"><canvas id="hjul" width="960" height="960" role="img" aria-label="Spinner med dine valg"></canvas><div class="pil" aria-hidden="true"></div></div>
+    <div class="resultat" id="resultat" aria-live="assertive">Skriv dine valg, og tryk Drej.</div>
+    <div class="raekke" style="justify-content:center"><button type="button" class="hoved" id="drej">Drej hjulet</button></div>
+    <p class="lille" style="text-align:center" id="info"></p>
+  </section>
+
+  <section>
+    <div class="kort" style="margin-bottom:16px">
+      <h2>Dine valg (ét pr. linje)</h2>
+      <textarea id="liste" spellcheck="false" aria-label="Dine valg, ét pr. linje"></textarea>
+      <p class="fejl" id="fejl" role="alert"></p>
+      <div class="raekke">
+        <button type="button" id="bland">Bland</button><button type="button" id="ryd">Ryd</button>
+        <select id="eksempel" aria-label="Indsæt et eksempel"><option value="">Indsæt et eksempel …</option></select>
+      </div>
+      <label class="valg"><input type="checkbox" id="fjern"> Fjern vinderen fra listen, når den er valgt</label>
+      <label class="valg"><input type="checkbox" id="hurtig"> Hurtigt valg uden hjul</label>
+      <label class="valg" id="antalBlok" hidden>Antal vindere <input type="number" id="antal" min="1" max="20" value="1" style="width:5em"></label>
+      <p class="lille">Valget trækkes med browserens tilfældighedsgenerator (<code>crypto.getRandomValues</code>), før hjulet begynder at dreje. Hjulet ender altså, hvor det var bestemt på forhånd. Skriv et valg flere gange, hvis det skal have større chance.</p>
+    </div>
+    <div class="kort"><h2>Seneste valg</h2><ol id="historik"></ol><p class="lille" id="tomHistorik">Ingen endnu.</p></div>
+  </section>
+</main>
+
+<script type="module">
+import { API_KEY } from "./config.js";
+const HEAD = { "X-Ugeplan-Key": API_KEY };
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+
+// ── Kerne: rene funktioner, uden adgang til siden ─────────────────────
+const MAX_VALG = 200, MAX_TEKST = 60;
+const EKSEMPLER = {
+  "Aftensmad": "Pasta\nPizza\nTaco\nSuppe\nBøf med kartofler\nRisotto\nSushi\nRester",
+  "Hvem begynder?": "Mor\nFar\nStorebror\nLillesøster",
+  "Ja eller nej": "Ja\nNej",
+  "Terning": "1\n2\n3\n4\n5\n6",
+  "Weekendplan": "Biograf\nTur i skoven\nBrætspil\nBesøg hos bedsteforældre\nBageprojekt\nCykeltur",
+};
+const FARVER = ["#52616d", "#784078", "#173e6e", "#1a5929", "#92561a", "#a45238", "#2c4b46", "#6a4a8c", "#7a5f10", "#3d6b7a"];
+
+/** Én linje pr. valg: trimmet, uden tomme, højst MAX_VALG og MAX_TEKST tegn hver. */
+function parseListe(tekst){
+  return String(tekst || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, MAX_VALG).map(l => [...l].slice(0, MAX_TEKST).join(""));
+}
+/** Helt tal fra 0 til n-1, jævnt fordelt (afvisning i stedet for modulo, så ingen valg favoriseres). */
+function tilfaeldigt(n, rng = crypto){
+  if (!Number.isInteger(n) || n < 1) throw new Error("Der skal være mindst ét valg.");
+  if (n === 1) return 0;
+  const graense = Math.floor(0x100000000 / n) * n, a = new Uint32Array(1);
+  do { rng.getRandomValues(a); } while (a[0] >= graense);
+  return a[0] % n;
+}
+/** k forskellige valg uden gentagelse (delvis Fisher–Yates). Returnerer indeks. */
+function traekFlere(n, k, rng = crypto){
+  const idx = Array.from({ length: n }, (_, i) => i), ud = [];
+  for (let i = 0; i < Math.min(k, n); i++){
+    const j = i + tilfaeldigt(n - i, rng);
+    [idx[i], idx[j]] = [idx[j], idx[i]]; ud.push(idx[i]);
+  }
+  return ud;
+}
+function bland(liste, rng = crypto){
+  const a = liste.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = tilfaeldigt(i + 1, rng); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+/**
+ * Hjulet tegnes med første udsnit lige til højre for toppen og drejer med uret. Pilen står i toppen.
+ * Vinkel (radianer med uret), hvor udsnit i med placering u (0 til 1 inde i udsnittet) står under pilen, efter `runder` hele omgange.
+ */
+function slutVinkel(i, n, u = 0.5, runder = 6){
+  const seg = TAU / n;
+  return runder * TAU + ((TAU - (i + u) * seg) % TAU + TAU) % TAU;
+}
+/** Hvilket udsnit står under pilen ved vinklen theta? */
+function vinderUnderPil(theta, n){
+  const seg = TAU / n, t = ((theta % TAU) + TAU) % TAU;
+  return Math.floor((((TAU - t) % TAU) + TAU) % TAU / seg) % n;
+}
+const easeOut = t => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 4);
+/** Farver, så to udsnit side om side aldrig har samme farve (også første og sidste). */
+function hjulFarver(n){
+  const f = [];
+  for (let i = 0; i < n; i++){
+    let c = FARVER[i % FARVER.length];
+    if (i === n - 1 && n > 1 && c === f[0]) c = FARVER[(i + 1) % FARVER.length];
+    f.push(c);
+  }
+  return f;
+}
+// ── Slut på kernen ───────────────────────────────────────────────────
+
+const LAGER = "familieoverblik-vaelger";
+const tilstand = () => { try { return JSON.parse(localStorage.getItem(LAGER) || "null") || {}; } catch { return {}; } };
+const husk = () => { try { localStorage.setItem(LAGER, JSON.stringify({ liste: $("liste").value, fjern: $("fjern").checked, hurtig: $("hurtig").checked, antal: Number($("antal").value) || 1 })); } catch {} };
+
+let valg = [], theta = 0, drejer = false;
+const ctx = $("hjul").getContext("2d");
+function tegn(){
+  const N = $("hjul").width, c = N / 2, r = c - 6;
+  ctx.clearRect(0, 0, N, N);
+  if (!valg.length){
+    ctx.fillStyle = "rgba(127,127,127,.18)"; ctx.beginPath(); ctx.arc(c, c, r, 0, TAU); ctx.fill();
+    ctx.fillStyle = "rgba(127,127,127,.9)"; ctx.font = `${N / 20}px system-ui`; ctx.textAlign = "center"; ctx.fillText("Tilføj valg", c, c); return;
+  }
+  const n = valg.length, seg = TAU / n, farver = hjulFarver(n);
+  ctx.save(); ctx.translate(c, c); ctx.rotate(-Math.PI / 2 + theta);
+  for (let i = 0; i < n; i++){
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r, i * seg, (i + 1) * seg); ctx.closePath();
+    ctx.fillStyle = farver[i]; ctx.fill(); ctx.lineWidth = n > 60 ? 0 : 2; ctx.strokeStyle = "#ffffff"; if (n <= 60) ctx.stroke();
+    if (n <= 80){
+      ctx.save(); ctx.rotate((i + 0.5) * seg); ctx.fillStyle = "#ffffff"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      const fs = Math.max(N / 60, Math.min(N / 16, (r * seg) * 0.55)); ctx.font = `600 ${fs}px system-ui`;
+      let t = valg[i]; const maks = r * 0.86;
+      while (t.length > 1 && ctx.measureText(t).width > maks) t = t.slice(0, -2) + "…";
+      ctx.fillText(t, r - N / 40, 0); ctx.restore();
+    }
+  }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(c, c, N / 28, 0, TAU); ctx.fillStyle = "#ffffff"; ctx.fill();
+}
+function laesListe(){
+  valg = parseListe($("liste").value);
+  $("info").textContent = valg.length ? `${valg.length} valg${valg.length >= MAX_VALG ? " (højst " + MAX_VALG + ")" : ""}` : "";
+  $("drej").disabled = drejer || valg.length < 2;
+  tegn();
+}
+function nyHistorie(tekst){
+  const li = document.createElement("li"); li.textContent = `${new Date().toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })} · ${tekst}`;
+  $("historik").insertBefore(li, $("historik").firstChild);
+  while ($("historik").children.length > 10) $("historik").removeChild($("historik").lastChild);
+  $("tomHistorik").hidden = true;
+}
+function visResultat(tekst, lille){ $("resultat").textContent = tekst; $("resultat").classList.toggle("lille", !!lille); }
+function fjernFraListe(indeks){
+  const linjer = $("liste").value.split(/\r?\n/); let k = -1;
+  for (let i = 0; i < linjer.length; i++){ if (linjer[i].trim()){ k++; if (k === indeks){ linjer.splice(i, 1); break; } } }
+  $("liste").value = linjer.join("\n");
+}
+
+function drej(){
+  $("fejl").textContent = "";
+  laesListe();
+  if (drejer) return;
+  if (valg.length < 2){ $("fejl").textContent = "Skriv mindst to valg."; return; }
+  if ($("hurtig").checked){
+    const k = Math.max(1, Math.min(20, Number($("antal").value) || 1)), idx = traekFlere(valg.length, k), v = idx.map(i => valg[i]);
+    visResultat(v.length === 1 ? v[0] : v.map((x, i) => `${i + 1}. ${x}`).join("  "), v.length > 1);
+    nyHistorie(v.join(", "));
+    if ($("fjern").checked) [...idx].sort((a, b) => b - a).forEach(fjernFraListe);       // bagfra, så indeksene ikke flytter sig
+    laesListe(); husk(); return;
+  }
+  const i = tilfaeldigt(valg.length), slut = slutVinkel(i, valg.length, 0.15 + 0.7 * tilfaeldigt(1000) / 1000, 5 + tilfaeldigt(3));
+  const vinder = valg[i], start = theta % TAU, mål = slut, varighed = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 4200 + tilfaeldigt(1800);
+  const faerdig = () => {
+    theta = mål % TAU; drejer = false; tegn(); visResultat(vinder);
+    nyHistorie(vinder);
+    if ($("fjern").checked){ fjernFraListe(i); }
+    laesListe(); husk();
+  };
+  if (!varighed){ drejer = true; faerdig(); return; }
+  drejer = true; $("drej").disabled = true; visResultat("…");
+  const t0 = performance.now();
+  const trin = nu => {
+    const t = (nu - t0) / varighed;
+    theta = start + (mål - start) * easeOut(t); tegn();
+    if (t < 1) requestAnimationFrame(trin); else faerdig();
+  };
+  requestAnimationFrame(trin);
+}
+
+$("drej").addEventListener("click", drej);
+$("liste").addEventListener("input", () => { laesListe(); husk(); });
+$("bland").addEventListener("click", () => { $("liste").value = bland(parseListe($("liste").value)).join("\n"); laesListe(); husk(); });
+$("ryd").addEventListener("click", () => { $("liste").value = ""; $("fejl").textContent = ""; visResultat("Skriv dine valg, og tryk Drej."); laesListe(); husk(); });
+$("hurtig").addEventListener("change", () => { $("antalBlok").hidden = !$("hurtig").checked; $("drej").textContent = $("hurtig").checked ? "Vælg" : "Drej hjulet"; husk(); });
+$("fjern").addEventListener("change", husk); $("antal").addEventListener("change", husk);
+for (const n of Object.keys(EKSEMPLER)){ const o = document.createElement("option"); o.value = n; o.textContent = n; $("eksempel").appendChild(o); }
+$("eksempel").addEventListener("change", () => { const e = EKSEMPLER[$("eksempel").value]; if (e){ $("liste").value = e; laesListe(); husk(); } $("eksempel").value = ""; });
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "BUTTON" && e.target.tagName !== "SELECT" && !$("drej").disabled) drej(); });
+
+const gemt = tilstand();
+$("liste").value = typeof gemt.liste === "string" ? gemt.liste : EKSEMPLER["Aftensmad"];
+$("fjern").checked = !!gemt.fjern; $("hurtig").checked = !!gemt.hurtig; if (gemt.antal) $("antal").value = String(gemt.antal);
+$("antalBlok").hidden = !$("hurtig").checked; if ($("hurtig").checked) $("drej").textContent = "Vælg";
+laesListe();
+
+import("./sprog.js").then(m => m.startSprog({ HEAD, container: document.querySelector("header") })).catch(e => console.error("sprog:", e));
+</script>
+</body>
+</html>

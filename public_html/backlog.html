@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Backlog · Familieoverblik</title>
+<script>
+/* Farverne fra tema.php, husket i browseren, så siden ikke blinker i standardfarver. Samme blok i alle sider. */
+(function(){try{var t=JSON.parse(localStorage.getItem("familieoverblik-tema")||"null");if(t&&t.vars){var r=document.documentElement.style;for(var k in t.vars){if(/^--[a-z0-9-]+$/.test(k)&&/^#[0-9a-fA-F]{6}$/.test(t.vars[k]))r.setProperty(k,t.vars[k]);}}}catch(e){}})();
+</script>
+<style>
+:root{--paper:#E9ECEE;--card:#FFFFFF;--ink:#14202C;--ink-soft:#5E6A75;--rule:#D6DBE0;--accent:#14202C;--fejl:#B91C1C;--radius:4px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme: dark){:root{--paper:#10161B;--card:#1A222A;--ink:#E8ECEF;--ink-soft:#9AA6B0;--rule:#2C3742;--accent:#E8ECEF;--fejl:#F38B8B}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);line-height:1.45}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--rule);background:var(--card)}
+header h1{font-size:18px;margin:0;flex:1 1 auto}
+header a{color:inherit;font-size:14px}
+main{max-width:860px;margin:0 auto;padding:16px}
+.kort{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.lille{font-size:13px;color:var(--ink-soft)}
+label{display:block;margin:8px 0 3px;font-size:14px}
+input,select,textarea,button{font:inherit;color:inherit}
+input[type=text],input[type=search],select,textarea{width:100%;min-height:42px;padding:6px 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--paper)}
+textarea{min-height:90px;resize:vertical}
+button{min-height:42px;padding:0 14px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);cursor:pointer}
+button.hoved{background:var(--accent);color:var(--card);border-color:var(--accent);font-weight:600}
+button.lille-knap{min-height:34px;padding:0 10px;font-size:13px}
+summary{cursor:pointer;font-weight:600;min-height:34px;display:flex;align-items:center}
+.raekke{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end}
+.pkt{border:1px solid var(--rule);border-radius:var(--radius);padding:12px;margin:10px 0;background:var(--card)}
+.pkt h3{margin:0 0 4px;font-size:16px;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.chip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--ink-soft)}
+.chip.p1{background:#B91C1C;border-color:#B91C1C;color:#fff}.chip.p2{background:#B45309;border-color:#B45309;color:#fff}.chip.p3{border-color:var(--ink-soft)}.chip.p4{opacity:.8}
+.chip.done{text-decoration:line-through;opacity:.7}
+.besk{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0;font-size:14px}
+.meta{font-size:12px;color:var(--ink-soft)}
+.handl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.handl select{width:auto;min-height:34px;font-size:13px}
+.stem[aria-pressed=true]{background:var(--accent);color:var(--card);border-color:var(--accent)}
+.kommentarer{margin:8px 0 0;padding:0;list-style:none;font-size:14px}
+.kommentarer li{padding:6px 8px;border-left:3px solid var(--rule);margin:4px 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.kom-form{display:flex;gap:8px;margin-top:6px}
+.fejl{color:var(--fejl);min-height:1.3em;font-size:14px;margin:4px 0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Backlog</h1><a href="overblik.html">← Oversigten</a></header>
+<main>
+  <section class="kort">
+    <p class="lille" style="margin-top:0">Her logger vi idéer og ønsker til Familieoverblik. Alle med PIN-koden kan tilføje, stemme, kommentere og ændre status.</p>
+    <label for="hvem">Hvem er du?</label>
+    <select id="hvem"></select>
+    <input type="text" id="hvemAndet" maxlength="30" placeholder="Dit navn" hidden autocomplete="off" style="margin-top:6px">
+  </section>
+
+  <section class="kort">
+    <details id="nytBlok">
+      <summary>+ Nyt punkt</summary>
+      <form id="nytForm" novalidate>
+        <label for="nTitel">Titel</label>
+        <input type="text" id="nTitel" maxlength="120" autocomplete="off">
+        <label for="nBesk">Beskrivelse (valgfri)</label>
+        <textarea id="nBesk" maxlength="4000"></textarea>
+        <div class="raekke">
+          <div><label for="nKat">Kategori</label><select id="nKat"></select></div>
+          <div><label for="nPri">Ønsket prioritet</label><select id="nPri"></select></div>
+          <div><button type="submit" class="hoved" style="width:100%">Tilføj</button></div>
+        </div>
+      </form>
+    </details>
+    <p class="fejl" id="fejl" role="alert"></p>
+    <p class="lille" id="info" role="status"></p>
+  </section>
+
+  <section class="kort">
+    <div class="raekke">
+      <div><label for="fSoeg">Søg</label><input type="search" id="fSoeg" autocomplete="off"></div>
+      <div><label for="fKat">Kategori</label><select id="fKat"></select></div>
+      <div><label for="fStatus">Status</label><select id="fStatus"></select></div>
+      <div><label for="fPri">Prioritet</label><select id="fPri"></select></div>
+      <div><label for="fSort">Sortér efter</label><select id="fSort"><option value="prioritet">Prioritet og stemmer</option><option value="stemmer">Flest stemmer</option><option value="nyeste">Nyeste først</option><option value="opdateret">Sidst ændret</option></select></div>
+    </div>
+    <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="fAlle"> Vis også færdige og droppede</label>
+  </section>
+
+  <p class="lille" id="tal"></p>
+  <div id="liste"></div>
+
+  <section class="kort">
+    <b>Hent og læg ind</b>
+    <p class="lille">Eksporten kan lægges ind i <i>BACKLOG.md</i> (Markdown), åbnes i et regneark (CSV) eller flyttes til en anden installation (JSON). Indlæsning tager kun JSON og springer punkter over, der allerede findes.</p>
+    <div class="handl">
+      <button type="button" class="lille-knap" data-eksport="md">Hent som Markdown</button>
+      <button type="button" class="lille-knap" data-eksport="csv">Hent som CSV</button>
+      <button type="button" class="lille-knap" data-eksport="json">Hent som JSON</button>
+    </div>
+    <label for="fil">Læg en JSON-fil ind</label>
+    <input type="file" id="fil" accept=".json,application/json">
+  </section>
+</main>
+
+<script type="module">
+import { API_KEY, PEOPLE } from "./config.js";
+const HEAD = { "X-Ugeplan-Key": API_KEY };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ── Kerne: rene funktioner, uden adgang til siden ─────────────────────
+const KLAR = new Set(["Færdig", "Droppet"]);
+const PRI_RAEKKE = { P1: 0, P2: 1, P3: 2, P4: 3 };
+/** Filtrér: tekst (titel, beskrivelse, kommentarer), kategori, status, prioritet og om færdige/droppede vises. */
+function filtrer(punkter, f){
+  const q = String(f.soeg || "").trim().toLowerCase();
+  return punkter.filter(p => {
+    if (f.kategori && p.kategori !== f.kategori) return false;
+    if (f.status && p.status !== f.status) return false;
+    if (f.prioritet && p.prioritet !== f.prioritet) return false;
+    if (!f.alle && !f.status && KLAR.has(p.status)) return false;
+    if (q && !`${p.titel}\n${p.beskrivelse}\n${p.kommentarer.map(k => k.tekst).join("\n")}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+/** Sortér en kopi: prioritet og stemmer (standard), flest stemmer, nyeste, sidst ændret. Id'et afgør ved lighed, så rækkefølgen er stabil. */
+function sorter(punkter, hvordan){
+  const n = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  const nøgle = {
+    prioritet: (a, b) => n(PRI_RAEKKE[a.prioritet], PRI_RAEKKE[b.prioritet]) || n(b.stemmer.length, a.stemmer.length),
+    stemmer: (a, b) => n(b.stemmer.length, a.stemmer.length) || n(PRI_RAEKKE[a.prioritet], PRI_RAEKKE[b.prioritet]),
+    nyeste: (a, b) => n(b.oprettet, a.oprettet) || n(b.id, a.id),
+    opdateret: (a, b) => n(b.opdateret, a.opdateret) || n(b.id, a.id),
+  }[hvordan] || (() => 0);
+  return [...punkter].sort((a, b) => nøgle(a, b) || n(a.id, b.id));
+}
+/** 2026-11-07 → 7. nov. 2026 */
+function datoTekst(d){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ""));
+  return m ? `${+m[3]}. ${["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."][+m[2] - 1]} ${m[1]}` : String(d || "");
+}
+/** Ét punkt som HTML. Alt, brugeren har skrevet, escapes. redigerer: true viser rette-formularen. */
+function punktHtml(p, hvem, ramme, redigerer){
+  const sel = (liste, valgt, attr, ekstra = "") => `<select ${attr} ${ekstra}>${liste.map(x => `<option value="${esc(x)}"${x === valgt ? " selected" : ""}>${esc(x)}</option>`).join("")}</select>`;
+  const stemt = !!hvem && p.stemmer.includes(hvem.toLowerCase());
+  const kom = p.kommentarer.map(k => `<li><b>${esc(k.af)}</b> <span class="meta">${esc(datoTekst(k.tid))}</span><br>${esc(k.tekst)}</li>`).join("");
+  if (redigerer) return `<article class="pkt" data-id="${p.id}"><label>Titel</label><input type="text" data-ret-titel maxlength="120" value="${esc(p.titel)}">
+    <label>Beskrivelse</label><textarea data-ret-besk maxlength="4000">${esc(p.beskrivelse)}</textarea>
+    <label>Kategori</label>${sel(ramme.kategorier, p.kategori, "data-ret-kat")}
+    <div class="handl"><button type="button" class="lille-knap hoved" data-gem-ret>Gem</button><button type="button" class="lille-knap" data-annuller-ret>Annuller</button></div></article>`;
+  return `<article class="pkt" data-id="${p.id}">
+    <h3>${esc(p.titel)}</h3>
+    <div class="chips"><span class="chip p${p.prioritet.slice(1)}">${esc(p.prioritet)}</span><span class="chip">${esc(p.kategori)}</span><span class="chip${KLAR.has(p.status) ? " done" : ""}">${esc(p.status)}</span></div>
+    ${p.beskrivelse ? `<div class="besk">${esc(p.beskrivelse)}</div>` : ""}
+    <div class="meta">Foreslået af ${esc(p.af)} ${esc(datoTekst(p.oprettet))}${p.opdateret !== p.oprettet ? ` · ændret ${esc(datoTekst(p.opdateret))}` : ""}</div>
+    <div class="handl">
+      <button type="button" class="lille-knap stem" data-stem aria-pressed="${stemt}" aria-label="Stem på dette punkt">▲ ${p.stemmer.length}</button>
+      ${sel(ramme.statusser, p.status, "data-status", 'aria-label="Status"')}
+      ${sel(ramme.prioriteter, p.prioritet, "data-prio", 'aria-label="Prioritet"')}
+      <button type="button" class="lille-knap" data-ret>Ret</button>
+      <button type="button" class="lille-knap" data-slet>Slet</button>
+    </div>
+    ${kom ? `<ul class="kommentarer">${kom}</ul>` : ""}
+    <div class="kom-form"><input type="text" data-kom-tekst maxlength="1000" placeholder="Skriv en kommentar" aria-label="Kommentar"><button type="button" class="lille-knap" data-kom-send>Send</button></div>
+  </article>`;
+}
+// ── Slut på kernen ───────────────────────────────────────────────────
+
+let punkter = [], ramme = { kategorier: [], prioriteter: [], statusser: [] }, redigerer = null;
+const HVEM_NOEGLE = "familieoverblik-hvem";
+function hvem(){
+  const v = $("hvem").value;
+  return v === "__andet" ? $("hvemAndet").value.trim() : v;
+}
+function fejl(t){ $("fejl").textContent = t || ""; if (t) $("info").textContent = ""; }
+async function api(metode, body){
+  const r = await fetch("backlog.php", { method: metode, headers: body ? { ...HEAD, "Content-Type": "application/json" } : HEAD, body: body ? JSON.stringify(body) : undefined, cache: "no-store", credentials: "same-origin" });
+  let d = null; try { d = await r.json(); } catch {}
+  if (!r.ok || !d || d.ok === false) throw new Error((d && (d.fejl || d.error)) || (r.status === 404 ? "backlog.php findes ikke på serveren (kræver version 3.3)." : r.status === 403 ? "Log ind igen (åbn siden på ny)." : `HTTP ${r.status}`));
+  return d;
+}
+function tegn(){
+  const f = { soeg: $("fSoeg").value, kategori: $("fKat").value, status: $("fStatus").value, prioritet: $("fPri").value, alle: $("fAlle").checked };
+  const vist = sorter(filtrer(punkter, f), $("fSort").value), navn = hvem();
+  $("tal").textContent = `${vist.length} af ${punkter.length} punkter`;
+  $("liste").innerHTML = vist.map(p => punktHtml(p, navn, ramme, redigerer === p.id)).join("") || `<p class="lille">Ingen punkter at vise. Tilføj det første ovenfor, eller fjern et filter.</p>`;
+}
+function fyldValg(){
+  const valg = (liste, forste) => (forste ? `<option value="">${forste}</option>` : "") + liste.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join("");
+  $("nKat").innerHTML = valg(ramme.kategorier); $("nKat").value = "andet";
+  $("nPri").innerHTML = valg(ramme.prioriteter); $("nPri").value = "P3";
+  $("fKat").innerHTML = valg(ramme.kategorier, "Alle kategorier"); $("fPri").innerHTML = valg(ramme.prioriteter, "Alle prioriteter"); $("fStatus").innerHTML = valg(ramme.statusser, "Alle statusser");
+  const personer = (PEOPLE || []).filter(p => p.id !== "alle");
+  $("hvem").innerHTML = `<option value="">Vælg …</option>` + personer.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("") + `<option value="__andet">Andre …</option>`;
+  const gemt = localStorage.getItem(HVEM_NOEGLE) || "";
+  if (personer.some(p => p.name === gemt)) $("hvem").value = gemt;
+  else if (gemt){ $("hvem").value = "__andet"; $("hvemAndet").value = gemt; $("hvemAndet").hidden = false; }
+}
+async function laes(){
+  try { const d = await api("GET"); punkter = d.punkter; ramme = { kategorier: d.kategorier, prioriteter: d.prioriteter, statusser: d.statusser }; if (!$("nKat").options.length) fyldValg(); tegn(); }
+  catch (e){ fejl(e.message); }
+}
+async function handl(h, body, besked){
+  fejl("");
+  try { await api("POST", { handling: h, ...body }); if (besked) $("info").textContent = besked; await laes(); return true; }
+  catch (e){ fejl(e.message); return false; }
+}
+const kraevHvem = () => { if (!hvem()){ fejl("Vælg, hvem du er, øverst på siden."); return false; } return true; };
+$("hvem").addEventListener("change", () => {
+  $("hvemAndet").hidden = $("hvem").value !== "__andet";
+  try { localStorage.setItem(HVEM_NOEGLE, hvem()); } catch {}
+  tegn();
+});
+$("hvemAndet").addEventListener("input", () => { try { localStorage.setItem(HVEM_NOEGLE, hvem()); } catch {} tegn(); });
+for (const id of ["fSoeg", "fKat", "fStatus", "fPri", "fSort", "fAlle"]) $(id).addEventListener(id === "fSoeg" ? "input" : "change", tegn);
+$("nytForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!kraevHvem()) return;
+  if (!$("nTitel").value.trim()){ fejl("Skriv en titel."); return; }
+  if (await handl("nyt", { titel: $("nTitel").value, beskrivelse: $("nBesk").value, kategori: $("nKat").value, prioritet: $("nPri").value, af: hvem() }, "Tilføjet.")){
+    $("nTitel").value = ""; $("nBesk").value = ""; $("nKat").value = "andet"; $("nPri").value = "P3"; $("nytBlok").open = false;
+  }
+});
+const punktAf = el => { const a = el.closest && el.closest("[data-id]"); return a ? { id: Number(a.dataset.id), art: a } : null; };
+$("liste").addEventListener("click", async e => {
+  const k = e.target, p = punktAf(k);
+  if (!p) return;
+  if (k.closest("[data-stem]")){ if (kraevHvem()) await handl("stem", { id: p.id, hvem: hvem() }); }
+  else if (k.closest("[data-ret]")){ redigerer = p.id; tegn(); }
+  else if (k.closest("[data-annuller-ret]")){ redigerer = null; tegn(); }
+  else if (k.closest("[data-gem-ret]")){
+    const a = p.art;
+    if (await handl("ret", { id: p.id, titel: a.querySelector("[data-ret-titel]").value, beskrivelse: a.querySelector("[data-ret-besk]").value, kategori: a.querySelector("[data-ret-kat]").value }, "Gemt.")) redigerer = null, tegn();
+  }
+  else if (k.closest("[data-slet]")){
+    const b = k.closest("[data-slet]");
+    if (!b.dataset.sikker){ b.dataset.sikker = "1"; b.textContent = "Tryk igen"; return; }
+    await handl("slet", { id: p.id }, "Slettet.");
+  }
+  else if (k.closest("[data-kom-send]")){
+    if (!kraevHvem()) return;
+    const felt = p.art.querySelector("[data-kom-tekst]");
+    if (!felt.value.trim()){ fejl("Skriv en kommentar."); return; }
+    await handl("kommentar", { id: p.id, af: hvem(), tekst: felt.value });
+  }
+});
+$("liste").addEventListener("change", async e => {
+  const p = punktAf(e.target);
+  if (!p) return;
+  if (e.target.matches && e.target.matches("[data-status]")) await handl("ret", { id: p.id, status: e.target.value });
+  else if (e.target.matches && e.target.matches("[data-prio]")) await handl("ret", { id: p.id, prioritet: e.target.value });
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest && e.target.closest("[data-eksport]");
+  if (!b) return;
+  fejl("");
+  try {
+    const d = await api("POST", { handling: "eksport", format: b.dataset.eksport });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([d.indhold], { type: d.type })); a.download = d.filnavn;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    $("info").textContent = `Hentet ${d.filnavn}.`;
+  } catch (err){ fejl(err.message); }
+});
+$("fil").addEventListener("change", async e => {
+  const fil = e.target.files && e.target.files[0];
+  fejl("");
+  if (!fil) return;
+  try {
+    if (fil.size > 500000) throw new Error("Filen er for stor (højst 500 kB).");
+    let d; try { d = JSON.parse(await fil.text()); } catch { throw new Error("Filen er ikke gyldig JSON."); }
+    const liste = Array.isArray(d) ? d : d && Array.isArray(d.punkter) ? d.punkter : null;
+    if (!liste) throw new Error("Filen skal være en liste af punkter eller {\"punkter\": [...]}.");
+    const r = await api("POST", { handling: "importer", punkter: liste });
+    $("info").textContent = `Lagt ind: ${r.tilfoejet} nye punkter${r.sprunget_over ? `, ${r.sprunget_over} sprunget over (findes allerede eller er ugyldige)` : ""}.`;
+    await laes();
+  } catch (err){ fejl(err.message); }
+  e.target.value = "";
+});
+laes();
+
+import("./sprog.js").then(m => m.startSprog({ HEAD, container: document.querySelector("header") })).catch(e => console.error("sprog:", e));
+</script>
+</body>
+</html>
