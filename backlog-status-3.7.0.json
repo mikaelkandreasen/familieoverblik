@@ -1,0 +1,17 @@
+{
+ "format": 1,
+ "opdater": true,
+ "punkter": [
+  {
+   "titel": "Aula kantine menu",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.7.0: kortet «Kantine» viser ugens menu fra kantinens besked, med dagens ret markeret. Hentes sammen med skema og breve (python /app/Sync-Aula.py)."
+    }
+   ]
+  }
+ ]
+}

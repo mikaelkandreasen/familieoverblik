@@ -26,7 +26,8 @@ Det kører i Docker og styres med [Dockhand](https://dockhand.pro), **uden at du
 - **Kalendere:** alle kalenderlinks (ICS), også Holdsport og DBU KampKlar, samlet pr. person.
 - **Vejr:** Open-Meteo (uden nøgle). Hver tredje time, farver efter vejrtype og vind med retning og stød.
 - **Elpris:** dagens priser og billigste periode (Energi Data Service), og et «kun søjler»-valg.
-- **Tømning:** hvornår hver skraldespand tømmes, og en påmindelse aftenen før. Du skriver én dato og et antal uger, resten regnes ud.
+- **Kantine:** skolens menu for ugen, fra den besked kantinen sender, med dagens ret fremhævet.
+- **Tømning:** hvornår hver skraldespand tømmes, med et ikon for hver slags affald (også på dagene i «De næste dage») og en påmindelse aftenen før. Du skriver én dato og et antal uger, eller **læser en PDF-tømmekalender ind** (den læses i din egen browser).
 - **Fødselsdage:** familiens fødselsdage, og **på dagen** får skærmen Dannebrog, flagguirlande og konfetti.
 - **Bil, træning, indkøb:** batteri og rækkevidde fra en Hyundai, Strava-aktiviteter og indkøbslisten fra Microsoft To Do (alle valgfri).
 - **Tegneserie, dagens joke, noter og huskepunkter.**
@@ -74,7 +75,7 @@ Du skal bruge: en server med Docker (en lille mini-pc er nok) og [Dockhand](http
 
 ## Status
 
-**Tidlig udgave (version 3.x).** Koden er afprøvet med **426 automatiske Python-prøver og 1.027 JavaScript-prøver**, men ikke alt er prøvet mod de rigtige tjenester:
+**Tidlig udgave (version 3.x).** Koden er afprøvet med **498 automatiske Python-prøver og 1.163 JavaScript-prøver**, men ikke alt er prøvet mod de rigtige tjenester:
 - **Aula-login** bruger et uofficielt bibliotek og er prøvet mod en simulering, ikke mod Aula. Det er den mest skrøbelige del.
 - **PHP, Apache og Docker** er ikke kørt i udviklingsmiljøet, så login, totrinsbekræftelse og åben visning skal prøves på en rigtig server.
 - Tjenester som Hyundai, Strava og Open-Meteo kan ændre sig og dermed bryde en del af løsningen.

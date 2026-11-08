@@ -36,6 +36,8 @@ import urllib.request
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+import brev
+import kantine
 from config import (ANTHROPIC_API_KEY, ANTHROPIC_MODEL, API_BASE, CHILDREN,
                     MITID_USERNAME, WRITE_TOKEN)
 
@@ -64,7 +66,7 @@ AULA_TIMEOUT = 180           # sekunder, før en aula-kommando opgives
 AULA_PAUSE = 4               # sekunder mellem forsøg
 
 
-def aula_json(*args: str):
+def aula_json(*args: str, delvist: bool = False):
     """Kør en aula-kommando og returnér den parsede JSON.
 
     Aulas API svarer med jævne mellemrum 503 uden grund. Et enkelt forsøg
@@ -74,7 +76,7 @@ def aula_json(*args: str):
     sidste = None
     for forsøg in range(1, AULA_TRIES + 1):
         try:
-            return _aula_json_once(*args)
+            return _aula_json_once(*args, delvist=delvist)
         except Exception as exc:
             sidste = exc
             if forsøg < AULA_TRIES:
@@ -83,7 +85,7 @@ def aula_json(*args: str):
     raise sidste
 
 
-def _aula_json_once(*args: str):
+def _aula_json_once(*args: str, delvist: bool = False):
     cmd = ["aula", "--username", MITID_USERNAME, "--output", "json", *args]
 
     # Tving underprocessen til UTF-8. Uden det skriver den i konsollens egen
@@ -105,7 +107,8 @@ def _aula_json_once(*args: str):
         raise RuntimeError(f"{' '.join(args)} svarede ikke inden {AULA_TIMEOUT}s. Er Aula-login udløbet? "
                            f"Log ind igen (./lokal/hjaelp.sh aula-login), og kør derefter synkroniseringen igen.") from None
 
-    if r.returncode != 0:
+    # delvist: en søgning, der ikke nåede til ende, giver kode 1, men skriver stadig de resultater, den fandt (aula messages --search). De er bedre end ingenting.
+    if r.returncode != 0 and not (delvist and (r.stdout or b"").strip()):
         err = (r.stderr or b"").decode("utf-8", "replace").strip()[:400]
         raise RuntimeError(f"{' '.join(args)} fejlede: {err}")
 
@@ -162,6 +165,62 @@ def tjek_ugeplan(ugeplan):
         raise RuntimeError(f"ugebrevene har ikke feltet 'institutions'. Fandt: {fundet}. "
                            "Kør Sync-Aula.py --dump og send filen aula-dump/ugeplan.json.")
     return ugeplan
+
+
+def hent_kantine():
+    """Kantinens ugemenu: den nyeste besked, hvis emne (eller første linje) starter med «Kantine» og har en liste efter «Menu:». Returnerer {"uge", "dage", "dato"} eller None. Fejl er en advarsel, aldrig et stop."""
+    for args in (("messages", "--search", "Kantine"), ("messages", "--limit", "40")):
+        try:
+            k = kantine.find_kantine(aula_json(*args, delvist=True))
+        except Exception as exc:
+            log(f"advarsel: kantinens menu kunne ikke hentes med «aula {' '.join(args)}» ({exc})")
+            continue
+        if k:
+            return k
+    log("kantine: ingen besked med en menu fundet. Kør Sync-Aula.py --kantineform for at se svarets opbygning (uden indhold).")
+    return None
+
+
+def placer_kantine(weeks, kant) -> str:
+    """Lægger menuen på den hentede uge, den handler om (ugenummeret står i beskedens emne). Returnerer en logtekst."""
+    uge = kant.get("uge")
+    mal = next((w for w in weeks if w["monday"].isocalendar().week == uge), None) if uge else None
+    if mal is None:
+        hentet = ", ".join(str(w["monday"].isocalendar().week) for w in weeks)
+        return f"kantine: menuen er for uge {uge or 'ukendt (ugenummeret kunne ikke læses)'}, og der hentes kun uge {hentet}. Gemmes ikke."
+    mal["kantine"] = {"dage": kant["dage"]}
+    return f"kantine: menuen for uge {uge} ({len(kant['dage'])} retter) gemmes på {mal['id']}"
+
+
+def kantineform() -> int:
+    """Viser opbygningen af det, aula messages svarer, UDEN indhold (feltnavne, antal, og om en kantine-besked blev fundet)."""
+    for args in (("messages", "--search", "Kantine"), ("messages", "--limit", "40")):
+        print("== aula " + " ".join(args))
+        try:
+            print(kantine.opbygning(aula_json(*args, delvist=True)))
+        except Exception as exc:
+            print(f"fejlede: {exc}")
+    return 0
+
+
+def brevform() -> int:
+    """Viser, hvordan ugebrevenes HTML er bygget, UDEN at vise, hvad der står i dem (tags, klasser og tekstmængde). Kan sendes uden skoledata."""
+    iso = date.today().isocalendar()
+    ugeplan = aula_json("mu:ugeplan", "--week", f"{iso.year}-W{iso.week:02d}")
+    n = 0
+    for person in ugeplan or []:
+        for inst in person.get("institutions") or []:
+            for letter in inst.get("letters") or []:
+                n += 1
+                raa = letter.get("content_html", "") or ""
+                tab, lin = brev.laes_html(raa)
+                plan = brev.find_plan(tab)
+                print(f"--- brev {n}: felter {sorted(letter.keys())}, {len(raa)} tegn HTML, {len(tab)} tabeller, {len(lin)} tekstlinjer uden for tabeller, "
+                      f"skema {'FUNDET: ' + str(len(plan['raekker'])) + ' rækker, dage ' + str(plan['dage']) if plan else 'ikke fundet'} ---")
+                print(brev.skelet(raa))
+    if not n:
+        print("Ingen ugebreve at vise for denne uge.")
+    return 0
 
 
 def dump() -> int:
@@ -303,6 +362,44 @@ def strip_html(raw: str) -> str:
     return "\n".join(ln for ln in lines if ln)
 
 
+def rens_breve(letters):
+    """Brevene, som de gemmes: uden de nøgler, der kun er til brug her (understreg)."""
+    return [{k: v for k, v in l.items() if not k.startswith("_")} for l in letters]
+
+
+def fyld_fra_breve(wk) -> int:
+    """Står skemaet ikke i Aulas kalender, bruges det, der står i ugebrevet (en tabel med klokkeslæt). Pr. barn og dag: har kalenderen lektioner, bevares de.
+    Fejlede kalenderen helt (school er None), skrives kun de dage, brevet har lektioner for, så en tidligere hentning ikke overskrives med tomme dage.
+    Returnerer antal lektioner, der kom fra brevene."""
+    planer = [(l["child"], l["_plan"]) for l in wk["letters"] if l.get("_plan")]
+    if not planer:
+        return 0
+    fra_kalender = wk["school"] is not None
+    lessons = wk["lessons_by_day"] if wk["lessons_by_day"] is not None else {str(i): [] for i in range(1, 8)}
+    school = wk["school"] if fra_kalender else {str(i): [] for i in range(1, 8)}
+    ny_les = {str(i): [] for i in range(1, 8)}
+    n = 0
+    for barn, plan in planer:
+        les, sk = brev.plan_til_lektioner(plan, barn), brev.plan_til_skole(plan, barn)
+        for k in "1234567":
+            if les[k] and not any(x["child"] == barn for x in lessons[k]):
+                lessons[k].extend(les[k]); ny_les[k].extend(les[k]); n += len(les[k])
+            if sk[k] and not any(x["child"] == barn for x in school[k]):
+                school[k].extend(sk[k])
+    if n == 0:
+        return 0
+    order = {c["name"]: i for i, c in enumerate(CHILDREN)}
+    for lst in lessons.values():
+        lst.sort(key=lambda x: (order.get(x["child"], 99), x["start"], x["title"]))
+    for lst in school.values():
+        lst.sort(key=lambda x: order.get(x["child"], 99))
+    if not fra_kalender:                                 # kun de dage, vi har noget for
+        lessons = {k: v for k, v in lessons.items() if v}
+        school = {k: v for k, v in school.items() if v}
+    wk["lessons_by_day"], wk["school"] = lessons, school
+    return n
+
+
 def match_child(full_name: str):
     """Find barnet ud fra afsenderens fulde navn.
 
@@ -334,14 +431,23 @@ def build_letters(ugeplan, week_no: int):
                 # for HVER uge i kørslen og stod derfor to gange på skærmen.
                 if letter.get("week_number") != week_no:
                     continue
-                text = strip_html(letter.get("content_html", ""))
+                raa = letter.get("content_html", "")
+                text = strip_html(raa)
                 if not text:
                     continue
-                letters.append({
-                    "child": child,
-                    "group": letter.get("group_name", ""),
-                    "full": text,
-                })
+                # «full» er hele brevet som flad tekst (det, analysen læser). «body» er selve brevet uden skemaet, og skemaet i brevet ligger i «_plan»
+                # (en nøgle med understreg gemmes ikke, se rens_breve): lærernes forbogstaver skal ikke ligge på serveren.
+                try:
+                    krop, plan = brev.laes_brev(raa)
+                except Exception as exc:                  # læseren må aldrig vælte synkroniseringen
+                    log(f"advarsel: et ugebrev kunne ikke deles i skema og tekst ({type(exc).__name__}: {exc}). Det vises som ren tekst.")
+                    krop, plan = "", None
+                entry = {"child": child, "group": letter.get("group_name", ""), "full": text}
+                if krop and krop != text:
+                    entry["body"] = krop
+                if plan:
+                    entry["_plan"] = plan
+                letters.append(entry)
     letters.sort(key=lambda l: order.get(l["child"], 99))
     return letters
 
@@ -891,6 +997,10 @@ def main() -> int:
     log(f"aula: {aula_version()}  python: {sys.version.split()[0]}")
     if "--dump" in sys.argv:
         return dump()
+    if "--brevform" in sys.argv:
+        return brevform()
+    if "--kantineform" in sys.argv:
+        return kantineform()
     today = date.today()
     monday = today - timedelta(days=today.weekday())
 
@@ -938,6 +1048,14 @@ def main() -> int:
             "letters_ok": breve_ok,
             "lessons": len(events),
         })
+        fra_breve = fyld_fra_breve(weeks[-1])
+        if fra_breve:
+            log(f"{week_id}: {fra_breve} lektioner kommer fra skemaet i ugebrevet (Aulas kalender havde dem ikke for alle børn)")
+
+    # Kantinens menu kommer i en besked, ikke i kalenderen: hent den, og læg den på den uge, den handler om (ugenummeret står i emnet).
+    kant = hent_kantine()
+    if kant:
+        log(placer_kantine(weeks, kant))
 
     # Vigtige datoer staar uden for ugerne og hentes derfor for sig. Fejler
     # den, skal resten af synkroniseringen stadig komme igennem.
@@ -971,9 +1089,11 @@ def main() -> int:
             # Huskepunkterne udledes af brevene. Kunne brevene ikke hentes,
             # ved vi ingenting om ugens huskepunkter — og saa maa vi ikke
             # skrive "ingen", for det ville slette dem, der allerede staar.
-            payload["letters"] = wk["letters"]
+            payload["letters"] = rens_breve(wk["letters"])
             payload["reminders"] = rem
 
+        if wk.get("kantine"):
+            payload["kantine"] = wk["kantine"]
         if payload:
             api_post(f"aula/{wk['id']}", payload, merge=True)
         else:

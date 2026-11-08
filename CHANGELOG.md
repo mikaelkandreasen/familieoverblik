@@ -16,6 +16,61 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.8.0] – 2026-11-08
+
+### Tilføjet
+- **Læs tidsplanen fra en PDF-tømmekalender** (Opsætning → Tømning → «Læs tidsplanen fra en PDF-tømmekalender»). Vælg PDF'en, og siden foreslår en tidsplan for hver slags affald: første dato, hvor tit (hver 1., 2., 4. … uge), hvilke datoer der udgår (helligdage), og hvilke der er ekstra. Man ser forslaget, sætter hak ved dem, man vil bruge, vælger adresse og lægger dem ind. **Intet gemmes, før man har set det og trykket Gem.** En slags affald, der allerede står der, bliver erstattet.
+  - **PDF'en læses i din browser og sendes ikke noget sted hen.** Der er ingen ny server-kode.
+  - Læseren forstår almindelige PDF'er med tekst: pakkede og upakkede indholdsstrømme, objektstrømme (PDF 1.5), skrifttyper med ToUnicode (også to-bytes koder), egne kodninger med æøå, tabeller (kolonner holdes ved), spejlede koordinater (browserens «Gem som PDF») og flere sider. Den siger tydeligt, hvis filen er krypteret, ikke er en PDF, eller ikke har tekst (en skannet kalender).
+  - Teksten tolkes på flere måder, en kalender kan være sat op på: slags affald som overskrift og datoer under, dato først og så slags affald, begge dele på samme linje, månedsrækker med en kolonne pr. slags affald, og månedslister («Januar: 6, 20»). Datoformater: 24.12.2026, 24/12, 24. dec. m.fl. Støj som adresser, telefonnumre og klokkeslæt giver ikke falske datoer.
+  - **Hjælper ikke PDF'en** (fx fordi teksten ikke kan trækkes ud), kan man markere al tekst i PDF'en, kopiere den og indsætte den i et felt. Det, der blev læst, kan ses i forslaget.
+- **Ikoner på hver slags affald**: skraldespand (restaffald), æble (madaffald), papir, pap, glas, dåse (metal), flaske (plast), karton, advarselstrekant (farligt affald), blad (haveaffald), sofa (storskrald), T-shirt (tekstiler) og batteri. Ikonet vælges ud fra navnet (også et navn, du selv har skrevet). De står på **kortet Tømning**, ved **påmindelserne** i «Vigtigt snart», **på hver dag i «De næste dage»** (så man kan se, hvad der hentes den dag), i editoren og i PDF-forslaget.
+- To nye kendte slags affald: **Mad- og drikkekartoner** og **Batterier**.
+- Nye prøver: 48 for modulet (ikoner, «hvad hentes en dag», datoer → tidsplan), 22 for PDF-læseren (med selvbyggede PDF'er i 15 former), 24 for tolkningen af teksten og 24 for panelet.
+
+### Opdatering fra 3.7.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Ikonerne kommer med det samme. Åbn Opsætning → Tømning for at prøve PDF-læsningen.
+- **Ikke afprøvet mod din rigtige PDF.** Jeg har aldrig set Renosyds kalender, kun selvbyggede PDF'er. Er den et billede, eller viser den kun farver og symboler, kan den ikke læses (så bruges de manuelle felter som før). Læser den forkert, så send mig teksten fra «Det, jeg læste» (uden adresse), så tilpasser jeg tolkningen.
+
+## [3.7.1] – 2026-11-08
+
+### Rettet
+- **Totrinsbekræftelse kunne ikke slås til:** «Forespørgslen skal være JSON.» Når man trykker **Slå til**, sender siden kun `{"handling":"start"}`. `totp.php` fjerner «handling» og sender resten videre til Python, men PHP gør et tomt array til `[]` (en liste) i JSON og ikke til `{}` (et objekt), og Python afviste en liste. Fejlen har været der siden 3.2.0, og prøverne sendte altid `{}`, så de så den ikke.
+- Samme mønster fandtes i `backlog.php` (handlinger uden andre felter). Backlog-siden sender altid mindst ét felt til de handlinger, så den var ikke ramt i praksis, men den er rettet på samme måde.
+- **Begge rettelser:** PHP sender nu `{}`, og Python tager også imod en tom liste. En liste med noget i afvises stadig.
+- Nye prøver sender `[]` som krop (det PHP faktisk sender), og en prøve sikrer, at alle PHP-skaller med dette mønster har rettelsen. Jeg har kontrolleret, at prøverne fejler uden rettelsen.
+
+### Opdatering fra 3.7.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Prøv så Opsætning → Login og sikkerhed → Totrinsbekræftelse → Slå til igen.
+
+## [3.7.0] – 2026-11-08
+
+### Tilføjet
+- **Kortet «Kantine»** (#19): skolens menu for ugen, som et kort for sig selv. Menuen står i den besked, kantinen sender hver uge (emnet eller første linje starter med «Kantinen uge 46», og efter «Menu:» står én ret pr. dag). Aula-hentningen finder beskeden (`aula messages --search Kantine`), læser retterne og lægger dem på den uge, ugenummeret i emnet peger på. Kortet viser **denne uges menu, men i weekenden næste uges**, markerer **dagens ret** og dæmper de dage, der er gået. Det er skjult, til der er en menu, og kan flyttes, skjules og gøres halvt eller bredt i «Tilpas layout» som de andre kort.
+  - Retterne kan stå som en liste (som i dit eksempel), med punkttegn eller nummer, eller mærket med ugedag (**Mandag:**, **Tors:** …), og en uge med fridage viser kun de dage, der har en ret. Afslutninger («Mvh …») og nye overskrifter («Bemærk: …») er ikke retter.
+  - Afprøvet med din eksempeltekst og opdigtede varianter. **Ikke afprøvet mod Aulas rigtige svar:** jeg kender ikke bibliotekets feltnavne for beskeder, så søgningen leder generisk. Findes beskeden ikke, siger loggen det, og `python /app/Sync-Aula.py --kantineform` viser svarets opbygning uden indhold.
+- En søgning i Aula, der ikke nåede til ende (kode 1), men gav resultater, bruges nu i stedet for at blive kasseret.
+- `backlog-status-3.7.0.json` sætter «Aula kantine menu» til Færdig i jeres backlog.
+
+### Opdatering fra 3.6.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Hent så med det samme i `aula`-containerens terminal: `python /app/Sync-Aula.py`, og se efter linjen `kantine: menuen for uge 46 … gemmes` i udskriften. Kommer den ikke, så kør `python /app/Sync-Aula.py --kantineform` og send mig udskriften (den viser kun felternes navne).
+
+## [3.6.0] – 2026-11-08
+
+### Tilføjet
+- **«Opsætning» i menuen går direkte til opsætningsfanen**, og der er et nyt punkt **«Madplan»**, der går direkte til madplanen (`index.html#ops` og `index.html#mad`). Også `#faste` og `#uge` virker, og skifter du link, mens siden er åben, skifter fanen med. Uden `#` er Uge stadig udgangspunktet. (Er du ikke logget ind endnu, får du PIN-siden først og lander derefter på Uge.)
+- **Ugebrevene er delt i skema og tekst.** Brevet står nu som læsbare afsnit: hilsen, overskrifter («Ugen der gik», «Ugen der kommer»), emner fremhævet («**Novemberlæsning:** …») og en afslutning. Skemaet, der før stod som hundrede løse linjer foran brevet, er taget ud af brevteksten. Brevene hentes igen ved næste Aula-hentning; indtil da klippes ældre breve ved hilsenen, så skemaet heller ikke dér står først.
+- **Skemaet i ugebrevet bruges som skema.** Står lektionerne ikke i Aulas kalender, læses tabellen i ugebrevet (tider ned ad, ugedage hen ad), og **Skema-vinduet** og skolelinjen pr. dag fyldes ud fra den. Cellerne beholder deres plads (en tom celle er tom, og fredag er stadig fredag), «Pause» er ingen lektion, «DO.» (ditto) forlænger timen før, hold (A:/B:) står sammen, og noter som «Husk svømmetøj» vises under faget. **Lærernes forbogstaver sendes ikke videre** og gemmes ikke på serveren.
+- `Sync-Aula.py --brevform` viser, **hvordan et ugebrev er bygget**, uden at vise, hvad der står i det (tags, klasser og tekstmængde). Bruges, hvis skemaet i brevet ikke findes.
+- Skema-vinduets tomme besked nævner barnet og hvor skemaet kommer fra.
+
+### Rettet
+- **Skema-knappen viste intet,** når Aulas kalender ikke havde lektionerne (skemaet stod kun i ugebrevet).
+
+### Opdatering fra 3.5.7
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Hent så skema og breve med det samme i stedet for at vente til kl. 07: kør `python /app/Sync-Aula.py` i `aula`-containerens terminal. Står skemaet stadig ikke i Skema-vinduet, så kør `python /app/Sync-Aula.py --brevform` og send mig udskriften (den indeholder ikke brevenes tekst).
+- **Ikke afprøvet mod rigtige Aula-breve.** Læseren er prøvet mod en opdigtet kopi af brevets opbygning (en HTML-tabel). Er dit brev bygget på en anden måde end en tabel, finder den ikke skemaet, og det er det, `--brevform` viser.
+
 ## [3.5.7] – 2026-11-08
 
 ### Rettet (alvorlig fejl siden 3.4.0)

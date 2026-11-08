@@ -10,6 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
 # Tilføjelse, der klarer rolle- og bekræftelsessiden efter MitID (selected-aktoer = KONTAKT og ACCEPT)
 COPY docker/aula/patch/ /patch/
 ENV PYTHONPATH=/patch:/data/private/aula-config AULA_STATE_DIR=/data/private/aula-state TZ=Europe/Copenhagen
-COPY docker/aula/Sync-Aula.py docker/aula/loop.sh /app/
+COPY docker/aula/Sync-Aula.py docker/aula/brev.py docker/aula/kantine.py docker/aula/loop.sh /app/
 WORKDIR /app
 CMD ["sh", "/app/loop.sh"]

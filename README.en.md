@@ -26,7 +26,8 @@ It runs in Docker and is managed with [Dockhand](https://dockhand.pro), **withou
 - **Calendars:** any ICS calendar link, including Holdsport and DBU KampKlar (football), grouped per person.
 - **Weather:** Open-Meteo (no key needed). Every third hour, colours by weather type, and wind with direction and gusts.
 - **Electricity prices:** today's prices and the cheapest period (Energi Data Service), plus a "bars only" view.
-- **Waste collection:** when each bin is emptied, with a reminder the evening before. You enter one date and a number of weeks; the rest is calculated.
+- **Canteen:** the school's menu for the week, from the message the canteen sends, with today's dish highlighted.
+- **Waste collection:** when each bin is emptied, with an icon for each waste type (also on the days in "Next days") and a reminder the evening before. You enter one date and a number of weeks, or **import a PDF collection calendar** (it is read in your own browser).
 - **Birthdays:** family birthdays, and **on the day** the screen gets the Danish flag, bunting and confetti.
 - **Car, training, shopping:** battery and range from a Hyundai, Strava activities and the shopping list from Microsoft To Do (all optional).
 - **Comic strip, joke of the day, notes and reminders.**
@@ -74,7 +75,7 @@ You need: a server with Docker (a small mini PC is enough) and [Dockhand](https:
 
 ## Status
 
-**Early release (version 3.x).** The code is covered by **426 automated Python tests and 1,027 JavaScript tests**, but not everything has been tried against the real services:
+**Early release (version 3.x).** The code is covered by **498 automated Python tests and 1,163 JavaScript tests**, but not everything has been tried against the real services:
 - **The Aula login** uses an unofficial library and was tested against a simulation, not Aula itself. It is the most fragile part.
 - **PHP, Apache and Docker** were not run in the development environment, so login, two-step verification and open view must be tried on a real server.
 - Services such as Hyundai, Strava and Open-Meteo can change and break part of the solution.

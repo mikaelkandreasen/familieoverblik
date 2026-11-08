@@ -739,6 +739,7 @@ def main(a):
     if c == "backlog" and len(a) == 2:
         try:
             payload = json.loads(sys.stdin.read() or "{}")
+            if payload == []: payload = {}                      # PHP sender [] for et tomt array
             svar = backlog_kommando(a[1], payload)
             print(json.dumps(svar, ensure_ascii=False)); return 0
         except Fejl as e: print(json.dumps({"ok": False, "fejl": str(e)}, ensure_ascii=False)); return 1
@@ -746,6 +747,7 @@ def main(a):
     if c == "totp" and len(a) == 2:
         try:
             payload = json.loads(sys.stdin.read() or "{}") if a[1] != "status" else {}
+            if payload == []: payload = {}                      # PHP sender [] for et tomt array
             svar = totp_kommando(a[1], payload)
             print(json.dumps(svar, ensure_ascii=False)); return 0 if svar.get("ok", True) else 1
         except Fejl as e: print(json.dumps({"ok": False, "fejl": str(e)}, ensure_ascii=False)); return 1

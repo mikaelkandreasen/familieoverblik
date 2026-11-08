@@ -44,6 +44,7 @@ Det kører i Docker på familiens egen server og styres med Dockhand, uden SSH. 
 - **Filer og mapper, der starter med punktum, kommer ikke med, når man uploader i en browser til GitHub.** Derfor hedder spærrefilerne `htaccess.txt` (skrives ud som `.htaccess`), og der er ingen `.gitkeep`. Mappen `ugeplan-data/` skal have mindst én synlig fil. `tests/test_skjulte_filer.py` kører hele opstarten i en kopi uden skjulte filer.
 - **Browserkrav: cirka Chrome 85** (valgfri kæde `?.`, `??=`, `gap` i flex). Android 5.1 kan højst køre Chrome/WebView 95. Brug ikke `Array.at()`, `Object.hasOwn()`, `structuredClone()`, `:has()` eller `dvh` uden reserve. `crypto.randomUUID()` findes kun på https og skal have en reserve.
 - **`v in objekt` er ikke et gyldigt tjek af en nøgle** (`"constructor" in {}` er sand). Brug `Object.prototype.hasOwnProperty.call`. **`Number(null)` er 0.**
+- **PHP gør et tomt array til `[]`, ikke `{}`** i JSON. Send `$b === [] ? new stdClass() : $b` videre til Python (fundet i 3.7.1: totrinsbekræftelse kunne ikke slås til; prøver, der kun sender `{}`, ser det ikke).
 - **Chrome går ud af fuld skærm** ved genindlæsning, og en side må kun gå i fuld skærm efter et tryk.
 - **Python i webbilledet er antaget at være 3.11** (Debian; ikke bekræftet): brug ingen 3.12-syntaks (samme anførselstegn inde i en f-streng). Aula- og bil-billederne bygges på 3.15 og ellers 3.14.
 - **ZIP:** pak med `vaerktoej/pak.py`, ikke i hånden (rækkefølge, `__pycache__`, skabeloner til sprog og top-mappen `familieoverblik/` ordnes der).
@@ -76,6 +77,12 @@ Se `CHANGELOG.md` for alt, der er bygget, og `BACKLOG.md` for ønsker (afsnittet
 - **Aula-login** (`docker/aula/patch/aula_login_forms.py`) er prøvet mod en falsk httpx, ikke mod Aula. Den vælger rollen (KONTAKT) og **giver bibliotekets egen kode bekræftelsessiden** (med fuld action og knappens felt som skjult input), fordi biblioteket (`mitid_client._process_broker_response`) selv sender den første formular, forventer en 302, henter Location og forventer en formular med SAMLResponse dér. Det er fundet ud fra bibliotekets rigtige kode og en rigtig log (3.5.5 og 3.5.6). `tests/test_aula_overdrag.py` gengiver bibliotekets forløb; ændres biblioteket, så sammenlign med dets kode igen (`sed -n 570,640p …/aula/auth/mitid_client.py` i aula-containeren). Logger linjer, der starter med `aula-login:` (uden koder), så man kan se, hvor det stopper.
 - **Docker-billederne og GitHub-workflowet** er ikke bygget i udviklingsmiljøet. Brugeren kører workflowet og sender fejl tilbage.
 - **Hyundai (Bluelink)**, Open-Meteo, JokeAPI, GoComics m.fl. er kun prøvet med falske svar.
+
+**Ugebreve og skema (3.6.0):** `docker/aula/brev.py` læser brevets HTML med en parser (tabeller bevarer celleplads), skiller selve brevet (`body`) fra skemaet og laver lektioner (uden lærerinitialer). Den er prøvet mod en OPDIGTET tabel; det rigtige brevs opbygning er ikke set. `Sync-Aula.py --brevform` viser opbygningen uden indhold; brug den, før du gætter. Gemte breve har `full` (flad tekst, bruges af analysen), `body` og aldrig `_plan`.
+
+**Kantine (3.7.0):** `docker/aula/kantine.py` finder kantinens besked i `aula messages --search Kantine` (generisk, fordi feltnavnene ikke er set) og lægger `{dage}` på `aula/<uge>.kantine`. Prøvet kun mod opdigtede beskeder og brugerens eksempeltekst. `--kantineform` viser svarets opbygning uden indhold.
+
+**Tømning fra PDF og ikoner (3.8.0):** `public_html/pdfaffald.js` (kun opsætningen, hentes dynamisk) læser en PDF i browseren (`laesPdf`: egen lille PDF-læser med `DecompressionStream`, ToUnicode, tekstoperatorer; `tolkKalender`: tekst → datoer pr. slags affald). `affald.js` har `tilSerie` (datoer → start/hver/udgår/ekstra), `paaDag`, `ikonFor` og `ikonHtml`. Prøver bygger PDF'er selv (`tests/frontend/pdfbyg_hjaelp.mjs`); den rigtige kalender er ikke set. En ny slags affald: tilføj den i `FRAKTIONER` (navn og farve), i `FRAK` i `pdfaffald.js` (genkendelse) og evt. et ikon i `IKONER`/`ikonFor`.
 
 ## 7b. Licens og tredjepart
 
