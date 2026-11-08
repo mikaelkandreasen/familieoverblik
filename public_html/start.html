@@ -112,8 +112,8 @@ function fdNorm(x){
   const d = +m[1], mo = +m[2], y = m[3] ? +m[3] : null, test = new Date(Date.UTC(y || 2000, mo - 1, d));
   if (test.getUTCDate() !== d || test.getUTCMonth() !== mo - 1) return { fejl: `den dato findes ikke (${t})` };
   if (y !== null){
-    const nu = new Date();
-    if (y > nu.getFullYear() || test > nu) return { fejl: "fødselsdagen kan ikke ligge i fremtiden" };
+    const nu = new Date(), iDag = Date.UTC(nu.getFullYear(), nu.getMonth(), nu.getDate());          // dagens lokale dato (ikke et tidspunkt i UTC)
+    if (y > nu.getFullYear() || test.getTime() > iDag) return { fejl: "fødselsdagen kan ikke ligge i fremtiden" };
     if (y < 1900) return { fejl: "årstallet skal være 1900 eller senere" };
   }
   return { v: `${String(d).padStart(2, "0")}.${String(mo).padStart(2, "0")}${y ? "." + y : ""}` };

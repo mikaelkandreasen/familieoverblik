@@ -70,8 +70,8 @@ function vejr_ekstra(mixed $e): ?array
 function vejr_url(float $lat, float $lon, string $tz): string
 {
     return 'https://api.open-meteo.com/v1/forecast?latitude=' . rawurlencode((string)$lat) . '&longitude=' . rawurlencode((string)$lon)
-        . '&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,is_day'
-        . '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset'
+        . '&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,is_day'
+        . '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunrise,sunset,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant'
         . '&wind_speed_unit=ms&forecast_days=6&timezone=' . rawurlencode($tz);
 }
 
@@ -88,17 +88,21 @@ function vejr_komprimer(array $d): array
         if (!is_string($tid) || !str_starts_with($tid, $idag)) continue;
         $timer[] = ['t' => substr($tid, 11, 5), 'temp' => $r1($t['temperature_2m'][$i] ?? null), 'foeles' => $r1($t['apparent_temperature'][$i] ?? null),
             'regn' => $r1($t['precipitation'][$i] ?? null), 'sand' => isset($t['precipitation_probability'][$i]) ? (int)$t['precipitation_probability'][$i] : null,
-            'kode' => (int)($t['weather_code'][$i] ?? 0), 'vind' => $r1($t['wind_speed_10m'][$i] ?? null), 'dag' => (int)($t['is_day'][$i] ?? 1)];
+            'kode' => (int)($t['weather_code'][$i] ?? 0), 'vind' => $r1($t['wind_speed_10m'][$i] ?? null), 'stoed' => $r1($t['wind_gusts_10m'][$i] ?? null),
+            'retning' => isset($t['wind_direction_10m'][$i]) ? (int)round((float)$t['wind_direction_10m'][$i]) : null, 'dag' => (int)($t['is_day'][$i] ?? 1)];
     }
     $naeste = [];
     for ($i = 1; $i <= 5 && $i < count($dage); $i++) {
         $naeste[] = ['dato' => (string)$dage[$i], 'kode' => (int)($dg['weather_code'][$i] ?? 0), 'max' => $r1($dg['temperature_2m_max'][$i] ?? null),
             'min' => $r1($dg['temperature_2m_min'][$i] ?? null), 'regn' => $r1($dg['precipitation_sum'][$i] ?? null),
-            'sand' => isset($dg['precipitation_probability_max'][$i]) ? (int)$dg['precipitation_probability_max'][$i] : null];
+            'sand' => isset($dg['precipitation_probability_max'][$i]) ? (int)$dg['precipitation_probability_max'][$i] : null,
+            'vind' => $r1($dg['wind_speed_10m_max'][$i] ?? null), 'stoed' => $r1($dg['wind_gusts_10m_max'][$i] ?? null),
+            'retning' => isset($dg['wind_direction_10m_dominant'][$i]) ? (int)round((float)$dg['wind_direction_10m_dominant'][$i]) : null];
     }
     return ['tidszone' => (string)($d['timezone'] ?? ''), 'dato' => $idag, 'timer' => $timer, 'dage' => $naeste,
         'i_dag' => ['kode' => (int)($dg['weather_code'][0] ?? 0), 'max' => $r1($dg['temperature_2m_max'][0] ?? null), 'min' => $r1($dg['temperature_2m_min'][0] ?? null),
-            'regn' => $r1($dg['precipitation_sum'][0] ?? null), 'sol_op' => substr((string)($dg['sunrise'][0] ?? ''), 11, 5), 'sol_ned' => substr((string)($dg['sunset'][0] ?? ''), 11, 5)]];
+            'regn' => $r1($dg['precipitation_sum'][0] ?? null), 'vind' => $r1($dg['wind_speed_10m_max'][0] ?? null), 'stoed' => $r1($dg['wind_gusts_10m_max'][0] ?? null),
+            'retning' => isset($dg['wind_direction_10m_dominant'][0]) ? (int)round((float)$dg['wind_direction_10m_dominant'][0]) : null, 'sol_op' => substr((string)($dg['sunrise'][0] ?? ''), 11, 5), 'sol_ned' => substr((string)($dg['sunset'][0] ?? ''), 11, 5)]];
 }
 
 /** Dagens dato på stedet, regnet ud fra den tidszone, svaret havde. Bruges til at se, om det gemte svar stadig handler om «i dag». */

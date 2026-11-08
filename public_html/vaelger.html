@@ -58,8 +58,13 @@ ol{margin:6px 0 0 20px;padding:0}li{margin:3px 0}
       <p class="fejl" id="fejl" role="alert"></p>
       <div class="raekke">
         <button type="button" id="bland">Bland</button><button type="button" id="ryd">Ryd</button>
-        <select id="eksempel" aria-label="Indsæt et eksempel"><option value="">Indsæt et eksempel …</option></select>
+        <select id="eksempel" aria-label="Indsæt en liste"><option value="">Indsæt en liste …</option></select>
       </div>
+      <div class="raekke">
+        <input type="text" id="listeNavn" maxlength="40" placeholder="Navn på listen" aria-label="Navn på listen" autocomplete="off" style="flex:1;min-width:8em">
+        <button type="button" id="gemListe">Gem som liste</button>
+      </div>
+      <p class="lille" id="listeInfo" role="status"></p>
       <label class="valg"><input type="checkbox" id="fjern"> Fjern vinderen fra listen, når den er valgt</label>
       <label class="valg"><input type="checkbox" id="hurtig"> Hurtigt valg uden hjul</label>
       <label class="valg" id="antalBlok" hidden>Antal vindere <input type="number" id="antal" min="1" max="20" value="1" style="width:5em"></label>
@@ -223,8 +228,43 @@ $("bland").addEventListener("click", () => { $("liste").value = bland(parseListe
 $("ryd").addEventListener("click", () => { $("liste").value = ""; $("fejl").textContent = ""; visResultat("Skriv dine valg, og tryk Drej."); laesListe(); husk(); });
 $("hurtig").addEventListener("change", () => { $("antalBlok").hidden = !$("hurtig").checked; $("drej").textContent = $("hurtig").checked ? "Vælg" : "Drej hjulet"; husk(); });
 $("fjern").addEventListener("change", husk); $("antal").addEventListener("change", husk);
-for (const n of Object.keys(EKSEMPLER)){ const o = document.createElement("option"); o.value = n; o.textContent = n; $("eksempel").appendChild(o); }
-$("eksempel").addEventListener("change", () => { const e = EKSEMPLER[$("eksempel").value]; if (e){ $("liste").value = e; laesListe(); husk(); } $("eksempel").value = ""; });
+// Egne lister (Opsætning → Tilfældig vælger, eller «Gem som liste» her) og de indbyggede eksempler. Modulet hentes dynamisk, så siden virker uden det.
+let LISTER = null, EGNE = { lister: [], skjulStandard: false };
+function byggEksempler(){
+  const v = $("eksempel");
+  v.innerHTML = '<option value="">Indsæt en liste …</option>';
+  const gruppe = (navn, poster) => { if (!poster.length) return; const g = document.createElement("optgroup"); g.label = navn; for (const [vaerdi, tekst] of poster){ const o = document.createElement("option"); o.value = vaerdi; o.textContent = tekst; g.appendChild(o); } v.appendChild(g); };
+  gruppe("Dine lister", EGNE.lister.map((l, i) => ["egen:" + i, l.navn]));
+  if (!EGNE.skjulStandard) gruppe("Eksempler", Object.keys(EKSEMPLER).map(n => ["std:" + n, n]));
+}
+$("eksempel").addEventListener("change", () => {
+  const [art, ...rest] = $("eksempel").value.split(":"), n = rest.join(":");
+  const e = art === "std" ? EKSEMPLER[n] : art === "egen" && EGNE.lister[Number(n)] ? LISTER.listeTilTekst(EGNE.lister[Number(n)].valg) : null;
+  if (e){ $("liste").value = e; laesListe(); husk(); }
+  $("eksempel").value = "";
+});
+async function hentEgne(){
+  try {
+    LISTER = await import("./vaelgerlister.js");
+    const r = await fetch("api.php?get=settings/vaelger", { headers: HEAD, cache: "no-store", credentials: "same-origin" });
+    if (r.ok){ const d = await r.json(); EGNE = LISTER.rens(d && d["settings/vaelger"] ? d["settings/vaelger"].payload : null); }
+  } catch (e){ console.error("lister:", e); }
+  byggEksempler();
+}
+$("gemListe").addEventListener("click", async () => {
+  const info = $("listeInfo"); info.textContent = "";
+  if (!LISTER){ info.textContent = "Kunne ikke gemme: listemodulet blev ikke hentet."; return; }
+  const ny = LISTER.medListe(EGNE, $("listeNavn").value, LISTER.parseListe($("liste").value));
+  if (ny.fejl){ info.textContent = ny.fejl; return; }
+  try {
+    const r = await fetch("api.php?path=settings/vaelger", { method: "POST", headers: { ...HEAD, "Content-Type": "application/json" }, body: JSON.stringify({ payload: ny.data }), credentials: "same-origin" });
+    if (!r.ok) throw new Error(r.status === 403 ? "Log ind igen (åbn siden på ny)." : `HTTP ${r.status}`);
+    EGNE = ny.data; byggEksempler();
+    info.textContent = `${ny.erstattet ? "Opdateret" : "Gemt"}: «${$("listeNavn").value.trim()}». Den ligger nu under «Indsæt en liste» på alle enheder.`;
+  } catch (e){ info.textContent = "Kunne ikke gemme: " + e.message; }
+});
+byggEksempler();
+hentEgne();
 document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "BUTTON" && e.target.tagName !== "SELECT" && !$("drej").disabled) drej(); });
 
 const gemt = tilstand();

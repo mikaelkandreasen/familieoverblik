@@ -182,6 +182,34 @@ input.mad:focus{border-color:var(--ink);border-style:solid;background:#fff;outli
 .f-over{font-family:"Bricolage Grotesque",sans-serif;font-size:13px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-soft);font-weight:600;padding:16px 2px 6px}
 .f-over:first-child{padding-top:4px}
+/* Opsætning som træ: træ til venstre på en computer, valgmenu på en telefon. Kun den valgte side vises. */
+.ops-ramme{display:block}
+.ops-trae{margin:0 0 14px}
+.ops-liste{display:none}
+.ops-vaelg{display:block;width:100%;min-height:44px;padding:6px 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink);font:inherit}
+.ops-skjult{display:none!important}
+.aff-adr{border:1px solid var(--rule);border-radius:var(--radius);padding:10px;margin:0 0 12px;background:var(--card)}
+.aff-adr-hoved{display:flex;gap:8px;margin:0 0 10px}.aff-adr-hoved input{flex:1;min-width:0}
+.aff-frak{display:grid;grid-template-columns:minmax(0,2fr) 44px minmax(0,1.4fr) minmax(0,1fr) auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--rule-soft)}
+.aff-frak input[type=color]{width:44px;height:42px;padding:2px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card)}
+.aff-lbl{display:block;font-size:12px;color:var(--ink-soft)}
+.aff-lbl .st-in{display:block;width:100%;margin-top:3px}
+.aff-hver{display:flex;gap:6px;align-items:center;margin-top:3px;color:var(--ink)}.aff-hver input{width:64px}
+.aff-bred{grid-column:span 2}
+.aff-forh{grid-column:1/-1;margin:0}
+.aff-knapper{margin:4px 0 8px}
+@media (max-width:640px){.aff-frak{grid-template-columns:minmax(0,1fr) 44px}.aff-bred,.aff-lbl{grid-column:1/-1}}
+.ops-gr{margin:0 0 14px}
+.ops-gr-t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);padding:0 8px 4px}
+.ops-liste button{display:block;width:100%;text-align:left;min-height:40px;padding:6px 10px;border:0;border-left:3px solid transparent;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer;border-radius:0 var(--radius) var(--radius) 0}
+.ops-liste button:hover{background:var(--rule-soft)}
+.ops-liste button[aria-current=page]{border-left-color:var(--ink);background:var(--card);font-weight:600}
+@media (min-width:761px){
+  .ops-ramme{display:grid;grid-template-columns:230px minmax(0,1fr);gap:22px;align-items:start}
+  .ops-trae{position:sticky;top:12px;margin:0;max-height:calc(100vh - 24px);overflow:auto}
+  .ops-liste{display:block}
+  .ops-vaelg{display:none}
+}
 .liste{display:grid;gap:6px}
 .mad-raekke{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;background:var(--card);
   border:1px solid var(--rule-soft);border-radius:var(--radius);padding:8px 10px}
@@ -367,6 +395,8 @@ a.k-test{display:inline-flex;align-items:center;text-decoration:none;color:var(-
 .bi-tile{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:rgba(127,127,127,.2)}
 .bi-tile img{width:100%;height:100%;object-fit:cover;display:block}
 .bi-tile button{position:absolute;top:2px;right:2px;min-width:36px;min-height:36px;border:none;border-radius:4px;background:rgba(0,0,0,.6);color:#fff;font-size:18px;line-height:1}
+.bi-tile .bi-drej{position:absolute;left:2px;bottom:2px;display:flex;gap:4px}
+.bi-tile .bi-drej button{position:static;min-width:36px;min-height:36px;font-size:20px}
 .st-in{width:100%;padding:11px 12px;font:inherit;font-size:16px;border:1px solid var(--rule);border-radius:var(--radius);background:#fff}
 textarea.st-in{font-size:14px;resize:vertical}
 .st-row{display:flex;align-items:center;gap:10px;min-height:52px;border-left:3px solid var(--c,var(--p-alle));padding:6px 0 6px 10px}
@@ -452,6 +482,17 @@ textarea.st-in{font-size:14px;resize:vertical}
     <p class="f-note">Din Microsoft To Do-liste. Tilføj varer her, og se hvad der mangler.</p>
     <button class="stor-knap" id="indKnap" aria-label="Indkøbsseddel">Indkøbsseddel <span aria-hidden="true">›</span></button>
 
+    <h2 class="f-over">Tømning</h2>
+    <p class="f-note">Vis på forsiden, hvornår skraldespandene tømmes, og mind om det aftenen før. Skriv for hver fraktion <b>én dato, hvor der er tømning</b>, og <b>hvor mange uger der er mellem tømningerne</b>. Resten regnes ud. Står en tømning stille (fx på en helligdag), så skriv datoen under <i>Udgår</i>. Kommer der en ekstra (fx storskrald), så skriv datoen under <i>Ekstra</i>. Datoerne kan skrives som 24.12.2026 eller 2026-12-24, flere adskilt af komma. Du kan have flere adresser (fx din egen og en slægtnings).</p>
+    <datalist id="affNavne"></datalist>
+    <div id="affEditor"></div>
+    <div class="aff-knapper">
+      <button type="button" class="k-test" id="affNyAdresse">+ Tilføj adresse</button>
+    </div>
+    <p class="fejl" id="affFejl" role="alert"></p>
+    <button type="button" class="btn-save" id="affGem">Gem</button>
+    <p class="f-note" id="affInfo"></p>
+
     <h2 class="f-over">Dagens joke</h2>
     <p class="f-note">Kortet <i>Dagens joke</i> nederst på forsiden viser én joke om dagen fra JokeAPI (v2.jokeapi.dev). <b>Safe mode og alle filtre er altid slået til</b>, og kategorien Dark findes ikke her. Der er ingen danske jokes. Listen over sprog kommer fra tjenesten selv. Serveren henter jokes, ikke dine enheder.</p>
     <div id="jokeSek" hidden>
@@ -463,6 +504,14 @@ textarea.st-in{font-size:14px;resize:vertical}
         <button class="btn-save" type="submit">Gem</button>
         <p class="f-note" id="jokeInfo"></p>
       </form>
+      <div class="joke-vis">
+        <label for="jokeVis">Hvor skal joken vises?</label>
+        <select class="st-in" id="jokeVis">
+          <option value="kort">Som et kort (med kategori, sprog og kilde)</option>
+          <option value="header">I toppen af forsiden, kun selve joken</option>
+        </select>
+        <p class="f-note" id="jokeVisInfo"></p>
+      </div>
     </div>
 
     <h2 class="f-over">Vejr</h2>
@@ -528,6 +577,15 @@ textarea.st-in{font-size:14px;resize:vertical}
 
     <h2 class="f-over">Login og sikkerhed</h2>
     <p class="f-note">Siderne er låst med en PIN-kode. Du kan lægge <b>totrinsbekræftelse</b> oven på: efter PIN-koden skriver man en 6-cifret kode fra en autentificeringsapp (fx Google Authenticator, Microsoft Authenticator, 2FAS, Aegis eller 1Password). En enhed kan huskes i et antal dage, så væg-skærmen ikke spørger hver gang. Mister du telefonen, bruger du en af de 8 gendannelseskoder. Slås det til eller fra, skal <b>alle enheder logge ind igen</b>.</p>
+    <div id="adgSek" hidden>
+      <label for="adgangValg">Hvem må se forsiden?</label>
+      <select class="st-in" id="adgangValg">
+        <option value="laast">Kun med PIN-kode (standard)</option>
+        <option value="aaben_visning">Forsiden kan ses uden PIN-kode (PIN til alt andet)</option>
+      </select>
+      <p class="f-note" id="adgangNote"></p>
+      <p class="fejl" id="adgangFejl" role="alert"></p>
+    </div>
     <div id="toSek" hidden>
       <p class="f-note" id="toStatus"></p>
       <div id="toFraBlok"><button type="button" class="btn-save" id="toStart">Slå totrinsbekræftelse til</button></div>
@@ -594,6 +652,15 @@ textarea.st-in{font-size:14px;resize:vertical}
     <h2 class="f-over">Om</h2>
     <p class="f-note" id="verTekst">Familieoverblik</p>
     <p class="f-note">Ændringer pr. udgave står i <i>CHANGELOG.md</i> i projektmappen. Sikkerhedskopi og opdatering: se «Versioner og opdatering» i guiden.</p>
+
+    <h2 class="f-over">Tilfældig vælger</h2>
+    <p class="f-note">Gem egne lister til siden <i>Tilfældig vælger</i> (menuen Sider på forsiden), fx «Aftensmad», «Hvem skal tømme opvaskemaskinen?» eller «Weekendplan». Skriv ét valg pr. linje. Listerne dukker op under «Indsæt en liste» på alle enheder. Du kan også gemme en liste direkte på selve siden med «Gem som liste».</p>
+    <label class="check"><input type="checkbox" id="vlSkjul"> Skjul standardlisterne (Aftensmad, Hvem begynder?, Ja eller nej, Terning, Weekendplan)</label>
+    <div id="vlEditor"></div>
+    <div class="aff-knapper"><button type="button" class="k-test" id="vlNy">+ Tilføj liste</button></div>
+    <p class="fejl" id="vlFejl" role="alert"></p>
+    <button type="button" class="btn-save" id="vlGem">Gem</button>
+    <p class="f-note" id="vlInfo"></p>
 
     <h2 class="f-over">Bil (Hyundai Ioniq 6)</h2>
     <p class="f-note">Batteriniveauet hentes fra Hyundai på faste tidspunkter og vises i kortet <i>Bil</i> på skærmen. Adgangen er uofficiel og kan holde op med at virke. Dit Bluelink-login står i <i>lokal/.env</i> på NUC'en, ikke her.</p>
@@ -782,7 +849,7 @@ textarea.st-in{font-size:14px;resize:vertical}
     </details>
     <div><label>Hvem hører den til</label><div class="who-pick" id="kWho"></div></div>
     <div><label>Ikon</label><div class="ikon-pick" id="kIkon"></div></div>
-    <div><label for="kNavn">Navn <small style="text-transform:none;letter-spacing:0">(valgfrit — kun her i listen)</small></label><input type="text" id="kNavn" maxlength="60" autocomplete="off" placeholder="Fodbold, håndbold …"></div>
+    <div><label for="kNavn">Navn og kilde <small style="text-transform:none;letter-spacing:0">(valgfrit — står i listen og som kilde på forsiden, fx «Holdsport» eller «Skolen»)</small></label><input type="text" id="kNavn" maxlength="60" autocomplete="off" placeholder="Fodbold, håndbold …"></div>
   </div>
 
   <div class="k-msg" id="kMsg" role="status" hidden></div>
@@ -1408,7 +1475,7 @@ function paths(){
   const id = weekId();
   return [`planner/${id}`, `aula/${id}`, `ics/${id}`,
           "settings/recurring", "settings/birthdays",
-          "settings/weather", "settings/dated"];
+          "settings/weather", "settings/dated", "settings/affald", "settings/visning", "settings/vaelger"];
 }
 
 // Fordel et hentet dokument ud i tilstanden. Alt defensivt: en tom eller
@@ -1429,6 +1496,9 @@ function applyDoc(path, doc){
   else if (path === "settings/birthdays"){   birthdays  = p?.items || []; }
   else if (path === "settings/dated"){       datedItems = p?.items || []; }
   else if (path === "settings/weather"){     weather    = p || {}; }
+  else if (path === "settings/affald"){      affald     = p || {}; affSynk(false); }
+  else if (path === "settings/visning"){     visning    = p || {}; jokeVisFyld(); }
+  else if (path === "settings/vaelger"){     vlData     = p || {}; vlSynk(false); }
 }
 
 function resetState(){
@@ -2775,7 +2845,8 @@ function biTegnGrid(){
     : "Der er ingen billeder endnu. Tilføj nogle herover, så starter pauseskærmen.";
   $("biGrid").innerHTML = bi.filer.slice(0, BI_VIS_MAX).map(f =>
     `<div class="bi-tile"><img loading="lazy" alt="" src="${BI}?action=hent&amp;id=${encodeURIComponent(f.id)}">
-       <button type="button" data-bi-slet="${esc(f.id)}" aria-label="Slet billedet">&times;</button></div>`).join("");
+       <button type="button" data-bi-slet="${esc(f.id)}" aria-label="Slet billedet">&times;</button>
+       <div class="bi-drej"><button type="button" data-bi-drej="270" data-bi-id="${esc(f.id)}" aria-label="Drej billedet mod uret">&#8630;</button><button type="button" data-bi-drej="90" data-bi-id="${esc(f.id)}" aria-label="Drej billedet med uret">&#8631;</button></div></div>`).join("");
 }
 
 async function biLaes(){
@@ -2803,6 +2874,38 @@ async function biResize(fil, maxSide = 1920, kvalitet = 0.85){
   const blob = await new Promise(r => c.toBlob(r, "image/jpeg", kvalitet));
   if (!blob) throw new Error("kunne ikke læse billedet");
   return blob;
+}
+
+/** Billedet drejet 90, 180 eller 270 grader med uret (jpeg). lav leverer billedlæsning og lærred, så det kan prøves uden en browser. */
+async function biRoter(blob, grader, lav = { bitmap: b => createImageBitmap(b, { imageOrientation: "from-image" }), canvas: () => document.createElement("canvas") }){
+  const g = ((Math.round(Number(grader)) % 360) + 360) % 360;
+  if (![90, 180, 270].includes(g)) throw new Error("Ugyldig drejning");
+  const bmp = await lav.bitmap(blob), vend = g !== 180;
+  const c = lav.canvas();
+  c.width = vend ? bmp.height : bmp.width; c.height = vend ? bmp.width : bmp.height;
+  const x = c.getContext("2d");
+  x.translate(c.width / 2, c.height / 2); x.rotate(g * Math.PI / 180); x.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+  if (bmp.close) bmp.close();
+  const ud = await new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
+  if (!ud) throw new Error("kunne ikke gemme det drejede billede");
+  return ud;
+}
+/** Drej ét billede på serveren: hent det, drej det, læg det drejede ind som et nyt billede og slet det gamle (i den rækkefølge, så intet går tabt). */
+async function biDrej(id, grader, rot = biRoter){
+  if (bi.travl) return;
+  bi.travl = true;
+  try {
+    $("biUploadInfo").textContent = "Drejer billedet …";
+    const r = await fetch(`${BI}?action=hent&id=${encodeURIComponent(id)}`, { headers: HEAD, cache: "no-store", credentials: "same-origin" });
+    if (!r.ok) throw new Error("kunne ikke hente billedet");
+    const ny = await rot(await r.blob(), grader);
+    await biApi("upload", ny, "image/jpeg");
+    try { await biApi("slet", JSON.stringify({ id }), "application/json"); }
+    catch (e){ $("biUploadInfo").textContent = `Det drejede billede er lagt ind, men det gamle kunne ikke slettes (${e.message}). Slet det gamle i hånden.`; await biLaes(); return; }
+    $("biUploadInfo").textContent = "Billedet er drejet.";
+  } catch (e){ $("biUploadInfo").textContent = `Kunne ikke dreje billedet: ${e.message}`; }
+  finally { bi.travl = false; }
+  await biLaes();
 }
 
 async function biUpload(filer, resize = biResize){
@@ -2845,6 +2948,8 @@ $("biFiler").addEventListener("change", async e => {
 });
 
 $("biGrid").addEventListener("click", async e => {
+  const d = e.target.closest("[data-bi-drej]");
+  if (d){ await biDrej(d.dataset.biId, Number(d.dataset.biDrej)); return; }
   const k = e.target.closest("[data-bi-slet]");
   if (!k) return;
   if (!k.dataset.sikker){ k.dataset.sikker = "1"; k.textContent = "Slet?"; return; }     // to tryk
@@ -2951,6 +3056,16 @@ $("bilNu").addEventListener("click", async () => {
   } catch (err){ $("bilFejl").textContent = err.message; }
 });
 bilLaes();
+
+/** Hvor vises joken: «kort» (standard) eller «header» (kun selve joken i toppen). Gemmes for alle enheder i settings/visning. */
+let visning = {};
+function jokeVisFyld(){ const el = $("jokeVis"); if (el) el.value = visning && visning.joke === "header" ? "header" : "kort"; }
+$("jokeVis").addEventListener("change", async () => {
+  const v = $("jokeVis").value === "header" ? "header" : "kort";
+  $("jokeVisInfo").textContent = "";
+  await save("settings/visning", { ...(visning && typeof visning === "object" ? visning : {}), joke: v }, false);
+  $("jokeVisInfo").textContent = v === "header" ? "Gemt. Joken står i toppen af forsiden ved næste opdatering." : "Gemt. Joken vises som et kort på forsiden.";
+});
 
 /* ── Dagens joke (indstillinger) ───────────────────────────────────── */
 const JOKE_KAT = { Any: "Alle kategorier", Misc: "Blandet", Programming: "Programmering", Pun: "Ordspil", Spooky: "Uhyggelige", Christmas: "Jul" };
@@ -3075,6 +3190,7 @@ function famFyld(d){
   if (!famStat.boern.length) famStat.boern.push({ navn: "", fd: "", cid: "" });
   famTegn();
   $("famFdTema").checked = d.sv.fodselsdagstema !== false;
+  adgangFyld(d.adgang);
   $("famLat").value = String(d.sted.lat); $("famLon").value = String(d.sted.lon); $("famTz").value = d.sted.tidszone;
   $("famPin").value = "";
   for (const [k, id] of FAM_ABNE) $(id).value = (d.hemmeligheder && d.hemmeligheder[k]) || "";
@@ -3094,6 +3210,27 @@ function famPayload(){
   p.hemmeligheder = h;
   return p;
 }
+/** «Hvem må se forsiden?» (instans.json → adgang). Åben visning betyder, at alle på netværket kan se forsiden og dens data uden PIN; resten kræver stadig PIN. */
+const ADGANG_TEKST = {
+  laast: "Alt kræver PIN-koden (eller totrinsbekræftelsen), også forsiden. Det er det sikreste, og det er standarden.",
+  aaben_visning: "Alle på netværket kan se forsiden uden PIN-kode: skema, breve, fødselsdage, tømning, vejr, elpris og bil. De kan også ændre det, skærmen selv ændrer (afkrydsninger, opslagstavlen og huskepunkter), for læsenøglen står åbent i siden. Indstillinger, sikkerhedskopi, kalendere, gæste-wifi, oversættelse og backlog kræver stadig PIN. Vælg det kun på et netværk, du stoler på (ikke gæste-wifi). Kortene Strava og Indkøb er kun med, når siden er åbnet efter en PIN-kode.",
+};
+function adgangFyld(v){
+  const g = v === "aaben_visning" ? "aaben_visning" : "laast";
+  $("adgangValg").value = g; $("adgangNote").textContent = ADGANG_TEKST[g]; $("adgSek").hidden = false;
+}
+$("adgangValg").addEventListener("change", async () => {
+  const v = $("adgangValg").value === "aaben_visning" ? "aaben_visning" : "laast";
+  $("adgangFejl").textContent = "";
+  try {
+    await famApi("POST", "instans.php", { adgang: v });
+    adgangFyld((await famApi("GET", "instans.php")).adgang);
+    $("adgangNote").textContent = (v === "aaben_visning" ? "Gemt: forsiden kan nu ses uden PIN. " : "Gemt: alt kræver PIN igen. ") + ADGANG_TEKST[v];
+  } catch (e){
+    $("adgangFejl").textContent = e.message;
+    $("adgangValg").value = v === "aaben_visning" ? "laast" : "aaben_visning";            // tilbage til det, der gælder
+  }
+});
 async function famLaes(){
   try { famFyld(await famApi("GET", "instans.php")); $("famSek").hidden = false; }
   catch (e){ $("famSek").hidden = true; console.error("familie:", e); }
@@ -3596,6 +3733,251 @@ setInterval(() => {
   }
   if (today !== lastDay){ lastDay = today; render(); }
 }, 30000);
+
+/* ── Tømning (settings/affald) ─────────────────────────────────────────
+   Reglerne og beregningen ligger i affald.js (delt med forsiden). Her redigeres tidsplanen. Datoerne skrives som tekst og gøres til ÅÅÅÅ-MM-DD ved Gem. */
+let affald = {}, AFF = null, affStat = null, affSmudsig = false;
+import("./affald.js").then(m => { AFF = m; $("affNavne").innerHTML = m.FRAKTIONER.map(([n]) => `<option value="${esc(n)}">`).join(""); affSynk(true); }).catch(e => console.error("affald:", e));
+
+/** «24.12.2026», «24/12/2026», «24-12-2026» eller «2026-12-24» → «2026-12-24», ellers null. */
+function affDato(t){
+  t = String(t ?? "").trim();
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t), y, mo, d;
+  if (m){ y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else if ((m = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(t))){ d = +m[1]; mo = +m[2]; y = +m[3]; }
+  else return null;
+  const iso = `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  return AFF && AFF.dagNr(iso) !== null ? iso : null;
+}
+/** En liste datoer som tekst → {ok: [ÅÅÅÅ-MM-DD], fejl: [tekster, der ikke er datoer]}. */
+function affDatoer(tekst){
+  const ud = { ok: [], fejl: [] };
+  for (const t of String(tekst ?? "").split(/[,;\n]+/).map(x => x.trim()).filter(Boolean)){ const d = affDato(t); d ? ud.ok.push(d) : ud.fejl.push(t); }
+  return ud;
+}
+const affNyFraktion = (navn = "Restaffald") => ({ navn, farve: AFF ? (AFF.FRAKTIONER.find(([n]) => n === navn) || [0, "#5B6770"])[1] : "#5B6770", start: "", hver: 2, springes: "", ekstra: "" });
+const affTilStat = data => ({ adresser: (data.adresser.length ? data.adresser : [{ id: "a1", navn: "Hjemme", fraktioner: [] }]).map(a => ({ id: a.id, navn: a.navn, fraktioner: a.fraktioner.map(f => ({ ...f, springes: f.springes.join(", "), ekstra: f.ekstra.join(", ") })) })) });
+/** Formularen → det, der gemmes, og de fejl, der skal rettes først. */
+function affFraStat(stat){
+  const fejl = [], adresser = [];
+  stat.adresser.forEach((a, ai) => {
+    const fr = [];
+    a.fraktioner.forEach(f => {
+      const navn = (f.navn || "").trim(), start = f.start ? affDato(f.start) : null, hver = Math.round(Number(f.hver));
+      if (!navn){ fejl.push(`${a.navn || "Adresse " + (ai + 1)}: en fraktion mangler et navn.`); return; }
+      if (!start){ fejl.push(`${navn} (${a.navn}): vælg en første dato.`); return; }
+      if (!(hver >= 1 && hver <= 52)){ fejl.push(`${navn} (${a.navn}): antal uger skal være mellem 1 og 52.`); return; }
+      const sp = affDatoer(f.springes), ek = affDatoer(f.ekstra);
+      for (const x of [...sp.fejl, ...ek.fejl]) fejl.push(`${navn} (${a.navn}): «${x}» er ikke en dato (skriv fx 24.12.2026).`);
+      fr.push({ navn, farve: f.farve, start, hver, springes: sp.ok, ekstra: ek.ok });
+    });
+    if (fr.length) adresser.push({ id: a.id || `a${ai + 1}`, navn: (a.navn || "").trim() || "Hjemme", fraktioner: fr });
+  });
+  return { payload: { adresser }, fejl };
+}
+function affForhaand(f){
+  if (!AFF) return "";
+  const start = f.start ? affDato(f.start) : null, hver = Math.round(Number(f.hver));
+  if (!start || !(hver >= 1 && hver <= 52)) return "Vælg en første dato og antal uger for at se de næste tømninger.";
+  const n = AFF.naeste({ start, hver, springes: affDatoer(f.springes).ok, ekstra: affDatoer(f.ekstra).ok }, AFF.dagIDag(), 4);
+  return n.length ? "Næste: " + n.map(d => `${AFF.ugedag(d).slice(0, 3)}. ${AFF.datoKort(d)}`).join(", ") : "Ingen kommende tømninger.";
+}
+function affTegn(){
+  if (!affStat) return;
+  $("affEditor").innerHTML = affStat.adresser.map((a, ai) => `<div class="aff-adr" data-a="${ai}">
+    <div class="aff-adr-hoved"><input type="text" class="st-in" data-felt="adresse" maxlength="40" value="${esc(a.navn)}" placeholder="Adressens navn (fx Hjemme)" aria-label="Adressens navn"><button type="button" class="k-test" data-aff="fjern-adr" aria-label="Fjern adressen">Fjern adresse</button></div>
+    ${a.fraktioner.map((f, fi) => `<div class="aff-frak" data-a="${ai}" data-f="${fi}">
+      <input type="text" class="st-in" data-felt="navn" list="affNavne" maxlength="40" value="${esc(f.navn)}" placeholder="Fraktion" aria-label="Fraktion">
+      <input type="color" data-felt="farve" value="${esc(f.farve)}" aria-label="Farve">
+      <label class="aff-lbl">Første tømning<input type="date" class="st-in" data-felt="start" value="${esc(f.start)}"></label>
+      <label class="aff-lbl">Hver<span class="aff-hver"><input type="number" class="st-in" data-felt="hver" min="1" max="52" value="${esc(f.hver)}"> uge(r)</span></label>
+      <label class="aff-lbl aff-bred">Udgår (datoer)<input type="text" class="st-in" data-felt="springes" value="${esc(f.springes)}" placeholder="24.12.2026, 31.12.2026"></label>
+      <label class="aff-lbl aff-bred">Ekstra (datoer)<input type="text" class="st-in" data-felt="ekstra" value="${esc(f.ekstra)}" placeholder="12.12.2026"></label>
+      <button type="button" class="k-test" data-aff="fjern-frak" aria-label="Fjern fraktionen">×</button>
+      <div class="aff-forh f-note" data-forh>${esc(affForhaand(f))}</div>
+    </div>`).join("")}
+    <button type="button" class="k-test" data-aff="ny-frak">+ Tilføj fraktion</button>
+  </div>`).join("");
+  $("affNyAdresse").disabled = !AFF || affStat.adresser.length >= AFF.MAX_ADRESSER;
+}
+/** Hent fra serveren. Mens der er rettelser, der ikke er gemt, overskrives de ikke (en polling må aldrig tømme et felt, man er ved at udfylde). */
+function affSynk(tving){
+  if (!AFF || (affSmudsig && !tving)) return;
+  affStat = affTilStat(AFF.rens(affald)); affSmudsig = false; affTegn();
+}
+$("affEditor").addEventListener("input", e => {
+  const felt = e.target.dataset && e.target.dataset.felt; if (!felt || !affStat) return;
+  const rk = e.target.closest("[data-f]"), adr = e.target.closest("[data-a]");
+  const a = affStat.adresser[Number(adr.dataset.a)];
+  if (felt === "adresse") a.navn = e.target.value;
+  else { const f = a.fraktioner[Number(rk.dataset.f)]; f[felt] = e.target.value; const fh = rk.querySelector("[data-forh]"); if (fh) fh.textContent = affForhaand(f); }
+  affSmudsig = true;
+});
+$("affEditor").addEventListener("change", e => {
+  if (!e.target.dataset || e.target.dataset.felt !== "navn" || !AFF) return;
+  const rk = e.target.closest("[data-f]"), f = affStat.adresser[Number(e.target.closest("[data-a]").dataset.a)].fraktioner[Number(rk.dataset.f)];
+  const kendt = AFF.FRAKTIONER.find(([n]) => n.toLowerCase() === e.target.value.trim().toLowerCase());
+  if (kendt){ f.farve = kendt[1]; const c = rk.querySelector('[data-felt="farve"]'); if (c) c.value = kendt[1]; }       // en kendt fraktion får sin standardfarve
+});
+$("affEditor").addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-aff]"); if (!b || !affStat) return;
+  const a = affStat.adresser[Number(b.closest("[data-a]").dataset.a)];
+  if (b.dataset.aff === "ny-frak"){ if (a.fraktioner.length < AFF.MAX_FRAKTIONER) a.fraktioner.push(affNyFraktion(a.fraktioner.length ? "Papir" : "Restaffald")); }
+  else if (b.dataset.aff === "fjern-frak") a.fraktioner.splice(Number(b.closest("[data-f]").dataset.f), 1);
+  else if (b.dataset.aff === "fjern-adr") affStat.adresser.splice(Number(b.closest("[data-a]").dataset.a), 1);
+  affSmudsig = true; affTegn();
+});
+$("affNyAdresse").addEventListener("click", () => { if (!affStat || !AFF || affStat.adresser.length >= AFF.MAX_ADRESSER) return; affStat.adresser.push({ id: `a${Date.now().toString(36)}`, navn: affStat.adresser.length ? "" : "Hjemme", fraktioner: [affNyFraktion()] }); affSmudsig = true; affTegn(); });
+$("affGem").addEventListener("click", async () => {
+  $("affFejl").textContent = ""; $("affInfo").textContent = "";
+  if (!affStat || !AFF){ $("affFejl").textContent = "Siden er ikke klar endnu. Prøv igen om et øjeblik."; return; }
+  const { payload, fejl } = affFraStat(affStat);
+  if (fejl.length){ $("affFejl").textContent = fejl.join(" "); return; }
+  await save("settings/affald", payload, false);
+  affSmudsig = false; affSynk(true);
+  $("affInfo").textContent = payload.adresser.length ? "Gemt. Kortet «Tømning» vises nu på forsiden." : "Gemt. Der er ingen tidsplaner, så kortet er skjult på forsiden.";
+});
+
+/* ── Tilfældig vælger: egne lister (settings/vaelger) ───────────────── */
+let vlData = {}, VL = null, vlStat = null, vlSmudsig = false;
+import("./vaelgerlister.js").then(m => { VL = m; vlSynk(true); }).catch(e => console.error("vaelgerlister:", e));
+function vlTegn(){
+  if (!vlStat) return;
+  $("vlSkjul").checked = !!vlStat.skjul;
+  $("vlEditor").innerHTML = vlStat.lister.map((l, i) => `<div class="aff-adr" data-i="${i}">
+    <div class="aff-adr-hoved"><input type="text" class="st-in" data-vl="navn" maxlength="40" value="${esc(l.navn)}" placeholder="Listens navn (fx Aftensmad)" aria-label="Listens navn"><button type="button" class="k-test" data-vl-fjern aria-label="Fjern listen">Fjern liste</button></div>
+    <textarea class="st-in vl-valg" data-vl="valg" rows="6" spellcheck="false" aria-label="Valgene, ét pr. linje" placeholder="Ét valg pr. linje">${esc(l.tekst)}</textarea></div>`).join("");
+  $("vlNy").disabled = !VL || vlStat.lister.length >= VL.MAX_LISTER;
+}
+/** Hent fra serveren. Rettelser, der ikke er gemt, overskrives ikke af en polling (en tvungen hentning efter Gem gør). */
+function vlSynk(tving){
+  if (!VL || (vlSmudsig && !tving)) return;
+  const d = VL.rens(vlData);
+  vlStat = { skjul: d.skjulStandard, lister: d.lister.map(l => ({ navn: l.navn, tekst: VL.listeTilTekst(l.valg) })) };
+  vlSmudsig = false; vlTegn();
+}
+/** Formularen → det, der gemmes, og de fejl, der skal rettes først. */
+function vlFraStat(stat){
+  const fejl = [], lister = [], set = new Set();
+  stat.lister.forEach((l, i) => {
+    const navn = (l.navn || "").trim(), valg = VL.parseListe(l.tekst);
+    if (!navn && !valg.length) return;                                    // en helt tom række ignoreres
+    if (!navn){ fejl.push(`Liste ${i + 1}: skriv et navn.`); return; }
+    if (!valg.length){ fejl.push(`«${navn}»: skriv mindst ét valg.`); return; }
+    if (set.has(navn.toLowerCase())){ fejl.push(`«${navn}»: der er to lister med det navn.`); return; }
+    set.add(navn.toLowerCase()); lister.push({ navn, valg });
+  });
+  return { payload: { lister, skjulStandard: !!stat.skjul }, fejl };
+}
+$("vlEditor").addEventListener("input", e => {
+  const felt = e.target.dataset && e.target.dataset.vl, k = e.target.closest && e.target.closest("[data-i]");
+  if (!felt || !k || !vlStat) return;
+  const l = vlStat.lister[Number(k.dataset.i)];
+  if (felt === "navn") l.navn = e.target.value; else l.tekst = e.target.value;
+  vlSmudsig = true;
+});
+$("vlEditor").addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-vl-fjern]");
+  if (!b || !vlStat) return;
+  vlStat.lister.splice(Number(b.closest("[data-i]").dataset.i), 1); vlSmudsig = true; vlTegn();
+});
+$("vlSkjul").addEventListener("change", () => { if (vlStat){ vlStat.skjul = $("vlSkjul").checked; vlSmudsig = true; } });
+$("vlNy").addEventListener("click", () => { if (!vlStat || !VL || vlStat.lister.length >= VL.MAX_LISTER) return; vlStat.lister.push({ navn: "", tekst: "" }); vlSmudsig = true; vlTegn(); });
+$("vlGem").addEventListener("click", async () => {
+  $("vlFejl").textContent = ""; $("vlInfo").textContent = "";
+  if (!vlStat || !VL){ $("vlFejl").textContent = "Siden er ikke klar endnu. Prøv igen om et øjeblik."; return; }
+  const { payload, fejl } = vlFraStat(vlStat);
+  if (fejl.length){ $("vlFejl").textContent = fejl.join(" "); return; }
+  await save("settings/vaelger", payload, false);
+  vlSmudsig = false; vlSynk(true);
+  $("vlInfo").textContent = payload.lister.length ? `Gemt (${payload.lister.length} ${payload.lister.length === 1 ? "liste" : "lister"}).` : "Gemt. Der er ingen egne lister.";
+});
+
+/* ── Opsætning som træ ─────────────────────────────────────────────────
+   Opsætningen har én side pr. hovedoverskrift. Til venstre står et træ (på en telefon en valgmenu), og kun den valgte side vises.
+   Siderne findes ved at læse overskrifterne i #fOps, så en ny sektion kommer automatisk med (under «Andet», til den får en gruppe herunder).
+   De rene funktioner (opsInddel, opsTrae, opsVaelg) rører ikke siden og er afprøvet for sig. */
+const OPS_GRUPPER = [
+  ["Familie", ["Familie og forbindelser", "Fødselsdage", "Farver", "Sprog"]],
+  ["Kort på oversigten", ["Kalendere", "Vejr", "Elpris", "Tømning", "Dagens joke", "Tegneserie", "Indkøbsseddel", "Pauseskærm"]],
+  ["Tjenester", ["Bil (Hyundai Ioniq 6)", "Strava"]],
+  ["Sider", ["Tilfældig vælger"]],
+  ["System", ["Login og sikkerhed", "Sikkerhedskopi", "Om"]],
+];
+const OPS_NOEGLE = "familieoverblik-ops-side";
+
+/** Deler børnene af #fOps i sider. boern: [{overskrift: "Titel"|null, egen: "Titel"|null}]. En overskrift starter en side, og alt til næste overskrift hører til den.
+ *  Et element med sin EGEN overskrift (en skjult indpakning, fx Elpris) er en side for sig. Elementer før den første overskrift hører til ingen side (null). */
+function opsInddel(boern){
+  const sider = []; let nu = null;
+  boern.forEach((b, i) => {
+    if (b.overskrift){ nu = { titel: b.overskrift, indeks: [i], egen: false }; sider.push(nu); }
+    else if (b.egen){ nu = null; sider.push({ titel: b.egen, indeks: [i], egen: true }); }
+    else if (nu) nu.indeks.push(i);
+  });
+  return sider;
+}
+/** Sætter siderne i grupperne fra OPS_GRUPPER (i den rækkefølge, grupperne angiver). Ukendte sider kommer i «Andet». Tomme grupper udelades. */
+function opsTrae(titler, grupper = OPS_GRUPPER){
+  const brugt = new Set(), ud = [];
+  for (const [navn, liste] of grupper){
+    const her = liste.filter(t => titler.includes(t) && !brugt.has(t));
+    her.forEach(t => brugt.add(t));
+    if (her.length) ud.push({ titel: navn, sider: her });
+  }
+  const rest = titler.filter(t => !brugt.has(t));
+  if (rest.length) ud.push({ titel: "Andet", sider: rest });
+  return ud;
+}
+/** Hvilken side vises: den ønskede, hvis den findes og kan bruges, ellers den gemte, ellers den første, der kan bruges. null, hvis ingen kan. */
+function opsVaelg(oensket, gemt, tilgaengelige){
+  const ok = t => typeof t === "string" && tilgaengelige.includes(t);
+  return ok(oensket) ? oensket : ok(gemt) ? gemt : (tilgaengelige[0] ?? null);
+}
+
+let opsSider = [], opsBoern = [], opsValgt = null;
+const opsTilgaengelig = side => side.egen ? !opsBoern[side.indeks[0]].hidden : side.indeks.slice(1).some(i => !opsBoern[i].hidden);
+
+function opsTegn(){
+  const tilg = opsSider.filter(opsTilgaengelig).map(x => x.titel);
+  opsValgt = opsVaelg(opsValgt, (() => { try { return localStorage.getItem(OPS_NOEGLE); } catch { return null; } })(), tilg);
+  for (const side of opsSider){
+    const vis = side.titel === opsValgt;
+    for (const i of side.indeks) opsBoern[i].classList.toggle("ops-skjult", !vis);
+  }
+  const grupper = opsTrae(tilg);
+  $("opsListe").innerHTML = grupper.map(g => `<div class="ops-gr"><div class="ops-gr-t">${esc(g.titel)}</div>${g.sider.map(t => `<button type="button" data-ops="${esc(t)}"${t === opsValgt ? ' aria-current="page"' : ""}>${esc(t)}</button>`).join("")}</div>`).join("");
+  $("opsVaelger").innerHTML = grupper.map(g => `<optgroup label="${esc(g.titel)}">${g.sider.map(t => `<option value="${esc(t)}"${t === opsValgt ? " selected" : ""}>${esc(t)}</option>`).join("")}</optgroup>`).join("");
+}
+function opsGaaTil(titel){
+  opsValgt = titel;
+  try { localStorage.setItem(OPS_NOEGLE, titel); } catch {}
+  opsTegn();
+  const r = $("fOps"); if (r && r.scrollIntoView && window.matchMedia && window.matchMedia("(max-width:760px)").matches) r.scrollIntoView({ block: "start" });
+}
+function opsByg(){
+  const rod = $("fOps");
+  if (!rod || $("opsListe")) return;
+  const boern = [...rod.children];
+  const info = boern.map(k => {
+    const h2 = k.tagName === "H2" && k.classList.contains("f-over");
+    const egen = h2 ? null : [...k.children].find(c => c.tagName === "H2" && c.classList.contains("f-over"));
+    return { overskrift: h2 ? k.textContent.trim() : null, egen: egen ? egen.textContent.trim() : null };
+  });
+  opsBoern = boern; opsSider = opsInddel(info);
+  const ramme = document.createElement("div"), indhold = document.createElement("div"), trae = document.createElement("nav");
+  ramme.className = "ops-ramme"; indhold.className = "ops-indhold"; trae.className = "ops-trae"; trae.setAttribute("aria-label", "Vælg en side i opsætningen");
+  trae.innerHTML = `<select id="opsVaelger" class="ops-vaelg" aria-label="Vælg en side i opsætningen"></select><div id="opsListe" class="ops-liste"></div>`;
+  rod.insertBefore(ramme, rod.firstChild);
+  ramme.appendChild(trae); ramme.appendChild(indhold);
+  for (const k of boern) indhold.appendChild(k);
+  trae.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-ops]"); if (b) opsGaaTil(b.dataset.ops); });
+  trae.addEventListener("change", e => { if (e.target && e.target.id === "opsVaelger") opsGaaTil(e.target.value); });
+  opsTegn();
+  // Skjulte indpakninger (en sektion, der først vises, når serveren har svaret) skal give en side i træet, når de vises
+  if (typeof MutationObserver !== "undefined") new MutationObserver(() => opsTegn()).observe(rod, { attributes: true, attributeFilter: ["hidden"], subtree: true });
+}
+opsByg();
 
 /* ── Opstart ─────────────────────────────────────────────────────── */
 if (!API_KEY || String(API_KEY).includes("UDFYLD")){

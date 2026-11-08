@@ -8,10 +8,12 @@
 // kun naar nettet svigter. Bump foerst CACHE, naar SHELL-LISTEN selv aendrer
 // sig — altsaa naar en fil kommer til eller falder fra — saa de gamle
 // noegler bliver ryddet af activate-handleren.
-const CACHE = "familieoverblik-shell-v1";
+const CACHE = "familieoverblik-shell-v2";
 const SHELL = [
   "./overblik.html",
   "./config.js",
+  "./affald.js",
+  "./tema-forvalg.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"

@@ -464,6 +464,7 @@ function job_ics(): string
                         'tag'      => $feed['tag'] ?? '',
                         'who'      => $feed['person'] ?? '',
                         'icon'     => $feed['icon'] ?? '',
+                        'kilde'    => (string)($feed['label'] ?? ''),         // teksten fra feltet «Navn» i kalenderdialogen: vises som kilde på forsiden
                         'src'      => function_exists('feeds_service') ? feeds_service((string)($feed['url'] ?? '')) : '',
                         'location' => $e['location'] ?? '',
                     ];

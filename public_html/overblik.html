@@ -147,7 +147,13 @@ body.fd-dag .card{box-shadow:0 0 0 1px rgba(200,16,46,.22)}
 .vk-nu b{font-size:26px;color:var(--ink);font-weight:600}
 .vk-timer{display:flex;gap:2px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
 .vk-t{flex:0 0 58px;text-align:center;padding:6px 2px;border-radius:var(--radius);scroll-snap-align:start;font-size:12px;line-height:1.3}
-.vk-t.nu{background:var(--tint-blue);outline:1px solid var(--ink)}
+.vk-t.nu{outline:2px solid var(--ink)}
+.vk-vind{display:block;color:var(--ink-soft);font-size:11px}
+/* Vejrtype som farve: sol gul, skyet grå, regn blå, sne lysblå, torden lilla. Gennemsigtige, så de virker i alle farvetemaer. */
+.vk-sol{background:rgba(255,196,0,.22)}.vk-lidt{background:rgba(255,196,0,.10)}.vk-sky{background:rgba(120,130,140,.20)}.vk-taage{background:rgba(150,160,170,.16)}
+.vk-regn{background:rgba(60,120,220,.22)}.vk-sne{background:rgba(160,205,245,.34)}.vk-torden{background:rgba(135,70,195,.24)}
+.vk-t.nat{box-shadow:inset 0 -3px 0 rgba(20,30,70,.45)}
+.vk-nu[class*=" vk-"]{padding:8px 10px;border-radius:var(--radius)}
 .vk-t.forbi{opacity:.45}
 .vk-t svg,.vk-d svg{width:28px;height:28px;display:block;margin:2px auto}
 .vk-t small{display:block;color:var(--ink-soft);min-height:1.2em}
@@ -176,6 +182,7 @@ dialog.cl::backdrop{background:rgba(20,32,28,.42)}
 .cl-dato{color:var(--ink-soft);font-size:13px;margin-top:8px}
 /* Layout: flyt og klap kort sammen */
 .fod{display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);padding:14px 16px 28px}
+select.fod-knap{padding:0 8px;max-width:100%}
 .fod-knap{font:inherit;font-size:12px;min-height:36px;padding:0 14px;border:1px solid var(--rule);border-radius:var(--radius);background:transparent;color:inherit}
 .fod-knap[hidden]{display:none}
 .fod-fast{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -191,13 +198,33 @@ dialog.cl::backdrop{background:rgba(20,32,28,.42)}
 .lay-bar{display:none;align-items:center;gap:6px;margin:0 0 10px;padding:4px 6px;border-radius:6px;background:rgba(127,127,127,.14);font-size:12px;color:var(--ink-soft)}
 .lay-redigerer .lay-bar{display:flex}
 .lay-bar b{flex:1;font-weight:600}
+.el-enkel-knap{margin-left:8px;min-height:32px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink-soft);font:inherit;font-size:12px;cursor:pointer}
+.el-enkel-knap[aria-pressed=true]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+#elKort.el-enkel #elKrop>:not(.el-chart):not(.el-akse){display:none}
+.top-joke{max-width:1200px;margin:0 auto;padding:6px 16px 0;color:var(--ink-soft);font-size:14px;font-style:italic;line-height:1.4;overflow-wrap:anywhere}
+.top-joke[hidden]{display:none}
+.aff-raekke{align-items:center}
+.aff-prik{flex:0 0 auto;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.aff-navn{flex:1;min-width:0;overflow-wrap:anywhere}
+.aff-nar{flex:0 0 auto;text-align:right}
+.aff-meta{color:var(--ink-soft);font-size:12px}
+.aff-snart .aff-nar,.aff-snart .aff-navn{font-weight:700}
+.halv-raekke{grid-column:1/-1;display:grid;gap:var(--gap);grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+@media (max-width:900px){.halv-raekke{grid-template-columns:1fr}}
+.card.half{grid-column:auto}
+.er-skjult{display:none!important}
+.lay-skjulte{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
+.lay-skjulte button{min-height:36px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink);font-size:13px}
+.lay-bar button[data-lay=storrelse]{min-width:56px;font-size:12px}
 .lay-bar button{min-width:40px;min-height:40px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink);font-size:15px}
 .lay-redigerer [data-kort]{outline:2px dashed rgba(127,127,127,.5);outline-offset:3px}
 .lay-redigerer [data-kort].lay-traek{opacity:.45}
 .lay-redigerer [data-kort].lay-over{outline:2px solid var(--ink)}
 @media print{.fod,.lay-panel{display:none}}
-.ps{position:fixed;inset:0;z-index:9999;background:#000;overflow:hidden;touch-action:manipulation;cursor:none}
+.ps{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:9999;background:#000;overflow:hidden;touch-action:manipulation;cursor:none}
 .ps[hidden]{display:none}
+html.ps-aktiv,html.ps-aktiv body{overflow:hidden!important;scrollbar-width:none}
+html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:none}
 .ps-lag{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}
 .ps-lag.hele{object-fit:contain}
 .ps-lag.synlig{opacity:1}
@@ -905,6 +932,8 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
   <a class="kilde-knap" href="index.html"
      title="Ret madplan, aktiviteter, fødselsdage og forkerte huskepunkter">Ret</a>
 </header>
+<!-- Dagens joke i toppen (Opsætning → Dagens joke → Hvor skal joken vises?). Kun selve joken. -->
+<div class="top-joke" id="jokeTop" hidden></div>
 
 <main class="grid" id="app" hidden>
 
@@ -1020,6 +1049,7 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
         <h2>Elpris</h2>
         <span class="spacer"></span>
         <span class="pill" id="elOmraade"></span>
+        <button type="button" class="el-enkel-knap" id="elEnkelKnap" aria-pressed="false" title="Skjul alt undtagen søjlediagrammet">Kun søjler</button>
       </div>
       <div id="elKrop"></div>
     </section>
@@ -1045,6 +1075,15 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
         <span class="pill" id="bilPill" hidden></span>
       </div>
       <div id="bilKrop"></div>
+    </section>
+
+    <!-- Tømning: næste tømning pr. fraktion for en eller flere adresser. Skjult, til der er sat en tidsplan op (Opsætning → Tømning). -->
+    <section class="card" id="affKort" hidden data-kort="affald">
+      <div class="card-head">
+        <span class="ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9l1-12.5M10 11v5M14 11v5"/></svg></span>
+        <h2>Tømning</h2>
+      </div>
+      <div id="affKrop"></div>
     </section>
 
   </div>
@@ -1145,6 +1184,15 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
       <a role="menuitem" href="index.html">Opsætning</a>
     </div>
   </div>
+  <select class="fod-knap" id="temaValg" aria-label="Tema på denne enhed" title="Vælg lyst, varmt eller mørkt tema på netop denne enhed">
+    <option value="">Tema: som opsat</option>
+    <option value="auto">Tema: automatisk (lys/mørk)</option>
+    <option value="standard">Tema: lys</option>
+    <option value="varm">Tema: varm</option>
+    <option value="moerk">Tema: mørk</option>
+    <option value="hoj">Tema: høj kontrast</option>
+  </select>
+  <button type="button" class="fod-knap" id="fuldKnap" aria-pressed="false" hidden title="Vis siden i fuld skærm. Efter en genindlæsning går siden i fuld skærm igen ved første tryk (slås fra med «Afslut fuld skærm»).">Fuld skærm</button>
   <button type="button" class="fod-knap" id="layoutKnap">Tilpas layout</button>
 </footer>
 <dialog class="cl" id="clDlg" aria-labelledby="clTitel">
@@ -1152,7 +1200,8 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
   <div class="cl-krop" id="clKrop"></div>
 </dialog>
 <div class="lay-panel" id="layBar" hidden role="region" aria-label="Tilpas layout">
-  <span>Brug pilene på hvert kort til at flytte det. <b>↔</b> flytter kortet mellem kolonnen og den brede række. På en computer kan du også trække kortene. Pilen i et korts titel klapper det sammen. Valget gemmes kun på denne enhed.</span>
+  <span>Brug pilene på hvert kort til at flytte det. <b>Smal / Halv / Bred</b> skifter størrelsen: <i>smal</i> står i kolonnen, <i>halv</i> viser to kort side om side, <i>bred</i> fylder hele rækken. <b>✕</b> skjuler kortet helt. På en computer kan du også trække kortene. Pilen i et korts titel klapper det sammen. Valget gemmes kun på denne enhed.</span>
+  <span id="laySkjulteBlok" hidden>Skjulte kort (tryk for at vise): <span class="lay-skjulte" id="laySkjulteListe"></span></span>
   <button type="button" class="fod-knap" id="layNulstil">Nulstil</button>
   <button type="button" class="fod-knap fod-fast" id="layFaerdig">Færdig</button>
 </div>
@@ -1485,6 +1534,8 @@ function gruppeAf(child, wid){
 // config.php. Ingen ikon betyder en privat Google-kalender, og saa er den
 // personens egen.
 function kalenderKilde(x){
+  const egen = typeof x.kilde === "string" ? x.kilde.trim() : "";        // teksten, man selv har skrevet i kalenderdialogen (Opsætning → Kalendere → Navn)
+  if (egen) return egen;
   const i = x.icon || "";
   if (i.includes("⚽")) return "DBU KampKlar";
   if (i.includes("🤾")) return "Holdsport";
@@ -2289,14 +2340,14 @@ function leisureOn(d){
       && f.start === a.time && String(f.who || "") === String(a.who || ""));
     if (i === -1) return { time:a.time, text:a.text, who:a.who, icon:"", place:"" };
     brugt.add(i);
-    return { time:a.time, text:a.text, who:a.who, icon:feed[i].icon, place:feed[i].location };
+    return { time:a.time, text:a.text, who:a.who, icon:feed[i].icon, place:feed[i].location, kilde:feed[i].kilde };
   });
 
   // Traeninger og kampe uden en manuel makker staar for sig selv
   feed.forEach((f, i) => {
     if (brugt.has(i)) return;
     ud.push({ time:f.allDay ? "" : f.start, text:f.subject, who:f.who,
-              icon:f.icon, place:f.location });
+              icon:f.icon, place:f.location, kilde:f.kilde });
   });
 
   return ud.sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
@@ -2661,6 +2712,10 @@ function draw(){
       }
     }
   }
+  for (const r of affaldPaaminde()){
+    soon.push({ days:r.dage, date:addDays(today, r.dage), kilde:"Tømning",
+                text:`${r.fraktion} tømmes ${r.dage === 0 ? "i dag" : "i morgen"}${r.dage === 1 ? " — sæt spanden ud i aften" : ""} (${r.adresse})` });
+  }
   for (const x of important) {
     if (x.waiting) continue;                   // de staar allerede under "kræver svar"
     const d = new Date(x.date + "T00:00:00");
@@ -2691,6 +2746,28 @@ function draw(){
   $("notesFold").innerHTML = foldKnap("notes", notes.length > NOTES_MAX);
   $("notes").innerHTML = notes.length ? (erAaben("notes") ? notes : notes.slice(0, NOTES_MAX)).map(noteLine).join("")
     : `<div class="empty">Ingen noter</div>`;
+  affaldTegn();                              // datoen kan have skiftet siden sidst
+}
+
+/* ── Tømning (settings/affald) ───────────────────────────────────────
+   Reglerne og beregningen ligger i affald.js (delt med opsætningen). Hentes som modul, så siden stadig virker, hvis filen mangler. */
+let affald = {}, AFF = null;
+import("./affald.js").then(m => { AFF = m; affaldTegn(); }).catch(e => console.error("affald:", e));
+function affaldPaaminde(){
+  if (!AFF) return [];
+  try { return AFF.paaminde(affald, AFF.dagIDag()); } catch (e){ console.error("affald:", e); return []; }
+}
+function affaldTegn(){
+  const kort = $("affKort");
+  if (!kort) return;
+  let data = [];
+  try { data = AFF ? AFF.oversigt(affald, AFF.dagIDag()) : []; } catch (e){ console.error("affald:", e); }
+  kort.hidden = data.length === 0;
+  if (!data.length){ $("affKrop").innerHTML = ""; return; }
+  const flere = data.length > 1;
+  $("affKrop").innerHTML = data.map(a => (flere ? `<div class="sub-label">${esc(a.adresse)}</div>` : "") +
+    a.raekker.map(r => `<div class="line aff-raekke${r.dage <= 1 ? " aff-snart" : ""}"><span class="aff-prik" style="background:${esc(r.farve)}"></span><span class="aff-navn">${esc(r.fraktion)}</span><span class="aff-nar">${esc(r.relativ)}<span class="aff-meta"> · ${esc(r.ugedag)} ${esc(r.dato)}</span></span></div>`).join("")
+  ).join("");
 }
 
 /* ── Hentning ────────────────────────────────────────────────── */
@@ -2702,7 +2779,7 @@ function paths(){
           `planner/${nextWk.id}`, `aula/${nextWk.id}`, `ics/${nextWk.id}`,
           `aula/${nextWk2.id}`,   `ics/${nextWk2.id}`,
           "settings/recurring", "settings/birthdays", "settings/weather",
-          "settings/dated", "settings/important", "settings/notes"];
+          "settings/dated", "settings/important", "settings/notes", "settings/affald", "settings/visning"];
 }
 
 function applyDoc(path, doc){
@@ -2718,6 +2795,8 @@ function applyDoc(path, doc){
   else if (path === "settings/recurring"){ series = p?.items || []; }
   else if (path === "settings/birthdays"){ birthdays = p?.items || []; }
   else if (path === "settings/weather"){ weather = p || {}; }
+  else if (path === "settings/affald"){ affald = p || {}; affaldTegn(); }
+  else if (path === "settings/visning"){ jokeVisning(p); }
   else if (path === "settings/dated"){ datedItems = p?.items || []; }
   else if (path === "settings/important"){ important = p?.items || []; }
   else if (path === "settings/notes"){
@@ -2877,6 +2956,17 @@ function elDage(d, nu = new Date()){
   for (const x of dage){ x.left = (x.min - lo) / span * 100; x.bredde = Math.max(2, (x.max - x.min) / span * 100); }
   return dage;
 }
+
+// «Kun søjler» skjuler alt andet end søjlediagrammet (tal, billigste periode, noter og prognose for de næste dage). Valget gemmes på denne enhed.
+const EL_ENKEL_NOEGLE = "familieoverblik-el-enkel";
+function elEnkel(til, gem = true){
+  $("elKort").classList.toggle("el-enkel", til);
+  $("elEnkelKnap").setAttribute("aria-pressed", String(til));
+  $("elEnkelKnap").textContent = til ? "Vis detaljer" : "Kun søjler";
+  if (gem){ try { localStorage.setItem(EL_ENKEL_NOEGLE, til ? "1" : "0"); } catch {} }
+}
+$("elEnkelKnap").addEventListener("click", () => elEnkel(!$("elKort").classList.contains("el-enkel")));
+try { if (localStorage.getItem(EL_ENKEL_NOEGLE) === "1") elEnkel(true, false); } catch {}
 
 function elTegn(nu = new Date()){
   if (!elData) return;
@@ -3189,6 +3279,12 @@ function psNaeste(){
   ps.tSlide = setTimeout(psNaeste, ps.cfg.sekunder * 1000);
 }
 
+/** Mens pauseskærmen er oppe, skjules sidens rullelinje (ellers ligger linjen ved siden af billedet, og det fylder ikke hele skærmen). */
+function psSkjulRullelinje(til){
+  const h = document.documentElement;
+  if (h && h.classList) h.classList.toggle("ps-aktiv", til);
+}
+
 function psStart(){
   if (ps.vis) return;
   if (!psKlar() || document.querySelector("dialog[open]")){ psNulstil(); return; }   // ikke ovenpå en åben dialog
@@ -3200,6 +3296,7 @@ function psStart(){
   }
   $("psUr").hidden = !ps.cfg.ur;
   $("psOverlay").hidden = false;
+  psSkjulRullelinje(true);
   psUrOpdater();
   psNaeste();
 }
@@ -3209,6 +3306,7 @@ function psStop(){
   ps.vis = false;
   clearTimeout(ps.tSlide); clearTimeout(ps.tUr);
   $("psOverlay").hidden = true;
+  psSkjulRullelinje(false);
   for (const id of ["psA", "psB"]){ $(id).classList.remove("synlig"); $(id).removeAttribute("src"); }
   ps.lukket = Date.now();
   psNulstil();
@@ -3302,6 +3400,53 @@ async function hentBil(){
   } catch (e){ console.error("bil:", e); }
 }
 
+// ── Fuld skærm ───────────────────────────────────────────────────────
+// Chrome på Android har ingen fuldskærmsknap, og en side må kun gå i fuld skærm efter et tryk. Knappen virker, hvor browseren har Fullscreen API
+// (også den præfikserede udgave i ældre Chrome, fx Android 5). Chrome går ud af fuld skærm, når siden skifter eller genindlæses; derfor huskes valget
+// på enheden, og første tryk efter en genindlæsning går i fuld skærm igen. «Afslut fuld skærm» slår det fra.
+const FS_NOEGLE = "familieoverblik-fuldskaerm";
+const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+const fsStart = () => { const h = document.documentElement; return h.requestFullscreen || h.webkitRequestFullscreen || null; };
+const fsSlut = () => document.exitFullscreen || document.webkitExitFullscreen || null;
+const fsHuskes = () => { try { return localStorage.getItem(FS_NOEGLE) === "1"; } catch { return false; } };
+const fsHusk = til => { try { localStorage.setItem(FS_NOEGLE, til ? "1" : "0"); } catch {} };
+const fsAlleredeFuld = () => typeof matchMedia === "function" && matchMedia("(display-mode: fullscreen)").matches;     // en installeret app uden rammer: ingen knap nødvendig
+const fsMulig = () => !!fsStart() && document.fullscreenEnabled !== false && !fsAlleredeFuld();
+function fuldskaermTegn(){
+  const k = $("fuldKnap");
+  if (!k) return;
+  k.hidden = !fsMulig();
+  const fuld = !!fsElement();
+  k.textContent = fuld ? "Afslut fuld skærm" : "Fuld skærm";
+  k.setAttribute("aria-pressed", String(fuld));
+}
+/** Gå i fuld skærm (ud fra et tryk). Valget huskes først, når browseren har sagt ja, så et afslag ikke efterlader en «huskes»-markering. */
+async function fuldskaermStart(){
+  const start = fsStart();
+  if (!start) return false;
+  try { await start.call(document.documentElement); fsHusk(true); return true; }
+  catch (e){ console.error("fuld skærm:", e && e.message ? e.message : e); return false; }
+}
+async function fuldskaermSkift(){
+  if (fsElement()){
+    fsHusk(false);
+    const slut = fsSlut();
+    if (slut){ try { await slut.call(document); } catch (e){ console.error("fuld skærm:", e); } }
+    return;
+  }
+  await fuldskaermStart();
+}
+if ($("fuldKnap")){
+  $("fuldKnap").addEventListener("click", fuldskaermSkift);
+  for (const h of ["fullscreenchange", "webkitfullscreenchange"]) document.addEventListener(h, fuldskaermTegn);
+  fuldskaermTegn();
+  // Efter en genindlæsning: ét tryk et vilkårligt sted går i fuld skærm igen (kun hvis det var slået til sidst, og der er plads til det)
+  if (fsMulig() && !fsElement() && fsHuskes()){
+    const igen = () => { document.removeEventListener("pointerdown", igen, true); if (!fsElement()) fuldskaermStart(); };
+    document.addEventListener("pointerdown", igen, true);
+  }
+}
+
 // ── Layout: flyt og klap kort sammen ────────────────────────────────
 // Hvert kort har data-kort. Layoutet er tre lister: kortene i kolonnen (#stak), kortene i den brede række
 // (direkte under #app) og de sammenklappede. Det gemmes i denne enheds localStorage, fordi en telefon og en
@@ -3310,13 +3455,16 @@ const LAY_KEY = "familieoverblik-layout-v1";
 
 function layRens(l, kendte, standard){
   // Kun kendte kort, hver højst én gang. Nye kort, som den gemte udgave ikke kender, kommer til i deres standardgruppe.
+  // halve = kort i den brede række, der kun fylder halv bredde (to side om side). skjult = kort, der slet ikke vises.
   const set = new Set(kendte), set2 = new Set();
-  const ud = { stak: [], bred: [], lukket: [] };
+  const ud = { stak: [], bred: [], halve: [], lukket: [], skjult: [] };
   for (const g of ["stak", "bred"]) for (const id of (l && Array.isArray(l[g]) ? l[g] : [])){
     if (typeof id === "string" && set.has(id) && !set2.has(id)){ ud[g].push(id); set2.add(id); }
   }
   for (const g of ["stak", "bred"]) for (const id of standard[g]) if (!set2.has(id)){ ud[g].push(id); set2.add(id); }
+  for (const id of (l && Array.isArray(l.halve) ? l.halve : [])) if (ud.bred.includes(id) && !ud.halve.includes(id)) ud.halve.push(id);
   for (const id of (l && Array.isArray(l.lukket) ? l.lukket : [])) if (set.has(id) && !ud.lukket.includes(id)) ud.lukket.push(id);
+  for (const id of (l && Array.isArray(l.skjult) ? l.skjult : [])) if (set.has(id) && !ud.skjult.includes(id)) ud.skjult.push(id);
   return ud;
 }
 
@@ -3334,12 +3482,25 @@ function layFlyt(l, id, retning, skjult = new Set()){
   return true;
 }
 
-/** Flyt et kort mellem kolonnen og den brede række. */
-function laySkift(l, id){
-  if (l.stak.includes(id)){ l.stak.splice(l.stak.indexOf(id), 1); l.bred.unshift(id); }
-  else if (l.bred.includes(id)){ l.bred.splice(l.bred.indexOf(id), 1); l.stak.push(id); }
+const LAY_STR = ["Smal", "Halv", "Bred"];
+/** Kortets størrelse: Smal = i kolonnen, Halv = to side om side i den brede række, Bred = hele rækken. */
+function layStr(l, id){ return l.stak.includes(id) ? "Smal" : l.bred.includes(id) ? (l.halve.includes(id) ? "Halv" : "Bred") : null; }
+
+/** Skift størrelse i rækken Smal → Halv → Bred → Smal. Smal → Halv lægger kortet forrest i den brede række, Bred → Smal bagerst i kolonnen. */
+function layStorrelse(l, id){
+  const nu = layStr(l, id);
+  if (nu === "Smal"){ l.stak.splice(l.stak.indexOf(id), 1); l.bred.unshift(id); l.halve.push(id); }
+  else if (nu === "Halv"){ l.halve.splice(l.halve.indexOf(id), 1); }
+  else if (nu === "Bred"){ l.bred.splice(l.bred.indexOf(id), 1); l.stak.push(id); }
   else return false;
   return true;
+}
+
+/** Skjul et kort helt (det bevarer sin plads, så det kommer tilbage samme sted), eller vis det igen. true = nu skjult. */
+function laySkjul(l, id){
+  const i = l.skjult.indexOf(id);
+  if (i >= 0) l.skjult.splice(i, 1); else l.skjult.push(id);
+  return i < 0;
 }
 
 /** Træk et kort hen foran et andet (også i den anden gruppe). */
@@ -3364,15 +3525,46 @@ function layFraDom(){
   return { stak: ids($("stak")), bred: ids($("app")), lukket: [] };
 }
 
+const layNavn = e => { const h = e && e.querySelector ? e.querySelector("h2") : null; return (h ? h.textContent : (e && e.dataset ? e.dataset.kort : "")).trim(); };
+
+function layBarHtml(bar, id, l){
+  const navn = bar.dataset.navn || id, str = layStr(l, id) || "Smal";
+  bar.innerHTML = `<b>${esc(navn)}</b>
+        <button type="button" data-lay="op" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} op">▲</button>
+        <button type="button" data-lay="ned" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} ned">▼</button>
+        <button type="button" data-lay="storrelse" data-lay-id="${esc(id)}" aria-label="Skift størrelse på ${esc(navn)} (nu ${str.toLowerCase()})">${str}</button>
+        <button type="button" data-lay="skjul" data-lay-id="${esc(id)}" aria-label="Skjul ${esc(navn)}">✕</button>`;
+}
+
 function layAnvend(l){
-  const per = Object.fromEntries(layKort().map(e => [e.dataset.kort, e]));
-  for (const id of l.stak) if (per[id]){ per[id].classList.remove("wide"); $("stak").appendChild(per[id]); }
-  for (const id of l.bred) if (per[id]){ per[id].classList.add("wide"); $("app").appendChild(per[id]); }
+  const app = $("app"), per = Object.fromEntries(layKort().map(e => [e.dataset.kort, e]));
+  const gamle = [...app.children].filter(e => e.classList && e.classList.contains("halv-raekke"));
+  for (const id of l.stak) if (per[id]){ per[id].classList.remove("wide", "half"); $("stak").appendChild(per[id]); }
+  let raekke = null;
+  for (const id of l.bred) if (per[id]){
+    if (l.halve.includes(id)){
+      if (!raekke){ raekke = document.createElement("div"); raekke.className = "halv-raekke"; app.appendChild(raekke); }
+      per[id].classList.remove("wide"); per[id].classList.add("half"); raekke.appendChild(per[id]);
+    } else {
+      raekke = null;
+      per[id].classList.remove("half"); per[id].classList.add("wide"); app.appendChild(per[id]);
+    }
+  }
+  for (const w of gamle) w.remove();                       // de gamle rækker er nu tomme
   for (const [id, e] of Object.entries(per)){
     const lukket = l.lukket.includes(id);
     e.classList.toggle("er-lukket", lukket);
+    e.classList.toggle("er-skjult", l.skjult.includes(id));
     const k = e.querySelector(".kort-klap");
     if (k) k.setAttribute("aria-expanded", lukket ? "false" : "true");
+    const bar = e.querySelector(".lay-bar");
+    if (bar) layBarHtml(bar, id, l);
+  }
+  // Panelet: de skjulte kort som knapper, så de kan hentes tilbage (de er ikke at se på siden)
+  const skjulte = l.skjult.filter(id => per[id]);
+  if ($("laySkjulteBlok")){
+    $("laySkjulteBlok").hidden = skjulte.length === 0;
+    $("laySkjulteListe").innerHTML = skjulte.map(id => `<button type="button" data-lay-vis="${esc(id)}" aria-label="Vis ${esc(layNavn(per[id]))} igen">＋ ${esc(layNavn(per[id]))}</button>`).join("");
   }
 }
 
@@ -3383,7 +3575,7 @@ function layLaes(){
 function layGem(){
   try { localStorage.setItem(LAY_KEY, JSON.stringify(layNu)); } catch {}
 }
-const laySkjulte = () => new Set(layKort().filter(e => e.hidden).map(e => e.dataset.kort));
+const laySkjulte = () => new Set([...layKort().filter(e => e.hidden).map(e => e.dataset.kort), ...(layNu ? layNu.skjult : [])]);
 
 function layBygKnapper(){
   for (const e of layKort()){
@@ -3396,13 +3588,10 @@ function layBygKnapper(){
       hoved.appendChild(k);
     }
     if (!e.querySelector(".lay-bar")){
-      const navn = (hoved && hoved.querySelector("h2") ? hoved.querySelector("h2").textContent : id).trim();
       const bar = document.createElement("div");
       bar.className = "lay-bar";
-      bar.innerHTML = `<b>${esc(navn)}</b>
-        <button type="button" data-lay="op" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} op">▲</button>
-        <button type="button" data-lay="ned" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} ned">▼</button>
-        <button type="button" data-lay="skift" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} mellem kolonnen og den brede række">↔</button>`;
+      bar.dataset.navn = layNavn(e);
+      if (layNu) layBarHtml(bar, id, layNu);
       e.insertBefore(bar, e.firstChild);
     }
   }
@@ -3434,10 +3623,13 @@ function layInit(){
   document.addEventListener("click", e => {
     const klap = e.target.closest && e.target.closest("[data-lay-klap]");
     if (klap){ layKlap(layNu, klap.dataset.layKlap); layGem(); layAnvend(layNu); return; }
+    const vis = e.target.closest && e.target.closest("[data-lay-vis]");
+    if (vis){ laySkjul(layNu, vis.dataset.layVis); layGem(); layAnvend(layNu); return; }
     const b = e.target.closest && e.target.closest("[data-lay]");
     if (!b) return;
     const id = b.dataset.layId;
-    const aendret = b.dataset.lay === "skift" ? laySkift(layNu, id) : layFlyt(layNu, id, b.dataset.lay, laySkjulte());
+    const h = b.dataset.lay;
+    const aendret = h === "storrelse" ? layStorrelse(layNu, id) : h === "skjul" ? (laySkjul(layNu, id), true) : layFlyt(layNu, id, h, laySkjulte());
     if (aendret){ layGem(); layAnvend(layNu); }
   });
 
@@ -3571,7 +3763,32 @@ function temaAnvend(vars){
   }
   return alle;
 }
+// Tema på denne enhed: «Som opsat» (standard: farverne fra Opsætning, ens på alle enheder) eller et forvalg på netop denne enhed (fx mørkt på væggen om aftenen).
+// «Automatisk» følger enhedens lys/mørk-indstilling. Valget gemmes kun her, og så henter siden ikke serverens farver.
+const TEMA_VALG_KEY = "familieoverblik-tema-valg";
+const TEMA_VALG_NAVNE = { standard: "Standard", varm: "Varm", moerk: "Mørk", hoj: "Høj kontrast" };
+const temaValgGyldigt = v => v === "auto" || Object.prototype.hasOwnProperty.call(TEMA_VALG_NAVNE, v);          // ikke «in»: «constructor» er ikke et tema
+let TEMAMOD = null, temaValg = (() => { try { const v = localStorage.getItem(TEMA_VALG_KEY) || ""; return temaValgGyldigt(v) ? v : ""; } catch { return ""; } })();
+function temaForvalg(valg){
+  if (!TEMAMOD || !valg) return null;
+  const moerkt = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
+  return TEMAMOD.TEMA_PRESETS[valg === "auto" ? (moerkt ? "Mørk" : "Standard") : TEMA_VALG_NAVNE[valg]] || null;
+}
+function temaValgAnvend(valg, gem = true){
+  temaValg = temaValgGyldigt(valg) ? valg : "";
+  if ($("temaValg")) $("temaValg").value = temaValg;
+  if (gem){ try { if (temaValg) localStorage.setItem(TEMA_VALG_KEY, temaValg); else localStorage.removeItem(TEMA_VALG_KEY); } catch {} }
+  if (!temaValg){ hentTema(); return; }                                     // tilbage til serverens farver
+  const vars = temaForvalg(temaValg);
+  if (!vars) return;                                                        // modulet er ikke hentet endnu: den gemte kopi virker, til det er det
+  const alle = temaAnvend(vars);
+  try { localStorage.setItem(TEMA_KEY, JSON.stringify({ vars: alle })); } catch {}
+}
+import("./tema-forvalg.js").then(m => { TEMAMOD = m; if ($("temaValg")) $("temaValg").value = temaValg; if (temaValg) temaValgAnvend(temaValg, false); }).catch(e => console.error("tema-forvalg:", e));
+if ($("temaValg")) $("temaValg").addEventListener("change", () => temaValgAnvend($("temaValg").value));
+if (typeof matchMedia === "function") matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (temaValg === "auto") temaValgAnvend("auto", false); });
 async function hentTema(){
+  if (temaValg) return;                                                     // et tema, valgt på denne enhed, går forud for serverens
   try {
     const r = await fetch("tema.php", { headers: HEAD, cache: "no-store", credentials: "same-origin" });
     if (!r.ok) return;
@@ -3615,7 +3832,7 @@ function alleFd(egne, familie = familieFd()){
 function fodselsdageIDag(d = new Date(), people = PEOPLE){
   return familieFd(people).filter(f => erFdIDag(f, d)).map(f => ({ id: f.id, navn: f.name, alder: f.year ? d.getFullYear() - f.year : null }));
 }
-const fdOg = n => n.length <= 1 ? n.join("") : n.slice(0, -1).join(", ") + " og " + n.at(-1);
+const fdOg = n => n.length <= 1 ? n.join("") : n.slice(0, -1).join(", ") + " og " + n[n.length - 1];
 /** Teksten i båndet. */
 function fdTekst(liste){
   if (!liste.length) return { tit: "", sub: "" };
@@ -3669,11 +3886,24 @@ $("siderListe").addEventListener("click", e => { if (e.target.closest && e.targe
 
 // ── Dagens joke (joke.php) ──────────────────────────────────────────
 // Serveren henter én joke om dagen fra JokeAPI (safe mode altid til). Svaret på en joke i to dele vises først, når man trykker.
+let visning = {}, jokeSidste = null;
+/** Hvordan kortene vises (settings/visning, sat i Opsætning): fx joke: «header» viser kun selve joken i toppen i stedet for et kort. */
+function jokeVisning(v){
+  visning = v && typeof v === "object" ? v : {};
+  if (jokeSidste) jokeTegn(jokeSidste);
+}
 function jokeTegn(d){
+  jokeSidste = d;
   const j = d && d.aktiv && d.joke;
   const ok = j && ((j.type === "twopart" && j.setup && j.delivery) || (j.type !== "twopart" && j.joke));
-  if (!ok){ $("jokeKort").hidden = true; return; }
-  $("jokeKort").hidden = false;
+  const top = visning.joke === "header";
+  if (!ok){ $("jokeKort").hidden = true; $("jokeTop").hidden = true; return; }
+  $("jokeTop").hidden = !top;
+  $("jokeKort").hidden = top;
+  if (top){
+    $("jokeTop").textContent = j.type === "twopart" ? `${j.setup} — ${j.delivery}` : j.joke;       // kun selve joken, ingen kategori, sprog eller kilde
+    return;
+  }
   const note = `<p class="jk-note">${esc(j.category || "")}${j.category ? " · " : ""}sprog: ${esc(j.lang || "?")} · fra JokeAPI${d.stale ? " · ikke opdateret i dag" : ""}</p>`;
   $("jokeIndhold").innerHTML = j.type === "twopart"
     ? `<p class="jk-tekst">${esc(j.setup)}</p><button type="button" class="jk-knap" data-joke-svar>Vis svaret</button><p class="jk-svar" hidden>${esc(j.delivery)}</p>${note}`
@@ -3688,7 +3918,7 @@ $("jokeIndhold").addEventListener("click", e => {
 async function hentJoke(){
   try {
     const r = await fetch("joke.php", { headers: HEAD, cache: "no-store", credentials: "same-origin" });
-    if (!r.ok){ $("jokeKort").hidden = true; return; }
+    if (!r.ok){ $("jokeKort").hidden = true; $("jokeTop").hidden = true; return; }
     jokeTegn(await r.json());
   } catch (e){ console.error("joke:", e); }
 }
@@ -3711,13 +3941,39 @@ function vejrStedetsTid(tidszone, nu = new Date()){
     return { time: nu.getHours(), dato: `${nu.getFullYear()}-${p(nu.getMonth() + 1)}-${p(nu.getDate())}` };
   }
 }
+// Vejrtype ud fra WMO-koden: giver farven på cellen (sol, skyet, regn, sne ...) og et ord. Ukendte koder regnes som overskyet.
+const VEJR_KLASSER = [[[0, 1], "sol", "Sol"], [[2], "lidt", "Let skyet"], [[3], "sky", "Overskyet"], [[45, 48], "taage", "Tåge"],
+  [[51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82], "regn", "Regn"], [[71, 73, 75, 77, 85, 86], "sne", "Sne"], [[95, 96, 99], "torden", "Torden"]];
+function vejrKlasse(kode){
+  const n = kode === null || kode === undefined || kode === "" || typeof kode === "boolean" ? NaN : Number(kode);          // null må ikke blive til 0 (sol)
+  const k = VEJR_KLASSER.find(([koder]) => koder.includes(n));
+  return k ? { k: k[1], navn: k[2] } : { k: "sky", navn: "Overskyet" };
+}
+/** Vindstyrke i ord (m/s, efter DMI's inddeling). */
+function vejrVindOrd(ms){
+  if (typeof ms !== "number" || isNaN(ms)) return "";
+  return ms < 0.5 ? "stille" : ms < 3.4 ? "svag vind" : ms < 8 ? "jævn vind" : ms < 13.9 ? "frisk vind" : ms < 20.8 ? "hård vind" : ms < 28.5 ? "storm" : "orkan";
+}
+/** Vindretning (grader, hvorfra det blæser) → «SV». Ugyldig giver tom tekst. */
+function vejrRetning(g){
+  if (typeof g !== "number" || isNaN(g)) return "";
+  return ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"][Math.round((((g % 360) + 360) % 360) / 45) % 8];
+}
+/** «5 m/s fra SV, stød 9» (kun det, der er data til). */
+function vejrVindTekst(vind, stoed, retning){
+  if (typeof vind !== "number" || isNaN(vind)) return "";
+  const r = vejrRetning(retning);
+  return `${Math.round(vind)} m/s${r ? " fra " + r : ""}${typeof stoed === "number" && stoed - vind >= 3 ? `, stød ${Math.round(stoed)}` : ""}`;
+}
 let vejrData = null, vejrValgt = "hjem";
 function vejrTimer(sted, nuTid){
   const nu = vejrStedetsTid(sted.tidszone, nuTid), samme = sted.dato === nu.dato;
-  return sted.timer.map(t => {
-    const time = Number(String(t.t).slice(0, 2)), klasse = samme && time === nu.time ? " nu" : samme && time < nu.time ? " forbi" : "";
+  // Kun hver 3. time (00, 03, 06 …): en række, der kan overskues. Timen, der er nu, markeres, og den, der er forbi, blegnes.
+  return sted.timer.filter(t => Number(String(t.t).slice(0, 2)) % 3 === 0).map(t => {
+    const time = Number(String(t.t).slice(0, 2)), klasse = samme && time <= nu.time && nu.time < time + 3 ? " nu" : samme && time + 3 <= nu.time ? " forbi" : "";
     const regn = t.regn >= 0.1 ? `${vejrMm(t.regn)} mm` : t.sand >= 30 ? `${t.sand} %` : "";
-    return `<div class="vk-t${klasse}" title="Føles som ${esc(vejrTemp(t.foeles))}, vind ${esc(t.vind ?? "–")} m/s"><div>${esc(String(t.t).slice(0, 2))}</div>${weatherIcon(t.kode)}<div><b>${esc(vejrTemp(t.temp))}</b></div><small>${esc(regn)}</small></div>`;
+    const vind = typeof t.vind === "number" ? `${Math.round(t.vind)} m/s` : "";
+    return `<div class="vk-t vk-${vejrKlasse(t.kode).k}${t.dag === 0 ? " nat" : ""}${klasse}" title="${esc(vejrKlasse(t.kode).navn)}. Føles som ${esc(vejrTemp(t.foeles))}. Vind ${esc(vejrVindTekst(t.vind, t.stoed, t.retning) || "–")}"><div>${esc(String(t.t).slice(0, 2))}</div>${weatherIcon(t.kode)}<div><b>${esc(vejrTemp(t.temp))}</b></div><small>${esc(regn)}</small><small class="vk-vind">${esc(vind)}</small></div>`;
   }).join("");
 }
 function vejrTegn(d, valgt = vejrValgt, nuTid = new Date()){
@@ -3737,9 +3993,9 @@ function vejrTegn(d, valgt = vejrValgt, nuTid = new Date()){
   const hentet = sted.hentet ? new Date(sted.hentet) : null;
   const hh = hentet && !isNaN(hentet) ? `${String(hentet.getHours()).padStart(2, "0")}.${String(hentet.getMinutes()).padStart(2, "0")}` : "";
   $("vejrIndhold").innerHTML = `${knapper}
-    <div class="vk-nu"><b>${esc(vejrTemp(i.max))}</b> / ${esc(vejrTemp(i.min))}${i.regn >= 0.1 ? ` · regn ${esc(vejrMm(i.regn))} mm` : ""}${i.sol_op ? ` · sol ${esc(i.sol_op.replace(":", "."))} til ${esc(i.sol_ned.replace(":", "."))}` : ""}</div>
+    <div class="vk-nu vk-${vejrKlasse(i.kode).k}"><b>${esc(vejrTemp(i.max))}</b> / ${esc(vejrTemp(i.min))} · ${esc(vejrKlasse(i.kode).navn.toLowerCase())}${i.regn >= 0.1 ? ` · regn ${esc(vejrMm(i.regn))} mm` : ""}${vejrVindTekst(i.vind, i.stoed, i.retning) ? ` · vind ${esc(vejrVindTekst(i.vind, i.stoed, i.retning))} (${esc(vejrVindOrd(i.vind))})` : ""}${i.sol_op ? ` · sol ${esc(i.sol_op.replace(":", "."))} til ${esc(i.sol_ned.replace(":", "."))}` : ""}</div>
     <div class="vk-timer" id="vejrTimer" aria-label="Timevejr i dag">${vejrTimer(sted, nuTid)}</div>
-    <div class="vk-dage">${sted.dage.map(x => `<div class="vk-d"><b>${esc(vejrDagNavn(x.dato))}</b>${weatherIcon(x.kode)}${esc(vejrTemp(x.max))} / ${esc(vejrTemp(x.min))}<br>${x.regn >= 0.1 ? esc(vejrMm(x.regn)) + " mm" : "tørt"}${x.sand >= 30 ? ` · ${esc(x.sand)} %` : ""}</div>`).join("")}</div>
+    <div class="vk-dage">${sted.dage.map(x => `<div class="vk-d vk-${vejrKlasse(x.kode).k}" title="${esc(vejrKlasse(x.kode).navn)}"><b>${esc(vejrDagNavn(x.dato))}</b>${weatherIcon(x.kode)}${esc(vejrTemp(x.max))} / ${esc(vejrTemp(x.min))}<br>${x.regn >= 0.1 ? esc(vejrMm(x.regn)) + " mm" : "tørt"}${x.sand >= 30 ? ` · ${esc(x.sand)} %` : ""}${typeof x.vind === "number" ? `<br><span class="vk-vind">${esc(vejrVindTekst(x.vind, x.stoed, x.retning))}</span>` : ""}</div>`).join("")}</div>
     <p class="vk-foot">${esc(sted.navn)}${hh ? " · opdateret " + hh : ""}${sted.stale ? " · gammelt, vejrtjenesten kunne ikke nås" : ""} · Open-Meteo</p>`;
   const strip = $("vejrTimer"), nuEl = strip && strip.querySelector ? strip.querySelector(".nu") : null;
   if (nuEl && strip.scrollTo) strip.scrollTo({ left: Math.max(0, nuEl.offsetLeft - strip.offsetLeft - 8) });
