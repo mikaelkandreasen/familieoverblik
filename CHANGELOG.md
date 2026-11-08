@@ -16,6 +16,21 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.5.6] – 2026-11-08
+
+### Rettet (Aula-login)
+Den nye log viste, at omdirigeringen blev fulgt, men at aula-biblioteket stadig afviste siden (`No SAML form found in broker response`). Koden i biblioteket (`mitid_client._process_broker_response`, sendt fra din container) viste hvorfor, og det var ikke `RelayState`:
+biblioteket er skrevet til **selv** at sende bekræftelsessiden: det tager den første `<form>` på siden, sender alle dens `<input>`-felter, forventer en **302**, henter dens `Location`, og forventer, at **den** side har Aula-formularen (`SAMLResponse`). Tilføjelsen (3.3.3 til 3.5.5) sendte bekræftelsen selv og gav biblioteket Aula-siden for tidligt. Biblioteket sendte så Aula-formularen, fik en 302 til portalen og ledte efter endnu en formular.
+- **Tilføjelsen sender nu kun rollevalget** (KONTAKT) og giver biblioteket **bekræftelsessiden** i stedet. Siden får to ændringer, så biblioteket kan sende den: en **fuld adresse** som `action` (httpx afviser relative adresser) og knappens felt (`accept=ACCEPT`) som **skjult felt**, fordi biblioteket kun læser `<input>`, ikke `<button name=accept>`, som en browser ville sende.
+- Er bekræftelsen ikke den første formular på siden (biblioteket tager altid den første), eller kan svaret ikke ændres, sender tilføjelsen selv som før, og det står i loggen.
+- `AULA_LOGIN_BEKRAEFT=send` (i `lokal/.env`) giver den gamle opførsel tilbage, hvis et senere bibliotek selv klarer rollesiden.
+- Aula-biblioteket er sat til **1.16.0** (den version, du har prøvet med).
+- Ny prøve `tests/test_aula_overdrag.py`: en tro gengivelse af bibliotekets eget forløb mod en falsk broker (23 prøver). Den viser, at forløbet nu kommer igennem, og at det gamle forløb giver præcis den fejl, du fik.
+- **Stadig ikke afprøvet mod Aula.** Siden efter omdirigeringen, Aulas svar på selve SAML-formularen og alt derefter (tokens, skema, breve) er ikke set endnu. Loggen (`aula-login:`) viser, hvor det eventuelt stopper.
+
+### Opdatering fra 3.5.5
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, tryk **Redeploy**, og kør `aula --username DIT-MITID-BRUGERNAVN login` i `aula`-containerens terminal igen. Du behøver ikke opgradere biblioteket selv, for billedet har 1.16.0 nu.
+
 ## [3.5.5] – 2026-11-08
 
 ### Rettet (Aula-login)

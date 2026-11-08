@@ -6,9 +6,15 @@ Efter MitID kan login-kæden lande på en side med en formular, som en browser v
   1. Rolle:        formularen har et felt  selected-aktoer.  For en forælder skal det være  KONTAKT.
   2. Bekræftelse:  formularen har knappen  #confirmation-button  (værdien ACCEPT). Den skal sendes for at komme videre.
 
-aula-biblioteket kender ikke nødvendigvis de to sider. Det her lægger sig i httpx (som biblioteket bruger),
-og når et svar fra broker.unilogin.dk eller login.aula.dk er en af de to formularer, sender det formularen
-og giver biblioteket svaret på selve afsendelsen, som om siden aldrig havde været der. Alt andet røres ikke.
+aula-biblioteket kender ikke de to sider. Det her lægger sig i httpx (som biblioteket bruger).
+
+  ROLLE:        tilføjelsen sender selv rolleformularen og giver biblioteket svaret (bekræftelsessiden), som om rollesiden aldrig havde været der.
+  BEKRÆFTELSE:  tilføjelsen sender den IKKE (standard «overdrag», AULA_LOGIN_BEKRAEFT=send for det gamle). Biblioteket (mitid_client._process_broker_response)
+                er skrevet til selv at sende siden efter rollevalget: det tager den FØRSTE <form> på siden, sender alle dens <input> til dens action,
+                forventer en 302, henter Location og forventer, at DEN side har en formular med SAMLResponse. Gav tilføjelsen biblioteket Aula-siden for tidligt (efter at have
+                sendt bekræftelsen selv og fulgt omdirigeringen), sendte biblioteket Aula-formularen og ledte efter endnu en formular: «No SAML form found in broker response».
+                Biblioteket ser kun <input>, ikke <button name=accept>, og en relativ action ville httpx afvise; derfor får bekræftelsessiden en fuld action og
+                knappens felt som skjult <input> (omskriv_formular), og så sender biblioteket den selv.
 SAML-sider (med SAMLResponse) har hverken selected-aktoer eller en bekræftelsesknap og lades urørt.
 
 Billeder: Aulas login loader et billede (typisk et lille sporingsbillede, der sætter en cookie), og først bagefter sendes man videre. En browser gør det af sig selv;
@@ -30,6 +36,7 @@ import os
 import re
 import sys
 from html.parser import HTMLParser
+import html as _html
 from urllib.parse import urljoin, urlsplit
 
 HOSTE = {"broker.unilogin.dk", "login.aula.dk"}
@@ -303,9 +310,10 @@ def planlaeg(html, url, oensket="KONTAKT", accept_felt=""):
     for form in forms:
         if er_rolleformular(form):
             return {"type": "rolle", "url": urljoin(url, form["action"] or url), "felter": byg_rolle(form, oensket), "tekst": tekst}
-    for form in forms:
+    for nr, form in enumerate(forms):
         if er_bekraeftelse(form):
-            return {"type": "bekraeftelse", "url": urljoin(url, form["action"] or url), "felter": byg_bekraeftelse(form, accept_felt), "tekst": tekst}
+            return {"type": "bekraeftelse", "url": urljoin(url, form["action"] or url), "felter": byg_bekraeftelse(form, accept_felt), "tekst": tekst,
+                    "nr": nr, "input_navne": {c["name"] for c in form["kontroller"] if c["tag"] == "input" and c["name"]}}
     return None
 
 
@@ -339,8 +347,6 @@ def _plan(resp, kwargs, set_):
     _log_svar(resp, f"{p['type']}-siden")
     if p["type"] == "rolle":
         _log(f"vælger rollen {p['felter'][ROLLE_FELT]} ({ROLLE_FELT})")
-    else:
-        _log(f"accepterer bekræftelsessiden. Siden siger: «{p['tekst'][:300]}». Felter sendt: {', '.join(sorted(p['felter'])) or 'ingen'}")
     return p
 
 
@@ -370,6 +376,59 @@ def _omdirigering_at_foelge(resp, kwargs):
         _log(f"svaret har ingen formular og sender videre til {_sti(mal)}, men det er ikke broker'en eller Aula. Følges ikke.")
         return None
     return mal
+
+
+def _bekraeft_mode():
+    """«overdrag» (standard): bekræftelsessiden gives til aula-biblioteket, som selv sender den og følger omdirigeringen (det er det forløb, biblioteket er skrevet til).
+    «send»: tilføjelsen sender selv bekræftelsen (som i 3.3.3 til 3.5.5, hvor biblioteket så fik Aula-siden for tidligt)."""
+    return "send" if os.environ.get("AULA_LOGIN_BEKRAEFT", "").strip().lower() == "send" else "overdrag"
+
+
+def omskriv_formular(html, nr, action, felter, findes):
+    """Formular nr. `nr` får en fuld adresse som action og et skjult felt for hvert felt, den ikke har som input (fx knappen «accept», som en browser sender, men som
+    biblioteket ikke ser, fordi det kun læser <input>). Returnerer den nye HTML, eller None hvis formularen ikke kan findes."""
+    tags = list(re.finditer(r"<form\b[^>]*>", html, flags=re.I))
+    if nr >= len(tags):
+        return None
+    m = tags[nr]
+    tag = re.sub(r"""\s+action\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)""", "", m.group(0), flags=re.I)
+    tag = tag[:-1].rstrip("/ \t\r\n") + f' action="{_html.escape(action, quote=True)}">'
+    nye = "".join(f'<input type="hidden" name="{_html.escape(n, quote=True)}" value="{_html.escape(str(v), quote=True)}">' for n, v in felter.items() if n not in findes)
+    return html[:m.start()] + tag + nye + html[m.end():]
+
+
+def _skift_tekst(resp, ny):
+    """Gør `ny` til svarets indhold, så biblioteket (der læser resp.text) ser den. Returnerer det svar, der skal bruges, eller None, hvis det ikke lykkedes."""
+    try:
+        if isinstance(getattr(type(resp), "text", None), property):             # rigtig httpx: text er læsbar og afledt af _content
+            resp.__dict__.pop("_text", None)
+            resp._content = ny.encode("utf-8")
+            resp._encoding = "utf-8"
+        else:                                                                   # simpel testklasse
+            resp.text = ny
+        if resp.text == ny:
+            return resp
+    except Exception as e:
+        _log(f"svaret kunne ikke ændres på stedet ({type(e).__name__}). Prøver et nyt svar.")
+    try:                                                                         # reserve: et nyt svar med samme status, adresse og anmodning
+        hoveder = {k: v for k, v in resp.headers.items() if k.lower() not in ("content-encoding", "content-length", "transfer-encoding")}
+        nyt = type(resp)(status_code=resp.status_code, headers=hoveder, content=ny.encode("utf-8"), request=getattr(resp, "request", None))
+        return nyt if nyt.text == ny else None
+    except Exception as e:
+        _log(f"kunne ikke lave et nyt svar ({type(e).__name__}).")
+        return None
+
+
+def _overdrag_bekraeftelse(resp, p):
+    """Bekræftelsessiden, klar til biblioteket: den fulde adresse og knappens felt som skjulte felter. Biblioteket sender den så selv, får en 302, følger den og finder Aula-formularen.
+    Returnerer det svar, biblioteket skal have, eller None (så sender tilføjelsen selv)."""
+    ny = omskriv_formular(resp.text, p["nr"], p["url"], p["felter"], p["input_navne"])
+    if ny is None:
+        return None
+    forms, _ = laes_formularer(ny)                                                # kontrol: første formular er bekræftelsen, med adressen og alle felter
+    if not forms or not er_bekraeftelse(forms[0]) or forms[0]["action"] != p["url"] or not set(p["felter"]) <= {c["name"] for c in forms[0]["kontroller"] if c["tag"] == "input"}:
+        return None
+    return _skift_tekst(resp, ny)
 
 
 def _http_omdirigering(resp, kwargs):
@@ -426,7 +485,15 @@ def install(httpx=None):
         set_, sendt, foelg, poster = set(), False, 0, 0
         for _ in range(MAX_HOP + MAX_FOELG + 2):                  # en side kan være en formular, en omdirigering, en ny formular …: skiftevis, med en fast grænse
             p = _plan(resp, kwargs, set_) if poster < MAX_HOP else None            # højst MAX_HOP formularer i alt
+            if p is not None and p["type"] == "bekraeftelse" and _bekraeft_mode() == "overdrag":
+                ny = _overdrag_bekraeftelse(resp, p)
+                if ny is not None:
+                    _log(f"gør bekræftelsessiden klar til biblioteket (det sender den selv). Siden siger: «{p['tekst'][:300]}». Felter: {', '.join(sorted(p['felter'])) or 'ingen'}")
+                    return ny
+                _log("kunne ikke gøre bekræftelsessiden klar til biblioteket. Sender den selv i stedet.")
             if p is not None:
+                if p["type"] == "bekraeftelse":
+                    _log(f"accepterer bekræftelsessiden. Siden siger: «{p['tekst'][:300]}». Felter sendt: {', '.join(sorted(p['felter'])) or 'ingen'}")
                 req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
                 resp = await orig_async(self, req, *args, **kwargs)
                 sendt = True
@@ -458,7 +525,15 @@ def install(httpx=None):
         set_, sendt, foelg, poster = set(), False, 0, 0
         for _ in range(MAX_HOP + MAX_FOELG + 2):                  # en side kan være en formular, en omdirigering, en ny formular …: skiftevis, med en fast grænse
             p = _plan(resp, kwargs, set_) if poster < MAX_HOP else None            # højst MAX_HOP formularer i alt
+            if p is not None and p["type"] == "bekraeftelse" and _bekraeft_mode() == "overdrag":
+                ny = _overdrag_bekraeftelse(resp, p)
+                if ny is not None:
+                    _log(f"gør bekræftelsessiden klar til biblioteket (det sender den selv). Siden siger: «{p['tekst'][:300]}». Felter: {', '.join(sorted(p['felter'])) or 'ingen'}")
+                    return ny
+                _log("kunne ikke gøre bekræftelsessiden klar til biblioteket. Sender den selv i stedet.")
             if p is not None:
+                if p["type"] == "bekraeftelse":
+                    _log(f"accepterer bekræftelsessiden. Siden siger: «{p['tekst'][:300]}». Felter sendt: {', '.join(sorted(p['felter'])) or 'ingen'}")
                 req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
                 resp = orig_sync(self, req, *args, **kwargs)
                 sendt = True

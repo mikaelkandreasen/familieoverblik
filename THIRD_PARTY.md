@@ -6,7 +6,7 @@
 
 | Billede | Bibliotek | Licens | Bemærkning |
 |---|---|---|---|
-| aula | [`aula`](https://pypi.org/project/aula/) 1.15.0 | MIT | Uofficielt bibliotek til Aula. Dets egne afhængigheder installeres med og har hver deres licens. |
+| aula | [`aula`](https://pypi.org/project/aula/) 1.16.0 | MIT | Uofficielt bibliotek til Aula. Dets egne afhængigheder installeres med og har hver deres licens. |
 | bil | [`hyundai-kia-connect-api`](https://pypi.org/project/hyundai-kia-connect-api/) 4.49.0 | MIT | Afhænger bl.a. af `beautifulsoup4`, `requests`, `certifi`, `tzdata` og `geopy` (hver med sin egen licens). |
 | alle | Basisbillederne (`php:apache`, `python`, `alpine` m.fl.) | Hver sin | Se billedernes sider på Docker Hub. De er ikke en del af dette repo. |
 

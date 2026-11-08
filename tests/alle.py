@@ -2,7 +2,7 @@
 Kræver Python 3.11+ og Node 22+. PHP, Apache og Docker er IKKE nødvendige (og bruges ikke). test_rettigheder.py springer sig selv over, hvis man ikke er root."""
 import os, subprocess, sys, time
 ROD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PY = ["test_skjulte_filer", "test_bootstrap", "test_scripts", "test_opbygning", "test_totp", "test_backlog", "test_aulapatch", "test_aula_diagnose", "test_aaben_visning", "test_pak", "test_praesentation", "test_rettigheder"]
+PY = ["test_skjulte_filer", "test_bootstrap", "test_scripts", "test_opbygning", "test_totp", "test_backlog", "test_aulapatch", "test_aula_diagnose", "test_aula_overdrag", "test_aaben_visning", "test_pak", "test_praesentation", "test_rettigheder"]
 def koer(cmd):
     t0 = time.time(); r = subprocess.run(cmd, capture_output=True, text=True, cwd=ROD)
     return r.returncode == 0, sum(1 for l in r.stdout.splitlines() if l.startswith("ok")), [l[:170] for l in r.stdout.splitlines() if l.startswith("FEJL")][:3], time.time() - t0, r.stdout, r.stderr

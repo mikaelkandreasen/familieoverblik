@@ -74,7 +74,7 @@ Du skal bruge: en server med Docker (en lille mini-pc er nok) og [Dockhand](http
 
 ## Status
 
-**Tidlig udgave (version 3.x).** Koden er afprøvet med **396 automatiske Python-prøver og 1.027 JavaScript-prøver**, men ikke alt er prøvet mod de rigtige tjenester:
+**Tidlig udgave (version 3.x).** Koden er afprøvet med **419 automatiske Python-prøver og 1.027 JavaScript-prøver**, men ikke alt er prøvet mod de rigtige tjenester:
 - **Aula-login** bruger et uofficielt bibliotek og er prøvet mod en simulering, ikke mod Aula. Det er den mest skrøbelige del.
 - **PHP, Apache og Docker** er ikke kørt i udviklingsmiljøet, så login, totrinsbekræftelse og åben visning skal prøves på en rigtig server.
 - Tjenester som Hyundai, Strava og Open-Meteo kan ændre sig og dermed bryde en del af løsningen.

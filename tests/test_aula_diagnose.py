@@ -2,6 +2,7 @@
 import asyncio, contextlib, io, os, sys
 _R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_R, "tests", "fakehttpx")); sys.path.insert(0, os.path.join(_R, "docker", "aula", "patch"))
+os.environ["AULA_LOGIN_BEKRAEFT"] = "send"                # de ældre prøver tester forløbet, hvor tilføjelsen selv sender bekræftelsen (se test_aula_overdrag.py for standarden)
 import httpx
 import aula_login_forms as F
 ok_all = True
