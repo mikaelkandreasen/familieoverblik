@@ -428,7 +428,14 @@
     "Kun med PIN-kode (standard)": "Only with the PIN code (default)",
     "Forsiden kan ses uden PIN-kode (PIN til alt andet)": "The front page can be seen without a PIN code (PIN for everything else)",
     "Fuld skærm": "Full screen",
-    "Afslut fuld skærm": "Exit full screen"
+    "Afslut fuld skærm": "Exit full screen",
+    "Kantine": "Canteen",
+    "Læs tidsplanen fra en PDF-tømmekalender": "Read the schedule from a PDF collection calendar",
+    "PDF-fil": "PDF file",
+    "Eller indsæt teksten fra PDF'en": "Or paste the text from the PDF",
+    "Læs teksten": "Read the text",
+    "Læg de valgte ind i tidsplanen": "Add the selected ones to the schedule",
+    "Se datoerne": "See the dates"
    }
   },
   "de": {
@@ -857,7 +864,14 @@
     "Kun med PIN-kode (standard)": "Nur mit PIN-Code (Standard)",
     "Forsiden kan ses uden PIN-kode (PIN til alt andet)": "Die Startseite ist ohne PIN-Code sichtbar (PIN für alles andere)",
     "Fuld skærm": "Vollbild",
-    "Afslut fuld skærm": "Vollbild beenden"
+    "Afslut fuld skærm": "Vollbild beenden",
+    "Kantine": "Kantine",
+    "Læs tidsplanen fra en PDF-tømmekalender": "Zeitplan aus einem PDF-Abfallkalender lesen",
+    "PDF-fil": "PDF-Datei",
+    "Eller indsæt teksten fra PDF'en": "Oder den Text aus der PDF einfügen",
+    "Læs teksten": "Text lesen",
+    "Læg de valgte ind i tidsplanen": "Die Ausgewählten in den Zeitplan übernehmen",
+    "Se datoerne": "Daten ansehen"
    }
   }
  }

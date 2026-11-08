@@ -1,0 +1,33 @@
+import fs from "fs";
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const k = new Function("esc", fs.readFileSync("/tmp/brev_block.js", "utf8") + "; return { brevKrop, brevAfsnit, brevAfsnitHtml, brevBlok };")(esc);
+// et opdigtet brev med samme opbygning som det rigtige: skemaet som løse linjer, så hilsen, overskrifter, «Emne: tekst» og en afslutning
+const SKEMA = ["Barn 4Auge 46", "Uge 46", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "7:45-8:30", "Billedkunst (AA, BB)", "Linoleumstryk.", "Matematik (AA, BB)", "9:15-9:35", "Pause", "Pause", "Pause", "Pause", "Pause", "12:30-13:15", "Dansk (AA, BB)", "Bibliotek"];
+const BREV = ["Kære forældre,", "Ugen der gik:", "Først og fremmest tak for en god skolefest.", "Novemberlæsning: Traditionen tro sætter skolen fokus på højtlæsning.", "Værkstedsmatematik: I næste uge ændres fredagens timer.", "Ugen der kommer:", "Den kommende uge ligner en normal uge.", "Kl. 8: Mødetid på skolen.", "Med ønsket om en god weekend,", "Team 4."];
+const FULD = [...SKEMA, ...BREV].join("\n");
+t("nyt data: «body» bruges, som den er", k.brevKrop({ body: "Kære forældre,\nHej", full: FULD }) === "Kære forældre,\nHej");
+t("gammelt data (kun «full», skemaet som løse linjer før hilsenen): der klippes ved hilsenen, og skemaet er væk", k.brevKrop({ full: FULD }) === BREV.join("\n") && !k.brevKrop({ full: FULD }).includes("Billedkunst"));
+t("et brev uden skema (ingen klokkeslæt) røres ikke, også selvom det har en hilsen", k.brevKrop({ full: BREV.join("\n") }) === BREV.join("\n") && k.brevKrop({ full: "Bare en besked" }) === "Bare en besked");
+t("klokkeslæt EFTER hilsenen (i selve brevet) får ikke brevet til at blive klippet", k.brevKrop({ full: "Kære forældre,\nMødetid 8:00-9:00 på skolen.\n8:00-9:00\nMed hilsen" }) === "Kære forældre,\nMødetid 8:00-9:00 på skolen.\n8:00-9:00\nMed hilsen");
+t("tom eller ugyldig «body» falder tilbage til «full», og skrald giver tom tekst uden fejl", k.brevKrop({ body: "  ", full: "x" }) === "x" && k.brevKrop(null) === "" && k.brevKrop({}) === "" && k.brevKrop({ preview: "p" }) === "p");
+const a = k.brevAfsnit(BREV.join("\n"));
+t("første linje er hilsenen; «Ugen der gik:» og «Ugen der kommer:» er overskrifter (uden kolon)", a[0].type === "hilsen" && a[1].type === "h" && a[1].tekst === "Ugen der gik" && a[5].type === "h" && a[5].tekst === "Ugen der kommer");
+t("«Emne: tekst» får emnet fremhævet, og teksten er resten", a[3].label === "Novemberlæsning" && a[3].tekst.startsWith("Traditionen tro") && a[4].label === "Værkstedsmatematik");
+t("en almindelig sætning er et afsnit, og «Kl. 8: Mødetid» (punktum i emnet) er ikke et emne", a[2].type === "p" && !a[2].label && a[7].type === "p" && !a[7].label && a[7].tekst.startsWith("Kl. 8:"));
+t("afslutningen («Med ønsket om en god weekend,») og det, der følger («Team 4.»), er «slut»", a[8].type === "slut" && a[9].type === "slut");
+t("en hilsen midt i brevet gør ikke resten til afslutning, før den kommer; og «Hej» først er hilsen, men ikke i midten", (() => { const x = k.brevAfsnit("Hej alle,\nHej med dig, du er sød.\nMvh\nTeam"); return x[0].type === "hilsen" && x[1].type === "p" && x[2].type === "slut" && x[3].type === "slut"; })());
+t("tomme linjer og mellemrum sorteres fra", k.brevAfsnit("\n  \nKære,\n\n  Tekst  \n").map(x => x.tekst).join("|") === "Kære,|Tekst");
+t("lange linjer med kolon sidst er ikke overskrifter (højst 40 tegn), og et kolon midt i en lang sætning er ikke et emne", k.brevAfsnit("Det her er en meget lang linje, som ender med et kolon, og så er det ikke en overskrift:")[0].type === "p" && k.brevAfsnit("Husk at tage en madpakke med, og husk også: drikkedunk til alle børn.")[0].label === undefined);
+const h = k.brevBlok({ full: FULD }, true);
+t("foldet ud: afsnit med overskrifter (h4), fremhævet emne (strong), hilsen og afslutning, i en beholder; skemaet er ikke med", h.startsWith('<div class="brev-tekst"><p class="hilsen">Kære forældre,</p><h4>Ugen der gik</h4>') && h.includes("<p><strong>Novemberlæsning:</strong> Traditionen tro") && h.includes('<p class="slut">Team 4.</p>') && !h.includes("Billedkunst") && !h.includes("Pause"), h.slice(0, 200));
+const c = k.brevBlok({ full: FULD }, false);
+t("sammenfoldet: løbende tekst uden hilsen og overskrifter, i p.klip (som før), uden skema", c.startsWith('<p class="klip">Ugen der gik Først og fremmest tak') && !c.includes("Kære") && !c.includes("Billedkunst") && !c.includes("<h4>"), c.slice(0, 160));
+t("HTML i brevet escapes (ingen script fra et brev)", k.brevBlok({ body: 'Kære,\n<script>alert(1)</script>\nEmne: <b>x</b>' }, true).includes("&lt;script&gt;") && !k.brevBlok({ body: "<img onerror=x>" }, true).includes("<img") && !k.brevBlok({ body: "<img onerror=x>" }, false).includes("<img"));
+t("et tomt brev giver en tom blok uden fejl (både foldet ind og ud)", k.brevBlok({}, true) === '<div class="brev-tekst"></div>' && k.brevBlok({}, false) === '<p class="klip"></p>');
+// siden
+const ov = fs.readFileSync(import.meta.dirname + "/../../public_html/overblik.html", "utf8");
+t("brevkortet bruger brevBlok, og den gamle brevTekst er væk", ov.includes("${brevBlok(l, brevAaben)}") && !ov.includes("brevTekst("));
+t("CSS til overskrifter, hilsen og afslutning findes, og noter i skemaet har en stil", /\.letter \.brev-tekst h4\{/.test(ov) && /\.letter \.brev-tekst \.hilsen\{/.test(ov) && /\.su-t \.lok\.note\{/.test(ov) && ov.includes('${t.note ? `<span class="lok note">${esc(t.note)}</span>` : ""}'));
+t("skemavinduets tomme besked nævner barnet og hvor skemaet kommer fra", /Der er intet skema for uge \$\{w\.week\} til \$\{esc\(skemaBarn\)\} endnu\. Skemaet kommer fra Aulas kalender eller fra tabellen i ugebrevet/.test(ov));
+process.exit(T.every(Boolean) ? 0 : 1);

@@ -27,6 +27,10 @@ put("aff_idx_block.js", skær(idx, '/* ── Tømning (settings/affald)', '/* �
 put("kilde_block.js", skær(ov, 'function kalenderKilde(x){', 'function kildeAf'))
 put("vl_idx_block.js", skær(idx, '/* ── Tilfældig vælger: egne lister', '/* ── Opsætning som træ'))
 put("fs_block.js", skær(ov, '// ── Fuld skærm ──', '// ── Layout: flyt og klap kort sammen'))
+put("aff_pdf_block.js", skær(idx, '/* ── Tømning: læs fra PDF', '/* ── Slut: tømning PDF ── */'))
+put("kant_block.js", skær(ov, '// ── Kantine ──', '// ── Slut: kantine ──'))
+put("brev_block.js", skær(ov, '// ── Ugebrev: tekst og afsnit ──', '// ── Slut: ugebrev ──'))
+put("faner_block.js", skær(idx, '// ── Faner og links ──', '// ── Slut: faner og links ──'))
 put("fam_block.js", skær(idx, '/* ── Familie og forbindelser (indstillinger)', '/* ── Login og sikkerhed'))
 put("to_block.js", skær(idx, '/* ── Login og sikkerhed (totrinsbekræftelse)', '/* ── Sprog (indstillinger)'))
 # overblik.html

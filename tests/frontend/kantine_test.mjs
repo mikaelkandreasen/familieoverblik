@@ -1,0 +1,28 @@
+import fs from "fs";
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const k = new Function("esc", fs.readFileSync("/tmp/kant_block.js", "utf8") + "; return { kantineValg, kantineHtml, KANT_DAGE };")(esc);
+const DAGE = { "1": "Kartoffel/ porre suppe", "2": "Frikadeller, rugbrød og rødkål", "3": "Pasta salat m. Kyllingelår", "4": "Efterårsgrød m. Æblemos", "5": "Kylling i karry m. Ris" };
+const d = (y, m, dd) => new Date(y, m - 1, dd, 12, 0);                       // 2026-11-09 er en mandag
+const uger = (denne, naeste) => [{ uge: 46, kantine: denne }, { uge: 47, kantine: naeste }];
+let v = k.kantineValg(uger({ dage: DAGE }, null), d(2026, 11, 11));
+t("onsdag: denne uges menu, fem rækker, onsdag er i dag, mandag og tirsdag er forbi", v.uge === 46 && v.erDenne && v.raekker.length === 5 && v.raekker.map(r => r.idag) .join() === "false,false,true,false,false" && v.raekker.map(r => r.forbi).join() === "true,true,false,false,false");
+t("rækkerne har rigtig dag og ret (første: Mandag – Kartoffel/ porre suppe)", v.raekker[0].dag === "Mandag" && v.raekker[0].ret === "Kartoffel/ porre suppe" && v.raekker[4].dag === "Fredag");
+t("mandag: ingen er forbi, mandag er i dag", (x => x.raekker[0].idag && !x.raekker.some(r => r.forbi))(k.kantineValg(uger({ dage: DAGE }, null), d(2026, 11, 9))));
+t("fredag: fredag er i dag, de fire før er forbi", (x => x.raekker[4].idag && x.raekker.slice(0, 4).every(r => r.forbi))(k.kantineValg(uger({ dage: DAGE }, null), d(2026, 11, 13))));
+v = k.kantineValg(uger({ dage: DAGE }, { dage: { "1": "Næste uge" } }), d(2026, 11, 14));
+t("lørdag og søndag: NÆSTE uges menu, hvis den findes (uge 47), og intet er forbi eller i dag", v.uge === 47 && !v.erDenne && v.raekker.length === 1 && !v.raekker[0].idag && !v.raekker[0].forbi && k.kantineValg(uger({ dage: DAGE }, { dage: { "1": "x" } }), d(2026, 11, 15)).uge === 47);
+v = k.kantineValg(uger({ dage: DAGE }, null), d(2026, 11, 14));
+t("i weekenden uden næste uges menu vises denne uges (alle dage er forbi)", v.uge === 46 && v.erDenne && v.raekker.every(r => r.forbi && !r.idag));
+v = k.kantineValg(uger(null, { dage: DAGE }), d(2026, 11, 10));
+t("hverdag uden denne uges menu, men med næste uges: den vises (uge 47), og ingen markeres som i dag eller forbi", v.uge === 47 && !v.erDenne && v.raekker.every(r => !r.idag && !r.forbi));
+t("ingen menu (null, tom, tomme dage, ingen uger) giver null", [uger(null, null), uger({ dage: {} }, null), uger({ dage: { "1": "  " } }, null), uger({}, {}), [], [undefined, undefined]].every(x => k.kantineValg(x, d(2026, 11, 11)) === null));
+v = k.kantineValg(uger({ dage: { "2": "Pizza", "4": "Suppe", "5": "Fisk" } }, null), d(2026, 11, 11));
+t("en uge med fridage: kun de dage, der har en ret, vises (tirsdag, torsdag, fredag), med rigtig forbi/i dag", v.raekker.map(r => r.dag).join() === "Tirsdag,Torsdag,Fredag" && v.raekker[0].forbi && !v.raekker[1].forbi);
+t("dage uden for mandag–fredag (6 og 7) og ikke-tekst-retter ignoreres uden fejl", (x => x.raekker.length === 2 && x.raekker[1].ret === "5")(k.kantineValg(uger({ dage: { "1": "A", "5": 5, "6": "lørdag", "7": "søndag", "0": "nul" } }, null), d(2026, 11, 11))));
+t("HTML i en ret escapes", k.kantineHtml({ raekker: [{ dag: "Mandag", ret: "<script>alert(1)</script> & \"x\"", idag: false, forbi: false }] }).includes("&lt;script&gt;") && !k.kantineHtml({ raekker: [{ dag: "Mandag", ret: "<b>", idag: false, forbi: false }] }).includes("<b>"));
+t("rækken får klasserne idag og forbi", k.kantineHtml({ raekker: [{ dag: "Mandag", ret: "x", idag: true, forbi: false }, { dag: "Tirsdag", ret: "y", idag: false, forbi: true }, { dag: "Onsdag", ret: "z", idag: false, forbi: false }] }).match(/class="kant-r(?: idag)?(?: forbi)?"/g).join("|") === 'class="kant-r idag"|class="kant-r forbi"|class="kant-r"');
+const ov = fs.readFileSync(import.meta.dirname + "/../../public_html/overblik.html", "utf8");
+t("kortet findes i kolonnen (skjult, data-kort=kantine, overskriften «Kantine»), og data fra aula-dokumentet tages med", /<section class="card" id="kantKort" hidden data-kort="kantine">[\s\S]*?<h2>Kantine<\/h2>[\s\S]*?id="kantUge"[\s\S]*?id="kantKrop"/.test(ov) && ov.includes("kantine:p?.kantine||null") && ov.includes('const kv = kantineValg([wk, nextWk].map(u => ({ uge: u.week, kantine: bucket(u.id).aula.kantine })), today);') && ov.includes('$("kantKort").hidden = !kv;'));
+t("kortet ligger i den smalle kolonne, så «Tilpas layout» kan flytte, skjule og gøre det halvt eller bredt (som de andre kort)", ov.indexOf('data-kort="affald"') < ov.indexOf('data-kort="kantine"') && ov.indexOf('data-kort="kantine"') < ov.indexOf('data-kort="vejr"'));
+process.exit(T.every(Boolean) ? 0 : 1);

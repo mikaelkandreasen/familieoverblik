@@ -1,0 +1,11 @@
+import fs from "fs";
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const f = new Function(fs.readFileSync("/tmp/faner_block.js", "utf8") + "; return { faneFraHash, FANE_HASH };")();
+t("#ops og #opsaetning er Opsætning, #mad og #madplan er Madplan, #uge og #ugeplan er Uge, #faste er Faste", f.faneFraHash("#ops") === "ops" && f.faneFraHash("#opsaetning") === "ops" && f.faneFraHash("#mad") === "mad" && f.faneFraHash("#madplan") === "mad" && f.faneFraHash("#uge") === "uge" && f.faneFraHash("#ugeplan") === "uge" && f.faneFraHash("#faste") === "faste");
+t("store bogstaver, uden #, og med mellemrum omkring er ligegyldigt for kendte navne (undtagen mellemrum)", f.faneFraHash("#OPS") === "ops" && f.faneFraHash("Mad") === "mad" && f.faneFraHash("#Madplan") === "mad");
+t("ukendte, tomme og forkerte navne giver null (så Uge forbliver udgangspunktet), også objektnavne som constructor og __proto__", ["", "#", "#ukendt", "#ops?x", "#constructor", "#__proto__", "#toString", "#hasOwnProperty", null, undefined, 5].every(x => f.faneFraHash(x) === null));
+const ix = fs.readFileSync(import.meta.dirname + "/../../public_html/index.html", "utf8"), ov = fs.readFileSync(import.meta.dirname + "/../../public_html/overblik.html", "utf8");
+t("siden starter på den fane, linket peger på (og ellers Uge), og et nyt link, mens siden er åben, skifter fane", ix.includes('let fane = faneFraHash(location.hash) || "uge";') && /window\.addEventListener\("hashchange", \(\) => \{[^}]*faneFraHash\(location\.hash\)[^}]*visFane\(f\)/s.test(ix));
+t("forsidens menu: «Opsætning» går direkte til opsætningsfanen, og «Madplan» er nyt og går til madplanen", ov.includes('<a role="menuitem" href="index.html#ops">Opsætning</a>') && ov.includes('<a role="menuitem" href="index.html#mad">Madplan</a>') && ov.indexOf('href="index.html#mad"') < ov.indexOf('href="gaest-wifi.html"'));
+t("hvert hash-navn i FANE_HASH peger på en fane, der findes (uge, mad, faste, ops)", Object.values(f.FANE_HASH).every(v => ["uge", "mad", "faste", "ops"].includes(v)) && /const FANER = \{ uge:"fUge", mad:"fMad", faste:"fFaste", ops:"fOps" \};/.test(ix));
+process.exit(T.every(Boolean) ? 0 : 1);

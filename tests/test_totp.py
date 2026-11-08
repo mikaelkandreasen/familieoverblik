@@ -50,6 +50,12 @@ r = js(kor("totp", "start", stdin=b"{}", nu=N)); secret = r["secret"]
 t("start: en ny 32-tegns base32-hemmelighed og en otpauth-adresse med appens navn, SHA1, 6 cifre og 30 sekunder", re.fullmatch(r"[A-Z2-7]{32}", secret) and r["uri"] == f"otpauth://totp/Familieoverblik?secret={secret}&issuer=Familieoverblik&algorithm=SHA1&digits=6&period=30", r)
 t("start: hemmeligheden gemmes med rettighed 660, men er endnu IKKE slået til", oct(os.stat(f"{D}/private/totp.json").st_mode & 0o777) == "0o660" and js(kor("totp", "status"))["aktiv"] is False)
 t("start to gange giver en ny hemmelighed (den gamle kan ikke bruges)", js(kor("totp", "start", stdin=b"{}", nu=N))["secret"] != secret)
+r = kor("totp", "start", stdin=b"[]", nu=N)
+t("«start» med [] som krop virker: det er det, totp.php sender, når «handling» var det eneste felt (PHP gør et tomt array til [], ikke {}). Fejlen var «Forespørgslen skal være JSON»", r.returncode == 0 and "secret" in js(r), (r.stdout + r.stderr).decode()[-200:])
+r = kor("totp", "fra", stdin=b"[]", nu=N)
+t("andre handlinger med [] giver en forklaring på det, der mangler, og ikke «skal være JSON»", r.returncode == 1 and "JSON" not in js(r)["fejl"], js(r))
+r = kor("totp", "start", stdin=b"[1, 2]", nu=N)
+t("en liste med noget i er stadig ikke en forespørgsel (afvises som JSON-fejl)", r.returncode == 1 and "skal være JSON" in js(r)["fejl"], js(r))
 secret = json.loads(L(f"{D}/private/totp.json"))["afventer"]["secret"]
 r = kor("totp", "bekraeft", stdin=b'{"kode":"000000"}', nu=N); t("bekræft med forkert kode afvises, og intet slås til", r.returncode == 1 and "passer ikke" in js(r)["fejl"] and js(kor("totp", "status"))["aktiv"] is False)
 r = kor("totp", "bekraeft", stdin=json.dumps({"kode": B.hotp(secret, N // 30)}).encode(), nu=N + AFV if (AFV := 901) else N); t("bekræft efter 15 minutter er udløbet", r.returncode == 1 and "udløbet" in js(r)["fejl"])

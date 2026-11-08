@@ -14,6 +14,10 @@ def kor(h, p=None, nu=None):
 ok = lambda h, p=None, **k: kor(h, p, **k)[1]
 def fejl(h, p, tekst=None):
     c, j = kor(h, p); return c == 1 and j["ok"] is False and (tekst is None or tekst in j["fejl"])
+r = subprocess.run([sys.executable, BOOT, "backlog", "liste"], input=b"[]", capture_output=True, env=E)
+t("«liste» med [] som krop virker (det backlog.php sender, når «handling» er det eneste felt)", r.returncode == 0 and json.loads(r.stdout.decode().strip().splitlines()[-1])["ok"] is True, r.stdout[-200:])
+r = subprocess.run([sys.executable, BOOT, "backlog", "liste"], input=b"[1]", capture_output=True, env=E)
+t("en liste med noget i afvises stadig", r.returncode == 1 and "skal være JSON" in json.loads(r.stdout.decode().strip().splitlines()[-1])["fejl"])
 j = ok("liste")
 t("tom liste og de faste valg", j["ok"] and j["punkter"] == [] and j["kategorier"][0] == "billeder" and j["prioriteter"] == ["P1", "P2", "P3", "P4"] and j["statusser"] == ["Idé", "Planlagt", "I gang", "Færdig", "Droppet"])
 j = ok("nyt", {"titel": "  Tømmekalender  ", "beskrivelse": "Vis tømning\r\nfor Skanderborg", "kategori": "kalender", "prioritet": "P2", "af": "Anna"}); p1 = j["punkt"]

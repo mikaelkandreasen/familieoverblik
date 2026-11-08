@@ -34,4 +34,7 @@ krop = re.search(r"return \[`planner/\$\{wk\.id\}`.*?\];", ov, re.S).group(0)
 antal = len(re.findall(r"`(?:planner|aula|ics|calendar)/\$\{[a-zA-Z0-9.]+\}`", krop)) + len(re.findall(r'"settings/[a-z]+"', krop))
 t(f"forsiden henter {antal} stier ad gangen, og serverens grænse er {maks}", 0 < antal <= maks)
 t("alle stier i forsidens hentning er gyldige (ugestier af formen planner/<uge> og de faste indstillinger)", all(gyldig(x) for x in re.findall(r'"(settings/[a-z]+)"', krop)))
+# PHP-skaller, der fjerner «handling» og sender resten videre til Python: et tomt array er [] i JSON, og Python vil have {}
+skaller = [f for f in sorted(os.listdir(os.path.join(ROD, "public_html"))) if f.endswith(".php") and "unset($b['handling'])" in L("public_html/" + f)]
+t(f"alle PHP-skaller, der fjerner «handling» før de videresender ({', '.join(skaller)}), sender {{}} og ikke [] når der intet er tilbage", len(skaller) >= 2 and all("$b === [] ? new stdClass() : $b" in L("public_html/" + f) for f in skaller), skaller)
 sys.exit(0 if ok_all else 1)
