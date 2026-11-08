@@ -16,6 +16,20 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.9.0] – 2026-11-08
+
+### Tilføjet
+- **Fuld skærm består, når du skifter side.** En browser forlader altid fuld skærm, når siden skifter til en anden side, og det kan en hjemmeside ikke forhindre. Derfor åbnes de andre sider (**Madplan, Opsætning, Backlog, Gæste-wifi, Tilfældig vælger, Tilføj billeder**) nu **i en ramme oven på forsiden**, når fuld skærm er slået til. Forsiden forlades aldrig, så fuld skærm består. Uden fuld skærm virker linkene som før (almindelig sideskift).
+  - **«← Forsiden»** øverst i rammen lukker den, og det gør «← Oversigten» og «‹ Overblik» inde i siderne også. Forsiden genopfriskes, når rammen lukkes, så det, du har rettet, er der med det samme.
+  - En ramme, ingen rører ved i **10 minutter**, lukker af sig selv, så væggen ikke bliver stående i opsætningen.
+  - Skifter du mellem siderne inde i rammen (fx fra Opsætning til Tilføj billeder), sker det inde i rammen.
+  - Ctrl/cmd-klik, midterklik og links, der åbner en ny fane (som «Kør rundt i Tokyo»), åbner som de plejer.
+- **Serverens regel for rammer er ændret:** `frame-ancestors 'none'` (ingen ramme) er blevet til `frame-ancestors 'self'` (kun siderne selv må ligge i en ramme). Andre hjemmesider må stadig ikke lægge dine sider i en ramme.
+- **Ikke afprøvet i en rigtig browser.** Reglerne og forløbet er prøvet med falske elementer (21 prøver), og jeg ved, at en ramme i en side i fuld skærm ikke afbryder fuld skærm, men jeg har ikke set det på din tablet. Afbrydes fuld skærm alligevel, så sig til.
+
+### Opdatering fra 3.8.1
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. **Genindlæs forsiden to gange** (reglen for rammer kommer fra serveren). Slå fuld skærm til nederst, og åbn Opsætning fra menuen «Sider».
+
 ## [3.8.1] – 2026-11-08
 
 ### Rettet (skemaet i ugebrevet, andet barns klasse)

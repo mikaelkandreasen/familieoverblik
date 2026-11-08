@@ -433,6 +433,7 @@ export const PAKKER = {
    "Ændringslog ▾": "Änderungsprotokoll ▾",
    "Ønsket prioritet": "Gewünschte Priorität",
    "‹ Overblik": "‹ Übersicht",
+   "← Forsiden": "← Startseite",
    "← Oversigten": "← Übersicht"
   }
  },
@@ -869,6 +870,7 @@ export const PAKKER = {
    "Ændringslog ▾": "Changelog ▾",
    "Ønsket prioritet": "Wanted priority",
    "‹ Overblik": "‹ Overview",
+   "← Forsiden": "← Home",
    "← Oversigten": "← Overview"
   }
  }

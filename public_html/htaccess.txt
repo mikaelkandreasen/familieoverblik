@@ -100,7 +100,7 @@ Options -Indexes
 
   # script-src og style-src skal have 'unsafe-inline': både script- og
   # style-blokken står inde i index.html, og uden den ville siden være tom.
-  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://featureassets.gocomics.com https://assets.gocomics.com https://assets.amuniversal.com; connect-src 'self'; frame-ancestors 'none'"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://featureassets.gocomics.com https://assets.gocomics.com https://assets.amuniversal.com; connect-src 'self'; frame-ancestors 'self'"
 
   # index.html og config.js må ikke caches — ellers viser skærmen en gammel
   # version efter en opdatering, indtil nogen rydder browserens cache. Samme

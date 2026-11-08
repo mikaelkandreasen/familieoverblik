@@ -217,6 +217,8 @@ Kortet «Tømning» vises på forsiden.
 
 **Drej et billede (Opsætning → Pauseskærm):** Hver miniature har to knapper nederst til venstre: drej mod uret og drej med uret. Billedet lægges ind igen som et nyt (det kommer forrest i listen), og det gamle slettes bagefter.
 
+**Fuld skærm og sideskift:** Er fuld skærm slået til, åbnes Madplan, Opsætning, Backlog og de andre sider i en ramme oven på forsiden, så fuld skærm ikke afbrydes. Tryk «← Forsiden» for at lukke rammen (den lukker også selv efter 10 minutter uden aktivitet). Uden fuld skærm skifter siden som før.
+
 **Fuld skærm (nederst på forsiden):** Knappen **Fuld skærm** viser siden uden Chromes adresselinje. Den hjælper især på en gammel tablet (Android 5.1 med Chrome 95), hvor Chrome ellers ikke har en fuldskærmsknap. Går siden ud af fuld skærm (genindlæsning eller et sidestifte), går den i fuld skærm igen ved første tryk. **Afslut fuld skærm** slår det fra. Vil du også skjule Androids egne knapper og statuslinjen, kræver det en kioskapp (fx Fully Kiosk Browser) eller at siden føjes til startskærmen som app.
 
 **Menuen «Sider» på forsiden:** «Madplan» og «Opsætning» går direkte til de to faner i redigeringssiden.
@@ -237,6 +239,6 @@ Afprøvet her (uden Docker og uden PHP, som ikke findes i min sandkasse):
 - Compose, workflow og Dockerfiles som tekst: at de peger på filer, der findes, og passer sammen. 39 prøver.
 - Guiden, indstillingerne og sikkerhedsindstillingerne mod en simuleret server (personrækker, fødselsdage, nøgler, sikkerhedskopi, QR-kode og gendannelseskoder): 94 prøver.
 - **Backlog:** hele logikken som en rigtig proces (oprettelse, ændring, stemmer, kommentarer, sletning, import, eksport, grænser, samtidige skrivninger og beskyttelse mod regnearksformler): 34 prøver, og selve siden (filtre, sortering, at alt skrevet escapes, hele forløbet): 51 prøver.
-- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1187 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
+- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1208 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
 
 **Ikke afprøvet:** selve `docker build`, GitHub-workflowet, at Dockhand kan hente fra ghcr.io og starte stakken, **al PHP** (`login.php`, `totp.php`, `instans.php`, `sikkerhedskopi.php`, `backlog.php`) og Dockhands terminal til MitID-login. For PHP er kun den logik, der ligger i Python, afprøvet. Selve PHP-filerne er gennemlæst og kontrolleret som tekst (parenteser, at de bruger samme formler som den afprøvede model, at cookien kun sættes ét sted). **Test login med totrinsbekræftelse, før du stoler på det:** slå det til, åbn siden i et privat vindue, og prøv både PIN og kode, en forkert kode, en gendannelseskode og «husk enhed».

@@ -333,6 +333,11 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .letter h3{font-size:13px;font-weight:600;margin-bottom:5px}
 .letter h3 span{font-weight:400;color:var(--ink-soft);font-size:12px}
 .letter p{font-size:13.5px;line-height:1.55;white-space:pre-line;overflow-wrap:break-word}
+.ramme-lag{position:fixed;inset:0;z-index:3000;display:flex;flex-direction:column;background:var(--paper)}
+.ramme-lag[hidden]{display:none}
+.ramme-top{display:flex;align-items:center;gap:12px;padding:6px 10px;border-bottom:1px solid var(--rule);background:var(--card)}
+.ramme-top span{font-size:13px;color:var(--ink-soft);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ramme-lag iframe{flex:1;width:100%;border:0;background:var(--paper)}
 .kant-r{display:grid;grid-template-columns:5.2em 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--rule);font-size:14px;line-height:1.35}
 .kant-r:first-child{border-top:0}
 .kant-d{color:var(--ink-soft);font-size:12.5px;padding-top:1px}
@@ -1194,6 +1199,12 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
   </section>
 
 </main>
+
+<!-- Sider i rammen: i fuld skærm åbnes Madplan, Opsætning m.fl. her oven på forsiden, så fuld skærm ikke afbrydes (se «Sider i rammen» i scriptet) -->
+<div class="ramme-lag" id="rammeLag" hidden>
+  <div class="ramme-top"><button type="button" class="fod-knap" id="rammeLuk">← Forsiden</button><span id="rammeTitel"></span></div>
+  <iframe id="rammeIframe" title="Side" src="about:blank"></iframe>
+</div>
 
 <footer class="fod" id="fod">
   <span id="verTekst">Familieoverblik</span>
@@ -3533,6 +3544,50 @@ if ($("fuldKnap")){
     document.addEventListener("pointerdown", igen, true);
   }
 }
+
+// ── Sider i rammen (fuld skærm) ──
+// En browser forlader fuld skærm, når siden skifter til en anden side, og det kan en hjemmeside ikke forhindre. I fuld skærm åbnes de andre sider (Madplan, Opsætning, Backlog …) derfor
+// i en ramme OVEN PÅ forsiden. Forsiden forlades aldrig, så fuld skærm består. «← Forsiden» (eller et link til overblik.html inde i siden) lukker rammen. Uden fuld skærm virker linkene som før.
+const RAMME_SIDE = /^[a-z0-9_-]+\.html(?:#[\w-]*)?$/i;
+const RAMME_LUK_MS = 10 * 60e3;                                 // en ramme, ingen rører ved, lukker af sig selv (væggen skal ikke blive stående i opsætningen)
+const erForsideLink = href => /^(?:\.\/)?overblik\.html(?:#.*)?$/i.test(href || "");
+/** Det link, der skal åbnes i rammen, ellers null: kun i fuld skærm, kun et almindeligt klik, kun en side i samme mappe, ikke forsiden selv og ikke en ny fane. */
+function rammeMaal(a, e, iFuld){
+  if (!iFuld || !a || !e || e.defaultPrevented || e.button > 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return null;
+  if (a.target && a.target !== "_self") return null;
+  const href = a.getAttribute("href") || "";
+  return RAMME_SIDE.test(href) && !erForsideLink(href) ? href : null;
+}
+/** Sætter rammen til: lytter efter links på forsiden, og efter links og aktivitet inde i rammen. d: { $, doc, fsElement, genopfrisk, setT, clearT }. */
+function rammeInit(d){
+  const { $, doc, fsElement } = d, setT = d.setT || setTimeout, clearT = d.clearT || clearTimeout;
+  let t = 0;
+  const luk = () => {
+    clearT(t);
+    $("rammeLag").hidden = true; $("rammeIframe").src = "about:blank"; $("rammeTitel").textContent = "";
+    d.genopfrisk();                                              // noget kan være rettet i opsætningen
+  };
+  const udsaet = () => { clearT(t); t = setT(luk, RAMME_LUK_MS); };
+  const aabn = href => { $("rammeLag").hidden = false; $("rammeIframe").src = href; udsaet(); };
+  doc.addEventListener("click", e => {
+    const a = e.target && e.target.closest ? e.target.closest("a[href]") : null, href = rammeMaal(a, e, !!fsElement());
+    if (href){ e.preventDefault(); aabn(href); }
+  }, true);
+  $("rammeLuk").addEventListener("click", luk);
+  $("rammeIframe").addEventListener("load", () => {
+    let dok; try { dok = $("rammeIframe").contentDocument; } catch { return; }
+    if (!dok || !dok.location || dok.location.href === "about:blank") return;
+    $("rammeTitel").textContent = dok.title || "";
+    dok.addEventListener("click", ev => {
+      const a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
+      if (a && erForsideLink(a.getAttribute("href"))){ ev.preventDefault(); luk(); } else udsaet();
+    }, true);
+    for (const h of ["pointerdown", "keydown", "touchstart"]) dok.addEventListener(h, udsaet, true);
+  });
+  return { aabn, luk, udsaet };
+}
+rammeInit({ $, doc: document, fsElement, genopfrisk: () => { Promise.resolve(poll()).catch(() => {}); if (!temaValg) hentTema(); } });
+// ── Slut: sider i rammen ──
 
 // ── Layout: flyt og klap kort sammen ────────────────────────────────
 // Hvert kort har data-kort. Layoutet er tre lister: kortene i kolonnen (#stak), kortene i den brede række
