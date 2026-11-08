@@ -5,7 +5,8 @@
 //   1. laesPdf(bytes)        → linjer med tekst (en lille PDF-læser: objekter, Flate-pakning, objektstrømme, skrifttyper med ToUnicode, tekst-operatorer)
 //   2. tolkKalender(linjer)  → { aar, fraktioner: [{ navn, datoer: [ÅÅÅÅ-MM-DD] }], advarsler }  (datoer og fraktioner genkendes ud fra tekst)
 // og tilPlan(datoer) (i affald.js) gør datoerne til start/hver/udgår/ekstra.
-// Læseren klarer almindelige PDF'er med tekst. Den klarer IKKE skannede billeder, og en kalender, hvor affaldstypen kun vises med en farve eller et symbol, har ingen tekst at læse.
+// Læseren klarer almindelige PDF'er med tekst. Den klarer IKKE skannede billeder. En kalender, hvor affaldstypen kun vises med en farve eller et symbol (som hos Renosyd), har ingen navne at læse: der samles datoerne
+// pr. ugedag (ukendt: true), og man skriver selv, hvilke slags affald hver gruppe er.
 import { FRAKTIONER, dagNr, isoFraDag } from "./affald.js";
 
 /* ═══ 1. PDF → tekst ═══════════════════════════════════════════════ */
@@ -311,6 +312,8 @@ const MAANED_LISTE = new RegExp(`^\\W*(${MD})\\W*[:\\-–]?\\s*((?:\\d{1,2}\\s*(
 const TAL_LISTE = /^\W*((?:\d{1,2}\s*(?:,|;|og|\/|&)?\s*)+)\W*$/;
 const dageAf = t => [...t.matchAll(/\d{1,2}/g)].map(m => +m[0]);
 
+const UGEDAGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
+
 /** Tekstlinjer → { aar, fraktioner: [{ navn, datoer: [ÅÅÅÅ-MM-DD] }], advarsler }.
  *  Genkender kalendere sorteret efter slags affald (overskrift, så datoer), efter dato (dato, så slags affald), på samme linje (6/1 Restaffald, Papir),
  *  og som månedsrækker med en kolonne pr. slags affald. Det er et FORSLAG: man ser og retter det, før det gemmes. */
@@ -319,16 +322,17 @@ export function tolkKalender(linjer, { aar } = {}){
   const Å = aar || findAar(L), advarsler = [], ud = new Map();
   const giv = (navn, iso) => { if (!iso) return; const y = +iso.slice(0, 4); if (y < Å - 1 || y > Å + 1) return; if (!ud.has(navn)) ud.set(navn, new Set()); ud.get(navn).add(iso); };
   // 1) hver linje: slags affald og datoer (et månedsnavn alene sætter en måned; tal alene og «Tirs 6» får den)
-  let maaned = null, maanedAar = null; const T = [];
+  let maaned = null, maanedAar = null, sektionAar = null; const T = [];     // sektionAar: året i en overskrift uden måned («Tømmekalender 2026»); gælder månedsnavne uden eget år, til næste overskrift
   const UGEDAG = /^\W*(?:man|tirs?|ons|tors?|fre|lør|søn)\w*\.?\s+(\d{1,2})\b\.?(?!\d)/i;
   for (const linje of L){
     const F = findFraktioner(linje); let D = findDatoer(linje, Å).map(d => d.iso), kind = null;
     const ma = MAANED_ALENE.exec(linje), ml = !F.length && !D.length ? MAANED_LISTE.exec(linje) : null, tl = !F.length && !D.length && maaned ? TAL_LISTE.exec(linje) : null;
     const ud_ = !D.length && maaned ? UGEDAG.exec(linje) : null;
     if (ma){ maaned = MAANED[ma[1].toLowerCase()]; maanedAar = ma[2] ? +ma[2] : null; kind = "maaned"; }
-    else if (ml){ maaned = MAANED[ml[1].toLowerCase()]; D = dageAf(ml[2]).map(d => gyldig(d, maaned, maanedAar || Å)).filter(Boolean); }
-    else if (tl){ const dd = dageAf(tl[1]); if (dd.length <= 8) D = dd.map(d => gyldig(d, maaned, maanedAar || Å)).filter(Boolean); }
-    else if (ud_){ const iso = gyldig(+ud_[1], maaned, maanedAar || Å); if (iso) D = [iso]; }
+    else if (ml){ maaned = MAANED[ml[1].toLowerCase()]; D = dageAf(ml[2]).map(d => gyldig(d, maaned, maanedAar || sektionAar || Å)).filter(Boolean); }
+    else if (tl){ const dd = dageAf(tl[1]); if (dd.length <= 8) D = dd.map(d => gyldig(d, maaned, maanedAar || sektionAar || Å)).filter(Boolean); }
+    else if (ud_){ const iso = gyldig(+ud_[1], maaned, maanedAar || sektionAar || Å); if (iso) D = [iso]; }
+    else if (!F.length && !D.length){ const y = /(?<!\d)(20\d\d)(?!\d)/.exec(linje); if (y) sektionAar = +y[1]; }
     T.push({ linje, F: F.map(f => f.navn), D, kind, start: F.length && F[0].pos <= (/^\W*/.exec(linje)[0].length) });
   }
   const type = x => (x.kind === "maaned" ? "N" : x.F.length && x.D.length ? "FD" : x.F.length ? "F" : x.D.length ? "D" : "N");
@@ -360,9 +364,22 @@ export function tolkKalender(linjer, { aar } = {}){
     if (k === "D"){ if (modeA){ for (const n of sidsteF) for (const d of x.D) { giv(n, d); parret++; } } else sidsteD = x.D; }
   });
   const fraktioner = [...ud].map(([navn, set]) => ({ navn, datoer: [...set].sort() })).sort((a, b) => (FRAKTIONER.findIndex(f => f[0] === a.navn) + 1 || 99) - (FRAKTIONER.findIndex(f => f[0] === b.navn) + 1 || 99));
+  // Datoer uden navne: en kalender, hvor affaldstypen kun vises med et symbol eller en farve (som hos Renosyd), har ingen tekst at læse navnene ud af. Datoerne samles pr. ugedag (en ugedag er som regel én
+  // gruppe af affald), og man skriver selv, hvilke slags affald hver gruppe er (ukendt: true).
+  let ukendt = false;
+  if (!fraktioner.length){
+    const dage = [...new Set(T.flatMap(x => x.D))].sort();
+    if (dage.length >= 2){
+      const pr = new Map();
+      for (const iso of dage){ const wd = new Date(iso + "T12:00:00Z").getUTCDay(); if (!pr.has(wd)) pr.set(wd, []); pr.get(wd).push(iso); }
+      for (const wd of [1, 2, 3, 4, 5, 6, 0]) if (pr.has(wd)) fraktioner.push({ navn: UGEDAGE[wd], datoer: pr.get(wd), ukendt: true });
+      ukendt = fraktioner.length > 0;
+    }
+  }
   if (!T.some(x => x.D.length)) advarsler.push("Jeg fandt ingen datoer i teksten.");
+  else if (ukendt) advarsler.push("Jeg fandt datoer, men kan ikke se, hvilken slags affald de hører til (kalenderen viser kun symboler eller farver, ingen navne). Jeg har samlet datoerne pr. ugedag. Skriv selv, hvilke slags affald hver gruppe er.");
   else if (!fraktioner.length) advarsler.push("Jeg fandt datoer, men kunne ikke se, hvilken slags affald de hører til (jeg leder efter ord som Restaffald, Papir, Plast, Glas, Madaffald).");
   const faa = fraktioner.filter(f => f.datoer.length < 3);
   if (fraktioner.length && faa.length) advarsler.push(`Kun få datoer for ${faa.map(f => f.navn).join(", ")}. Kontrollér dem.`);
-  return { aar: Å, fraktioner, advarsler, layout: kolonnePar ? "kolonner" : parret ? (modeA ? "overskrift først" : "dato først") : "ukendt" };
+  return { aar: Å, fraktioner, advarsler, layout: ukendt ? "uden navne" : kolonnePar ? "kolonner" : parret ? (modeA ? "overskrift først" : "dato først") : "ukendt" };
 }

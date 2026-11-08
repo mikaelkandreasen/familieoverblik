@@ -1,0 +1,17 @@
+{
+ "format": 1,
+ "opdater": true,
+ "punkter": [
+  {
+   "titel": "Tømningskalender fra Renosyd (Skanderborg)",
+   "kategori": "kalender",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.8.0: Opsætning → Tømning → Læs fra PDF læser Renosyds kalender (også uden navne på affaldet), samler datoerne pr. ugedag og laver en tidsplan, du navngiver selv. En automatisk hentning fra Renosyds login er ikke bygget. Kalenderen gælder til oktober 2027; hent en ny PDF, når den udkommer."
+    }
+   ]
+  }
+ ]
+}

@@ -3891,7 +3891,7 @@ const affHverTekst = h => (h === 1 ? "hver uge" : `hver ${h}. uge`);
 /** Tolkningen → et forslag. «adresse» er den adresse, de lægges ind under (nummer i listen). */
 function affLavForslag(tk, linjer, kilde){
   return { aar: tk.aar, layout: tk.layout, advarsler: tk.advarsler.slice(), kilde, adresse: 0, linjer: linjer.slice(0, 60),
-    poster: tk.fraktioner.map(f => ({ navn: f.navn, datoer: f.datoer, serie: AFF.tilSerie(f.datoer), valgt: true })) };
+    poster: tk.fraktioner.map(f => ({ navn: f.navn, datoer: f.datoer, serie: AFF.tilSerie(f.datoer), valgt: true, ukendt: !!f.ukendt, navne: "" })) };
 }
 function affForslagHtml(){
   if (!affForslag) return "";
@@ -3899,14 +3899,18 @@ function affForslagHtml(){
   const poster = f.poster.map((p, i) => {
     const farve = (AFF.FRAKTIONER.find(([n]) => n === p.navn) || [0, "#5B6770"])[1], s = p.serie;
     const beskr = `${p.datoer.length} ${p.datoer.length === 1 ? "dato" : "datoer"} · første ${AFF.ugedag(s.start).slice(0, 3)}. ${AFF.datoKort(s.start)} · ${affHverTekst(s.hver)}${s.springes.length ? ` · ${s.springes.length} udgår` : ""}${s.ekstra.length ? ` · ${s.ekstra.length} ekstra` : ""}`;
-    return `<div class="aff-post"><label><input type="checkbox" data-post="${i}"${p.valgt ? " checked" : ""}> ${AFF.ikonHtml(p.navn, farve)} <b>${esc(p.navn)}</b></label><div class="f-note">${esc(beskr)}${s.afkortet ? " (en del af undtagelserne er udeladt)" : ""}</div>
+    // Uden navne i kalenderen (symboler): gruppen hedder en ugedag, og man skriver selv, hvad der hentes. Flere navne adskilles med komma og får de samme datoer.
+    const navneFelt = p.ukendt ? `<label class="f-note" for="affNavn${i}">Hvilke slags affald hentes ${esc(p.navn.toLowerCase())}?</label><input type="text" class="st-in" id="affNavn${i}" data-post-navne="${i}" list="affNavneListe" value="${esc(p.navne)}" placeholder="fx Mad- og restaffald" autocomplete="off" maxlength="200">` : "";
+    return `<div class="aff-post"><label><input type="checkbox" data-post="${i}"${p.valgt ? " checked" : ""}> ${AFF.ikonHtml(p.navn, farve)} <b>${esc(p.navn)}</b></label><div class="f-note">${esc(beskr)}${s.afkortet ? " (en del af undtagelserne er udeladt)" : ""}</div>${navneFelt}
       <details><summary>Se datoerne</summary><div class="f-note">${p.datoer.map(d => esc(`${AFF.ugedag(d).slice(0, 3)}. ${AFF.datoKort(d)}`)).join(", ")}</div></details></div>`;
   }).join("");
+  const harUkendte = f.poster.some(p => p.ukendt);
   return `<div class="aff-forslag">
     <div><b>${f.poster.length ? `Fandt ${f.poster.length} slags affald i ${esc(f.aar)}` : "Fandt ingen slags affald med datoer"}</b>${f.kilde ? ` i ${esc(f.kilde)}` : ""}.</div>
     ${f.advarsler.map(a => `<p class="f-note aff-advarsel">${esc(a)}</p>`).join("")}
     ${poster}
     ${f.poster.length ? `${adr.length > 1 ? `<label for="affPdfAdr">Læg dem ind under</label><select class="st-in" id="affPdfAdr">${adr.map((a, i) => `<option value="${i}"${i === f.adresse ? " selected" : ""}>${esc(a.navn || `Adresse ${i + 1}`)}</option>`).join("")}</select>` : ""}
+    ${harUkendte ? `<datalist id="affNavneListe">${AFF.FRAKTIONER.map(([n]) => `<option value="${esc(n)}"></option>`).join("")}</datalist><p class="f-note">Skriv ét eller flere navne pr. gruppe, adskilt af komma (fx <i>Glas og metal, Plast og mad- og drikkekartoner</i>). De får alle de samme datoer. Hos Renosyd er symbolerne: sort pose = restaffald, grøn = madaffald, flaske = glas, dåse = metal, karton = mad- og drikkekartoner, dunk = plast, papkasse = pap, papir = papir, trøje = tekstiler.</p>` : ""}
     <button type="button" class="btn-save" id="affPdfBrug">Læg de valgte ind i tidsplanen</button>
     <p class="f-note">Kontrollér dem i listen herunder bagefter, og tryk Gem. En slags affald, der allerede står der, bliver erstattet.</p>` : ""}
     <details><summary>Det, jeg læste (de første ${Math.min(f.linjer.length, 60)} linjer)</summary><pre class="aff-laest">${esc(f.linjer.join("\n"))}</pre></details>
@@ -3918,15 +3922,20 @@ function affNytForslag(tk, linjer, kilde){
   $("affPdfInfo").textContent = affForslag.poster.length ? "Se forslaget herunder." : "";
   $("affPdfFejl").textContent = affForslag.poster.length ? "" : "Der var ingen slags affald med datoer, jeg kunne bruge. Se det, jeg læste, herunder, eller indsæt teksten i feltet.";
 }
+/** De navne, man har skrevet til en gruppe uden navne: adskilt af komma, semikolon, + eller linjeskift (ikke «og», for «Glas og metal» er ét navn), uden dubletter, højst 8. */
+const affNavneAf = p => { const set = new Map(); for (const n of String(p.navne || "").split(/[,;+\n]/).map(x => x.trim()).filter(Boolean)) if (!set.has(n.toLowerCase())) set.set(n.toLowerCase(), n.slice(0, 60)); return [...set.values()].slice(0, 8); };
 /** Læg de valgte ind under den valgte adresse (en slags affald med samme navn erstattes). */
 function affBrugForslag(){
   if (!affForslag || !affStat || !AFF) return;
   const valgte = affForslag.poster.filter(p => p.valgt && p.serie), a = affStat.adresser[Math.min(affForslag.adresse, affStat.adresser.length - 1)];
   $("affPdfFejl").textContent = ""; $("affPdfInfo").textContent = "";
   if (!valgte.length){ $("affPdfFejl").textContent = "Sæt hak ved mindst én slags affald."; return; }
+  const mangler = valgte.filter(p => p.ukendt && !affNavneAf(p).length);
+  if (mangler.length){ $("affPdfFejl").textContent = `Skriv, hvilke slags affald ${mangler.map(p => `«${p.navn}»`).join(" og ")} er (eller fjern hakket).`; return; }
+  const poster = valgte.flatMap(p => (p.ukendt ? affNavneAf(p).map(n => ({ ...p, navn: n })) : [p]));
   if (!a){ $("affPdfFejl").textContent = "Der er ingen adresse at lægge dem ind under. Tryk «+ Tilføj adresse» først."; return; }
   let nye = 0, erstattet = 0; const udenPlads = [];
-  for (const p of valgte){
+  for (const p of poster){
     const farve = (AFF.FRAKTIONER.find(([n]) => n === p.navn) || [0, "#5B6770"])[1];
     const fr = { navn: p.navn, farve, start: p.serie.start, hver: p.serie.hver, springes: p.serie.springes.map(affFmt).join(", "), ekstra: p.serie.ekstra.map(affFmt).join(", ") };
     const i = a.fraktioner.findIndex(x => String(x.navn).trim().toLowerCase() === p.navn.toLowerCase());
@@ -3954,6 +3963,9 @@ async function affLaesTekst(tekst){
 }
 $("affPdfFil").addEventListener("change", () => affLaesFil($("affPdfFil").files && $("affPdfFil").files[0]));
 $("affPdfTolk").addEventListener("click", () => affLaesTekst($("affPdfTekst").value));
+$("affPdfForslag").addEventListener("input", e => {
+  if (affForslag && e.target.dataset && e.target.dataset.postNavne !== undefined && affForslag.poster[Number(e.target.dataset.postNavne)]) affForslag.poster[Number(e.target.dataset.postNavne)].navne = e.target.value;
+});
 $("affPdfForslag").addEventListener("change", e => {
   if (!affForslag) return;
   if (e.target.dataset && e.target.dataset.post !== undefined) affForslag.poster[Number(e.target.dataset.post)].valgt = e.target.checked;

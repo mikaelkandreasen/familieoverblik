@@ -27,7 +27,7 @@ Det kører i Docker og styres med [Dockhand](https://dockhand.pro), **uden at du
 - **Vejr:** Open-Meteo (uden nøgle). Hver tredje time, farver efter vejrtype og vind med retning og stød.
 - **Elpris:** dagens priser og billigste periode (Energi Data Service), og et «kun søjler»-valg.
 - **Kantine:** skolens menu for ugen, fra den besked kantinen sender, med dagens ret fremhævet.
-- **Tømning:** hvornår hver skraldespand tømmes, med et ikon for hver slags affald (også på dagene i «De næste dage») og en påmindelse aftenen før. Du skriver én dato og et antal uger, eller **læser en PDF-tømmekalender ind** (den læses i din egen browser).
+- **Tømning:** hvornår hver skraldespand tømmes, med et ikon for hver slags affald (også på dagene i «De næste dage») og en påmindelse aftenen før. Du skriver én dato og et antal uger, eller **læser en PDF-tømmekalender ind** (den læses i din egen browser; også en kalender med kun symboler, hvor du selv navngiver grupperne).
 - **Fødselsdage:** familiens fødselsdage, og **på dagen** får skærmen Dannebrog, flagguirlande og konfetti.
 - **Bil, træning, indkøb:** batteri og rækkevidde fra en Hyundai, Strava-aktiviteter og indkøbslisten fra Microsoft To Do (alle valgfri).
 - **Tegneserie, dagens joke, noter og huskepunkter.**

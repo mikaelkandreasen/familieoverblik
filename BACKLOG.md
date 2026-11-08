@@ -183,7 +183,7 @@ Familiens egne punkter i appens backlog (de 12, I selv har lagt ind), og hvad de
 | Pauseskærm uden rullelinje | Færdig i 3.4.0 |
 | Joke i toppen | Færdig i 3.4.0 |
 | Lys/mørk/varm tema på oversigten | Færdig i 3.4.0 |
-| Tømningskalender (Renosyd) | Manuel tidsplan færdig. Automatisk del afventer afklaring af loginet |
+| Tømningskalender (Renosyd) | Færdig i 3.8.0: tidsplanen læses ud af kalender-PDF'en (også med kun symboler). Automatisk hentning fra Renosyds login er ikke bygget |
 | Rotering af billeder | Færdig i 3.5.0 |
 | Åben visning med PIN til indstillinger | Færdig i 3.5.0 (slået fra som standard) |
 | Aula kantinemenu | Afventer et eksempel på en besked fra Aula |

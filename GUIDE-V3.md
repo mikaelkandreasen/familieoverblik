@@ -199,7 +199,9 @@ Under **Sider ▾ → Backlog (idéer og ønsker)** på forsiden ligger en side,
 2. Vælg fraktionen (Restaffald, Papir …), en farve, **den første tømning** (en dato, hvor der er tømning, også en i fortiden) og **hver hvor mange uger**.
 3. En tømning, der udgår (helligdag), skrives under **Udgår**, og en ekstra under **Ekstra**. Datoer: 24.12.2026 eller 2026-12-24, flere adskilt af komma.
 4. Under hver fraktion står de næste datoer, så du kan se med det samme, om det passer. Tryk **Gem**.
-Kortet «Tømning» vises på forsiden. Aftenen før står der under **Vigtigt snart**, at spanden skal sættes ud. Du kan have flere adresser (fx en slægtnings).
+Kortet «Tømning» vises på forsiden.
+
+**Hurtigere: læs tidsplanen ud af tømmekalenderen (PDF).** Under *Tømning* vælger du PDF'en (eller indsætter teksten fra den), og siden foreslår en tidsplan. Viser kalenderen kun symboler (som Renosyds), samler den datoerne pr. ugedag, og du skriver selv, hvad hver gruppe er, fx mandag = *Mad- og restaffald*, fredag = *Glas og metal, Plast og mad- og drikkekartoner*, onsdag = *Papir og pap, Tekstiler*. Tryk *Læg de valgte ind i tidsplanen* og så *Gem*. Kontrollér de første datoer mod kalenderen. Aftenen før står der under **Vigtigt snart**, at spanden skal sættes ud. Du kan have flere adresser (fx en slægtnings).
 
 **Dagens joke i toppen:** Opsætning → Dagens joke → *Hvor skal joken vises?*
 

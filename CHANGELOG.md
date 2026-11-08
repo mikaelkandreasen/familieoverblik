@@ -32,6 +32,19 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Ikonerne kommer med det samme. Åbn Opsætning → Tømning for at prøve PDF-læsningen.
 - **Ikke afprøvet mod din rigtige PDF.** Jeg har aldrig set Renosyds kalender, kun selvbyggede PDF'er. Er den et billede, eller viser den kun farver og symboler, kan den ikke læses (så bruges de manuelle felter som før). Læser den forkert, så send mig teksten fra «Det, jeg læste» (uden adresse), så tilpasser jeg tolkningen.
 
+## [3.8.0] – 2026-11-08
+
+### Tilføjet
+- **Tømmekalendere, hvor affaldet kun vises som symboler** (som Renosyds PDF). Opsætning → Tømning → *Læs fra PDF* kunne før kun læse kalendere med navne på affaldet i teksten. En kalender med symboler og farver har ingen navne at læse, så den gav intet. Nu samler læseren datoerne **pr. ugedag** (en ugedag er som regel én gruppe affald) og laver en tidsplan for hver: *første dato* og *hver n. uge*.
+  - Du **skriver selv, hvilke slags affald hver gruppe er**, i et felt under gruppen. Du kan skrive flere navne adskilt af komma, og de får alle de samme datoer (fx *Glas og metal, Plast og mad- og drikkekartoner*). Navnene kan vælges fra listen over kendte slags affald, så de får det rigtige ikon. Hjælpeteksten forklarer Renosyds symboler (sort pose = restaffald, grøn = madaffald, flaske = glas, dåse = metal, karton = mad- og drikkekartoner, dunk = plast, papkasse = pap, papir, trøje = tekstiler).
+  - Mangler et navn, lægges gruppen ikke ind, og siden siger hvilken gruppe det er.
+  - Kontrolleret med en Renosyd-kalender for 2026 og 2027 (51 datoer): de tre tidsplaner (mandag hver 2. uge, fredag hver 3. uge, onsdag hver 6. uge) **genskaber præcis alle datoerne** og fortsætter derefter.
+- **Året læses fra overskriften.** Månedsnavne uden eget år (november og december på 2026-siden) får året fra overskriften «Tømmekalender 2026», og månedsnavne med år («JANUAR 2027») beholder det. Før blev 2026-datoerne i en PDF med begge år regnet som 2027.
+
+### Opdatering fra 3.7.1
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Gå så til **Opsætning → Tømning → Læs fra PDF**, vælg tømmekalenderen, skriv navnene, tryk **Læg de valgte ind i tidsplanen** og så **Gem**.
+- **Afprøvet** med en opbygget PDF i samme form (to sider, symboler uden navne), men **ikke med selve din fil**: læseren kan ikke se symbolerne, kun teksten. Siger den noget andet end din kalender, så åbn «Det, jeg læste» under forslaget.
+
 ## [3.7.1] – 2026-11-08
 
 ### Rettet
