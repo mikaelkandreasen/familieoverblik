@@ -66,7 +66,8 @@ $b = ($raw !== false && $raw !== '' && strlen($raw) < 2000) ? json_decode($raw, 
 if (!is_array($b) || !in_array($b['handling'] ?? null, TO_HANDLINGER, true)) to_fail(400, 'Ukendt handling.');
 $handling = (string)$b['handling'];
 unset($b['handling']);
-[$kode, $svar] = to_py(['totp', $handling], json_encode($b));
+// Er «handling» det eneste felt, er $b nu et TOMT array, og json_encode giver da [] (en liste), ikke {} (et objekt). Python afviser en liste: «Forespørgslen skal være JSON».
+[$kode, $svar] = to_py(['totp', $handling], json_encode($b === [] ? new stdClass() : $b));
 $j = json_decode($svar, true);
 if (!is_array($j)) to_fail(500, 'Uventet svar fra opsætningsprogrammet.');
 if (isset($j['ny_gate']) && is_string($j['ny_gate']) && strlen($j['ny_gate']) >= 32) {

@@ -204,7 +204,11 @@ select.fod-knap{padding:0 8px;max-width:100%}
 .top-joke{max-width:1200px;margin:0 auto;padding:6px 16px 0;color:var(--ink-soft);font-size:14px;font-style:italic;line-height:1.4;overflow-wrap:anywhere}
 .top-joke[hidden]{display:none}
 .aff-raekke{align-items:center}
-.aff-prik{flex:0 0 auto;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.aff-ikon{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--f);color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.aff-ikon svg{width:16px;height:16px}
+.aff-dag{display:inline-flex;gap:3px;align-items:center}
+.aff-dag .aff-ikon{width:20px;height:20px}
+.aff-dag .aff-ikon svg{width:12px;height:12px}
 .aff-navn{flex:1;min-width:0;overflow-wrap:anywhere}
 .aff-nar{flex:0 0 auto;text-align:right}
 .aff-meta{color:var(--ink-soft);font-size:12px}
@@ -329,6 +333,16 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .letter h3{font-size:13px;font-weight:600;margin-bottom:5px}
 .letter h3 span{font-weight:400;color:var(--ink-soft);font-size:12px}
 .letter p{font-size:13.5px;line-height:1.55;white-space:pre-line;overflow-wrap:break-word}
+.kant-r{display:grid;grid-template-columns:5.2em 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--rule);font-size:14px;line-height:1.35}
+.kant-r:first-child{border-top:0}
+.kant-d{color:var(--ink-soft);font-size:12.5px;padding-top:1px}
+.kant-r.idag{font-weight:650;background:var(--tint-blue);margin:0 -8px;padding:6px 8px;border-radius:var(--radius);border-top-color:transparent}
+.kant-r.forbi{opacity:.55}
+.letter .brev-tekst p{margin:0 0 .55em;white-space:normal}
+.letter .brev-tekst h4{margin:.95em 0 .3em;font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft)}
+.letter .brev-tekst .hilsen{font-weight:600}
+.letter .brev-tekst .slut{color:var(--ink-soft);margin-bottom:.1em}
+.su-t .lok.note{color:var(--ink-soft)}
 /* Klippet ned til tre linjer, saa kortet fylder det samme uanset hvor
    snakkesalig klasselaereren har vaeret i denne uge. */
 .letter p.klip{display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;
@@ -1086,6 +1100,17 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
       <div id="affKrop"></div>
     </section>
 
+    <!-- Kantine: skolens menu for ugen, fra den besked kantinen sender (Sync-Aula.py → aula/<uge>.kantine). Skjult, til der er en menu. -->
+    <section class="card" id="kantKort" hidden data-kort="kantine">
+      <div class="card-head">
+        <span class="ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 4 0V3M9 3v18M17 21V3c-2.5 1.5-4 4.5-4 8h4"/></svg></span>
+        <h2>Kantine</h2>
+        <span class="spacer"></span>
+        <span class="pill" id="kantUge"></span>
+      </div>
+      <div id="kantKrop"></div>
+    </section>
+
   </div>
 
   <!-- Vejr: timer for i dag og de næste 5 dage, for hjemmet og højst én ekstra lokation (vejr.php) -->
@@ -1175,13 +1200,14 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
   <div class="sider" id="siderMenu">
     <button type="button" class="fod-knap" id="siderKnap" aria-haspopup="menu" aria-expanded="false" aria-controls="siderListe">Sider ▾</button>
     <div class="sider-liste" id="siderListe" role="menu" hidden>
+      <a role="menuitem" href="index.html#mad">Madplan</a>
       <a role="menuitem" href="gaest-wifi.html">Gæste-wifi (QR-kode)</a>
       <a role="menuitem" href="vaelger.html">Tilfældig vælger (spinner)</a>
       <a role="menuitem" href="backlog.html">Backlog (idéer og ønsker)</a>
       <a role="menuitem" href="https://drivefromhome.com/city/tokyo/drive/" target="_blank" rel="noopener noreferrer">Kør rundt i Tokyo ↗</a>
       <button role="menuitem" type="button" id="clKnap" aria-haspopup="dialog">Ændringslog</button>
       <a role="menuitem" href="billeder.html">Tilføj billeder</a>
-      <a role="menuitem" href="index.html">Opsætning</a>
+      <a role="menuitem" href="index.html#ops">Opsætning</a>
     </div>
   </div>
   <select class="fod-knap" id="temaValg" aria-label="Tema på denne enhed" title="Vælg lyst, varmt eller mørkt tema på netop denne enhed">
@@ -1666,6 +1692,59 @@ function skemaUgeStart(d){
 }
 
 // Ugens dage for ét barn: hverdagene altid, weekenddage kun med indhold.
+// ── Kantine ──
+const KANT_DAGE = ["Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag"];
+/** Menuen, kortet viser: denne uge, men i weekenden næste uge. Har den uge ingen menu, bruges den anden. uger = [{ uge, kantine }] som [denne, næste];
+ *  kantine = { dage: { "1": "ret", … } }. Rækkerne er mandag–fredag, de dage der har en ret; i dag er markeret, og dage før i dag er «forbi» (kun i denne uge). Ingen menu giver null. */
+function kantineValg(uger, idag){
+  const weekend = idag.getDay() === 0 || idag.getDay() === 6;
+  const raekke = weekend ? [uger[1], uger[0]] : [uger[0], uger[1]];
+  const u = raekke.find(x => x && x.kantine && x.kantine.dage && Object.keys(x.kantine.dage).length);
+  if (!u) return null;
+  const erDenne = u === uger[0], idagK = idag.getDay() === 0 ? 7 : idag.getDay();
+  const raekker = [1, 2, 3, 4, 5].filter(k => String(u.kantine.dage[String(k)] ?? "").trim())
+    .map(k => ({ k, dag: KANT_DAGE[k - 1], ret: String(u.kantine.dage[String(k)]).trim(), idag: erDenne && k === idagK, forbi: erDenne && k < idagK }));
+  return raekker.length ? { uge: u.uge, erDenne, raekker } : null;
+}
+const kantineHtml = kv => kv.raekker.map(r => `<div class="kant-r${r.idag ? " idag" : ""}${r.forbi ? " forbi" : ""}"><span class="kant-d">${esc(r.dag)}</span><span class="kant-ret">${esc(r.ret)}</span></div>`).join("");
+// ── Slut: kantine ──
+// ── Ugebrev: tekst og afsnit ──
+const BREV_TID = /^\d{1,2}[:.]\d{2}\s*[-–—]\s*\d{1,2}[:.]\d{2}$/;
+const BREV_HILSEN = /^(kære|hej|goddag|godmorgen)\b/i;
+const BREV_SLUT = /^(med (ønsket|venlig)|venlig hilsen|mvh|de bedste hilsner|hilsen)\b/i;
+/** Selve brevet. Nyere data har «body» (Sync-Aula læser skemaet ud af brevet). Ældre data har kun «full», hvor skemaet står som løse linjer før hilsenen: så klippes der ved hilsenen. */
+function brevKrop(l){
+  if (typeof l?.body === "string" && l.body.trim()) return l.body;
+  const full = String(l?.full || l?.preview || "");
+  const lin = full.split("\n").map(x => x.trim());
+  const t = lin.findIndex(x => BREV_TID.test(x)), g = lin.findIndex(x => BREV_HILSEN.test(x));
+  return t >= 0 && g > t ? lin.slice(g).join("\n") : full;
+}
+/** Brevets linjer som afsnit: hilsen, overskrifter («Ugen der kommer:»), «Emne: tekst» med emnet fremhævet, almindelige afsnit og afslutning (hilsenen til sidst og det, der følger). */
+function brevAfsnit(tekst){
+  let slut = false;
+  return String(tekst || "").split("\n").map(x => x.trim()).filter(Boolean).map((x, i) => {
+    if (slut || BREV_SLUT.test(x)){ slut = true; return { type: "slut", tekst: x }; }
+    if (i === 0 && BREV_HILSEN.test(x)) return { type: "hilsen", tekst: x };
+    if (/^[^.!?:]{2,40}:$/.test(x)) return { type: "h", tekst: x.slice(0, -1) };
+    const m = /^([A-ZÆØÅ][^.!?:]{2,38}):\s+(\S.*)$/.exec(x);
+    return m ? { type: "p", label: m[1], tekst: m[2] } : { type: "p", tekst: x };
+  });
+}
+const brevAfsnitHtml = a => a.map(x =>
+  x.type === "h" ? `<h4>${esc(x.tekst)}</h4>`
+  : x.type === "hilsen" ? `<p class="hilsen">${esc(x.tekst)}</p>`
+  : x.type === "slut" ? `<p class="slut">${esc(x.tekst)}</p>`
+  : `<p>${x.label ? `<strong>${esc(x.label)}:</strong> ` : ""}${esc(x.tekst)}</p>`).join("");
+/** Sammenfoldet: de første linjer som løbende tekst uden hilsen og overskrifter. Foldet ud: afsnit med overskrifter og fremhævede emner. */
+function brevBlok(l, aaben){
+  const afsnit = brevAfsnit(brevKrop(l));
+  if (aaben) return `<div class="brev-tekst">${brevAfsnitHtml(afsnit)}</div>`;
+  const kort = afsnit.filter(x => x.type === "p" || x.type === "h").map(x => (x.label ? x.label + ": " : "") + x.tekst).join(" ");
+  return `<p class="klip">${esc(kort || String(l?.full || "").replace(/\s+/g, " ").trim())}</p>`;
+}
+// ── Slut: ugebrev ──
+
 function ugeSkema(aula, barn){
   const dage = [];
   for (let k = 1; k <= 7; k++){
@@ -1736,7 +1815,7 @@ function tegnSkema(){
     let krop;
     if (x.timer.length){
       krop = x.timer.map(t => `
-        <div class="su-t"><time>${esc(t.start)}</time><span class="fag">${esc(t.title)}${t.sub ? `<span class="skema-flag vikar">Vikar</span>` : ""}</span>${t.room ? `<span class="lok">${esc(t.room)}</span>` : ""}</div>`).join("")
+        <div class="su-t"><time>${esc(t.start)}</time><span class="fag">${esc(t.title)}${t.sub ? `<span class="skema-flag vikar">Vikar</span>` : ""}</span>${t.room ? `<span class="lok">${esc(t.room)}</span>` : ""}${t.note ? `<span class="lok note">${esc(t.note)}</span>` : ""}</div>`).join("")
         + `<div class="su-fri">Fri kl. ${esc(x.fri)}</div>`;
     } else if (x.linje){
       const m = moedeFri(x.linje.hours);
@@ -1749,7 +1828,7 @@ function tegnSkema(){
       ${flag ? `<div>${flag}</div>` : ""}${krop}</section>`;
   }).join("");
   $("skemaKrop").innerHTML = !harNoget
-    ? `<div class="skema-tom">Der er intet skema for uge ${w.week} endnu. Aula-synkroniseringen henter denne og næste uge.</div>`
+    ? `<div class="skema-tom">Der er intet skema for uge ${w.week} til ${esc(skemaBarn)} endnu. Skemaet kommer fra Aulas kalender eller fra tabellen i ugebrevet, og Aula-hentningen kører hver morgen (denne og næste uge).</div>`
     : `<div class="su-uge">${kol}</div>` + (harData ? "" :
       `<div class="skema-tom" style="font-size:13px">Kun møde- og fri-tider: fagene kommer med efter næste synkronisering fra Aula.</div>`);
 }
@@ -2562,10 +2641,11 @@ function draw(){
           r.child ? ` · ${esc(r.child)}` : ""}</div>`).join("")}</div>` : "";
 
     spalter.push(`
-      <div class="d5${i === 0 ? " now" : ""}">
+      <div class="d5${i === 0 ? " now" : ""}" data-dag="${ymd(d)}">
         <div class="hd">
           <span class="nm">${i === 0 ? "I dag" : i === 1 ? "I morgen" : DAYS[(d.getDay()+6)%7]}</span>
           <span class="dt">${d.getDate()}.${d.getMonth()+1}.</span>
+          <span class="aff-dag" data-aff-dag></span>
           ${(() => { const dw = weather[ymd(d)];
              return dw ? `<button type="button" class="vejr-knap" data-vejr="${ymd(d)}"
                             title="Se dagen time for time">${weatherIcon(dw.code)}${dw.max}°</button>` : ""; })()}
@@ -2632,15 +2712,6 @@ function draw(){
     msgKort.classList.add("wide");
   }
 
-  // Sammenfoldet klippes brevet til tre linjer. Med brevets egne linjeskift
-  // ville "Kære forældre i 3.x" og en tom linje bruge to af dem, og saa stod
-  // der reelt én linje indhold. Derfor presses alt sammen til loebende tekst,
-  // naar det er foldet sammen — og fuld opsaetning, naar det er foldet ud.
-  const brevTekst = (l, aaben) => {
-    const t = String(l.full || l.preview || "");
-    return aaben ? t : t.replace(/\s+/g, " ").trim();
-  };
-
   // Ugebrev. Det har ligget hentet i data hele tiden, men blev kun vist paa
   // vaegskaermen. Sammenfoldet staar de tre foerste linjer; foldet ud staar
   // hele brevet, saa man slipper for at aabne Aula for at laese det.
@@ -2668,9 +2739,14 @@ function draw(){
           // Ugenummeret saettes paa, saa snart brevet IKKE er fra den uge man
           // staar i. Uden det ville naeste uges brev se ud som denne uges.
           u.uge.id !== wk.id || flereUger ? `<span class="uge">uge ${u.uge.week}</span>` : ""}</h3>
-        <p class="${brevAaben ? "" : "klip"}">${esc(brevTekst(l, brevAaben))}</p>
+        ${brevBlok(l, brevAaben)}
       </article>`).join("")).join("")
     : `<div class="empty">Hverken uge ${wk.week} eller ${nextWk.week} har et ugebrev endnu</div>`;
+
+  // Kantine: ugens menu, hvis kantinens besked er hentet
+  const kv = kantineValg([wk, nextWk].map(u => ({ uge: u.week, kantine: bucket(u.id).aula.kantine })), today);
+  $("kantKort").hidden = !kv;
+  if (kv){ $("kantUge").textContent = `uge ${kv.uge}`; $("kantKrop").innerHTML = kantineHtml(kv); }
 
   // Lektier
   // Lektier grupperes efter hvornaar de skal vaere klar — det er den eneste
@@ -2713,7 +2789,7 @@ function draw(){
     }
   }
   for (const r of affaldPaaminde()){
-    soon.push({ days:r.dage, date:addDays(today, r.dage), kilde:"Tømning",
+    soon.push({ days:r.dage, date:addDays(today, r.dage), kilde:"Tømning", ikon: AFF ? AFF.ikonHtml(r.fraktion, r.farve) : "",
                 text:`${r.fraktion} tømmes ${r.dage === 0 ? "i dag" : "i morgen"}${r.dage === 1 ? " — sæt spanden ud i aften" : ""} (${r.adresse})` });
   }
   for (const x of important) {
@@ -2730,7 +2806,7 @@ function draw(){
   $("soonFold").innerHTML = foldKnap("soon", soon.length > SOON_MAX);
   $("soon").innerHTML = soon.length ? (erAaben("soon") ? soon : soon.slice(0, SOON_MAX)).map(s => `
     <div class="line">
-      <span class="bullet" style="--who:var(--p-alle)"></span>
+      ${s.ikon || `<span class="bullet" style="--who:var(--p-alle)"></span>`}
       <div${s.kilde ? ` title="${esc(s.kilde)}"` : ""}>${esc(s.text)}
         <span style="display:block;font-size:12px;color:var(--ink-soft)">${
           s.days === 0 ? "I dag" : s.days === 1 ? "I morgen" : `Om ${s.days} dage`
@@ -2763,10 +2839,17 @@ function affaldTegn(){
   let data = [];
   try { data = AFF ? AFF.oversigt(affald, AFF.dagIDag()) : []; } catch (e){ console.error("affald:", e); }
   kort.hidden = data.length === 0;
+  // ikonerne på dagene i «De næste dage»: hvad der hentes den dag (fyldes ud her, så de også kommer, når data eller modulet kommer senere end siden)
+  document.querySelectorAll("[data-aff-dag]").forEach(el => {
+    const iso = el.closest("[data-dag]")?.dataset.dag;
+    let ting = []; try { ting = AFF && iso ? AFF.paaDag(affald, iso) : []; } catch (e){ console.error("affald:", e); }
+    const set = new Set();
+    el.innerHTML = ting.filter(x => !set.has(x.fraktion) && set.add(x.fraktion)).map(x => AFF.ikonHtml(x.fraktion, x.farve)).join("");
+  });
   if (!data.length){ $("affKrop").innerHTML = ""; return; }
   const flere = data.length > 1;
   $("affKrop").innerHTML = data.map(a => (flere ? `<div class="sub-label">${esc(a.adresse)}</div>` : "") +
-    a.raekker.map(r => `<div class="line aff-raekke${r.dage <= 1 ? " aff-snart" : ""}"><span class="aff-prik" style="background:${esc(r.farve)}"></span><span class="aff-navn">${esc(r.fraktion)}</span><span class="aff-nar">${esc(r.relativ)}<span class="aff-meta"> · ${esc(r.ugedag)} ${esc(r.dato)}</span></span></div>`).join("")
+    a.raekker.map(r => `<div class="line aff-raekke${r.dage <= 1 ? " aff-snart" : ""}">${AFF.ikonHtml(r.fraktion, r.farve)}<span class="aff-navn">${esc(r.fraktion)}</span><span class="aff-nar">${esc(r.relativ)}<span class="aff-meta"> · ${esc(r.ugedag)} ${esc(r.dato)}</span></span></div>`).join("")
   ).join("");
 }
 
@@ -2790,7 +2873,7 @@ function applyDoc(path, doc){
                          hiddenRem:p?.hiddenRem||{}, doneRem:p?.doneRem||{} };
   } else if (coll === "ics"){ bucket(wid).ics = p || {}; }
   else if (coll === "aula"){
-    bucket(wid).aula = { school:p?.school||{}, lessons:p?.lessons||{}, letters:p?.letters||[], reminders:p?.reminders||{} };
+    bucket(wid).aula = { school:p?.school||{}, lessons:p?.lessons||{}, letters:p?.letters||[], reminders:p?.reminders||{}, kantine:p?.kantine||null };
   }
   else if (path === "settings/recurring"){ series = p?.items || []; }
   else if (path === "settings/birthdays"){ birthdays = p?.items || []; }

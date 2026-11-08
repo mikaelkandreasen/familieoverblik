@@ -62,7 +62,8 @@ if ($method === 'GET') {
     if (!is_array($b) || !in_array($b['handling'] ?? null, BL_HANDLINGER, true)) bl_fail(400, 'Ukendt handling.');
     $h = (string)$b['handling'];
     unset($b['handling']);
-    [$kode, $svar] = bl_py($h, (string)json_encode($b));
+    // Er «handling» det eneste felt, er $b nu et TOMT array, og json_encode giver da [] (en liste), ikke {} (et objekt).
+    [$kode, $svar] = bl_py($h, (string)json_encode($b === [] ? new stdClass() : $b));
 } else {
     bl_fail(405, 'kun GET og POST');
 }

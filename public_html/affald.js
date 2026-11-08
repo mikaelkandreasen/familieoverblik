@@ -9,9 +9,49 @@
 
 export const FRAKTIONER = [
   ["Restaffald", "#5B6770"], ["Madaffald", "#7A4B2A"], ["Mad- og restaffald", "#6B5B4A"], ["Papir", "#2F6DB5"], ["Papir og pap", "#2F6DB5"], ["Pap", "#3E7CC4"],
-  ["Glas", "#2E7D4F"], ["Glas og metal", "#2E7D4F"], ["Metal", "#6E7F8D"], ["Plast", "#C9811A"], ["Plast og mad- og drikkekartoner", "#C9811A"],
+  ["Glas", "#2E7D4F"], ["Glas og metal", "#2E7D4F"], ["Metal", "#6E7F8D"], ["Plast", "#C9811A"], ["Plast og mad- og drikkekartoner", "#C9811A"], ["Mad- og drikkekartoner", "#D08F2E"], ["Batterier", "#3D5A80"],
   ["Farligt affald", "#B3261E"], ["Haveaffald", "#5B8C2A"], ["Storskrald", "#7A3E9D"], ["Tekstiler", "#B0488A"],
 ];
+// Ikoner: én tegning pr. slags affald (24×24, streg), så man kan se, hvad der hentes, uden at læse. Fraktionens navn bestemmer ikonet (også et navn, man selv har skrevet).
+export const IKONER = {
+  rest:   '<path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13M10.5 11v6M13.5 11v6"/>',
+  mad:    '<path d="M12 8.5C9.5 6.5 5 8 5 13c0 4 3 8 5.2 8 1 0 1-.6 1.8-.6s.8.6 1.8.6C16 21 19 17 19 13c0-5-4.5-6.5-7-4.5zM12 8.5C12 6 13 4 15.5 3"/>',
+  papir:  '<path d="M7 3h7l4 4v14H7zM14 3v4h4M9.5 12h6M9.5 16h6"/>',
+  pap:    '<path d="M3 8l9-4 9 4-9 4zM3 8v9l9 4 9-4V8M12 12v9M7.5 6l9 4"/>',
+  glas:   '<path d="M9.5 3h5v3l2.5 3v10.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5V9l2.5-3zM7 12.5h10"/>',
+  metal:  '<path d="M7 5c0-1.1 2.2-2 5-2s5 .9 5 2-2.2 2-5 2-5-.9-5-2zM7 5v14c0 1.1 2.2 2 5 2s5-.9 5-2V5M7 10c0 1.1 2.2 2 5 2s5-.9 5-2"/>',
+  plast:  '<path d="M10 3h4v3l2 3v10.5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 8 19.5V9l2-3zM8 13h8M11 3v-1M13 3v-1"/>',
+  karton: '<path d="M6 8l6-5 6 5v13H6zM6 8h12M10 13h4v4h-4z"/>',
+  farlig: '<path d="M12 3l10 18H2zM12 10v5M12 17.8v.4"/>',
+  have:   '<path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15M5 19l8-8"/>',
+  stor:   '<path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3zM6 18v2M18 18v2"/>',
+  tekstil:'<path d="M8 3L3 6l2 4 3-1v12h8V9l3 1 2-4-5-3c-1 2-2.5 3-4 3S9 5 8 3z"/>',
+  batteri:'<path d="M8 6h8v15H8zM10 3h4v3h-4zM12 10v6M9 13h6"/>',
+};
+/** Ikonets navn ud fra fraktionens navn (små/store bogstaver er lige gyldige). Ukendte navne får skraldespanden. */
+export function ikonFor(navn){
+  const n = String(navn ?? "").toLowerCase();
+  const har = (...ord) => ord.some(o => n.includes(o));
+  if (har("farlig")) return "farlig";
+  if (har("batteri")) return "batteri";
+  if (har("tekstil")) return "tekstil";
+  if (har("storskrald", "stor ")) return "stor";
+  if (har("have")) return "have";
+  if (har("karton", "drikke")) return "karton";
+  if (har("plast")) return "plast";
+  if (har("glas")) return "glas";
+  if (har("metal")) return "metal";
+  if (har("papir")) return "papir";
+  if (har("pap")) return "pap";
+  if (har("mad", "organisk", "bio", "køkken")) return "mad";
+  return "rest";
+}
+const escHtml = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+/** Ikonet som HTML: en farvet rund flade med tegningen i hvid streg, og navnet som titel og skærmlæsertekst. */
+export function ikonHtml(navn, farve){
+  const f = /^#[0-9a-fA-F]{6}$/.test(farve || "") ? farve : "#5B6770";
+  return `<span class="aff-ikon" style="--f:${f}" role="img" aria-label="${escHtml(navn)}" title="${escHtml(navn)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IKONER[ikonFor(navn)]}</svg></span>`;
+}
 export const MAX_ADRESSER = 4, MAX_FRAKTIONER = 12, MAX_DATOER = 60, MAX_NAVN = 40;
 const UGEDAGE = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"];
 const MAANEDER = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."];
@@ -84,4 +124,41 @@ export function paaminde(data, nuIso){
   const ud = [];
   for (const a of oversigt(data, nuIso)) for (const r of a.raekker) if (r.dage <= 1) ud.push({ adresse: a.adresse, fraktion: r.fraktion, farve: r.farve, dage: r.dage, ugedag: r.ugedag });
   return ud;
+}
+
+/** Det, der hentes på én bestemt dag (for alle adresser): de regelmæssige tømninger (ikke dem, der udgår) og de ekstra. Til ikonerne på dagene. */
+export function paaDag(data, iso){
+  const n = dagNr(iso);
+  if (n === null) return [];
+  const ud = [];
+  for (const a of rens(data).adresser) for (const f of a.fraktioner){
+    const s = dagNr(f.start), trin = f.hver * 7;
+    const regel = n >= s && (n - s) % trin === 0 && !(f.springes || []).some(d => dagNr(d) === n);
+    if (regel || (f.ekstra || []).some(d => dagNr(d) === n)) ud.push({ adresse: a.navn, fraktion: f.navn, farve: f.farve });
+  }
+  return ud;
+}
+
+/** Datoer, som de står i en kalender (ÅÅÅÅ-MM-DD), → en tidsplan i modellen: start, hver (uger), springes (udgår) og ekstra.
+ *  Der vælges den regelmæssighed, der passer til flest af datoerne: hver 1., 2., 3. … uge, med hver af de første datoer som udgangspunkt.
+ *  Dem, der ligger i rækken, men ikke står i kalenderen, bliver «springes» (udgår), og dem, der står i kalenderen, men ikke i rækken, bliver «ekstra». */
+export function tilSerie(datoer){
+  const d = [...new Set((Array.isArray(datoer) ? datoer : []).map(dagNr).filter(n => n !== null))].sort((a, b) => a - b);
+  if (!d.length) return null;
+  const sæt = new Set(d), slut = d[d.length - 1];
+  if (d.length === 1) return { start: isoFraDag(d[0]), hver: 52, springes: [], ekstra: [], ialt: 1, regelmaessige: 1, afkortet: false };
+  let bedst = null;
+  for (const hver of [1, 2, 3, 4, 5, 6, 8, 13, 26, 52]){
+    const trin = hver * 7;
+    for (const anker of d.slice(0, 6)){
+      const n0 = anker - Math.floor((anker - d[0]) / trin) * trin;
+      let ramt = 0; const mangler = [];
+      for (let n = n0; n <= slut; n += trin) (sæt.has(n) ? ramt++ : mangler.push(n));
+      const ekstra = d.filter(n => n < n0 || (n - n0) % trin !== 0);
+      const score = ramt - mangler.length - 0.7 * ekstra.length;
+      if (!bedst || score > bedst.score + 1e-9 || (Math.abs(score - bedst.score) < 1e-9 && hver > bedst.hver)) bedst = { score, hver, n0, mangler, ekstra, ramt };
+    }
+  }
+  const afkortet = bedst.mangler.length > MAX_DATOER || bedst.ekstra.length > MAX_DATOER;
+  return { start: isoFraDag(bedst.n0), hver: bedst.hver, springes: bedst.mangler.slice(0, MAX_DATOER).map(isoFraDag), ekstra: bedst.ekstra.slice(0, MAX_DATOER).map(isoFraDag), ialt: d.length, regelmaessige: bedst.ramt, afkortet };
 }

@@ -394,6 +394,17 @@ a.k-test{display:inline-flex;align-items:center;text-decoration:none;color:var(-
 .bi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;margin-top:8px}
 .bi-tile{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:rgba(127,127,127,.2)}
 .bi-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.aff-ikon{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--f);color:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.18);vertical-align:middle}
+.aff-ikon svg{width:17px;height:17px}
+.aff-ikon-plads{display:inline-flex;align-items:center}
+.aff-pdf{margin:10px 0;border:1px solid var(--rule);border-radius:var(--radius);padding:8px 12px;background:var(--card)}
+.aff-pdf>summary{cursor:pointer;font-weight:600;min-height:36px;display:flex;align-items:center}
+.aff-pdf-krop{padding:4px 0 6px}
+.aff-post{border-top:1px solid var(--rule);padding:8px 0}
+.aff-post label{display:flex;align-items:center;gap:8px;font-size:15px}
+.aff-post details{margin-top:2px}
+.aff-advarsel{color:#8a5a00}
+.aff-laest{white-space:pre-wrap;font-size:12px;max-height:240px;overflow:auto;background:var(--paper);padding:8px;border-radius:var(--radius)}
 .bi-tile button{position:absolute;top:2px;right:2px;min-width:36px;min-height:36px;border:none;border-radius:4px;background:rgba(0,0,0,.6);color:#fff;font-size:18px;line-height:1}
 .bi-tile .bi-drej{position:absolute;left:2px;bottom:2px;display:flex;gap:4px}
 .bi-tile .bi-drej button{position:static;min-width:36px;min-height:36px;font-size:20px}
@@ -485,6 +496,23 @@ textarea.st-in{font-size:14px;resize:vertical}
     <h2 class="f-over">Tømning</h2>
     <p class="f-note">Vis på forsiden, hvornår skraldespandene tømmes, og mind om det aftenen før. Skriv for hver fraktion <b>én dato, hvor der er tømning</b>, og <b>hvor mange uger der er mellem tømningerne</b>. Resten regnes ud. Står en tømning stille (fx på en helligdag), så skriv datoen under <i>Udgår</i>. Kommer der en ekstra (fx storskrald), så skriv datoen under <i>Ekstra</i>. Datoerne kan skrives som 24.12.2026 eller 2026-12-24, flere adskilt af komma. Du kan have flere adresser (fx din egen og en slægtnings).</p>
     <datalist id="affNavne"></datalist>
+    <details class="aff-pdf" id="affPdf">
+      <summary>Læs tidsplanen fra en PDF-tømmekalender</summary>
+      <div class="aff-pdf-krop">
+        <p class="f-note">Vælg den PDF, renovationsselskabet eller kommunen har givet dig. Den læses <b>her i din browser</b> og sendes ikke noget sted hen. Jeg foreslår en tidsplan for hver slags affald, og du kan se og rette den, før du gemmer. Det virker for PDF'er med tekst. En skannet kalender, eller en hvor affaldet kun vises med farver og symboler, kan ikke læses.</p>
+        <label for="affPdfFil">PDF-fil</label>
+        <input type="file" id="affPdfFil" accept=".pdf,application/pdf">
+        <details class="aff-pdf-tekst">
+          <summary>Eller indsæt teksten fra PDF'en</summary>
+          <p class="f-note">Åbn PDF'en, markér al tekst (Ctrl+A), kopiér (Ctrl+C), og indsæt den her. Det hjælper, hvis selve filen ikke kan læses.</p>
+          <textarea class="st-in" id="affPdfTekst" rows="7" spellcheck="false" aria-label="Tekst fra PDF'en"></textarea>
+          <button type="button" class="k-test" id="affPdfTolk">Læs teksten</button>
+        </details>
+        <p class="f-note" id="affPdfInfo" role="status"></p>
+        <p class="fejl" id="affPdfFejl" role="alert"></p>
+        <div id="affPdfForslag"></div>
+      </div>
+    </details>
     <div id="affEditor"></div>
     <div class="aff-knapper">
       <button type="button" class="k-test" id="affNyAdresse">+ Tilføj adresse</button>
@@ -1165,8 +1193,17 @@ function apptsFor(day){
 // Fire faner, én for hver slags rettelse. "uge" er harmonikaen; de tre
 // andre er lister. Valget lever kun i hukommelsen, ligesom aabenDag: at
 // aabne redigeringssiden er en bevidst handling, og Uge er udgangspunktet.
+// ── Faner og links ──
+// Et link kan pege direkte på en fane: index.html#ops (Opsætning) og index.html#mad (Madplan). Uden # er Uge udgangspunktet, som før.
+const FANE_HASH = { uge:"uge", ugeplan:"uge", mad:"mad", madplan:"mad", faste:"faste", ops:"ops", opsaetning:"ops" };
+/** Fanen, et link peger på (#ops, #madplan …), ellers null. Kun kendte navne; alt andet (også «constructor») er null. */
+function faneFraHash(h){
+  const n = String(h || "").replace(/^#/, "").toLowerCase();
+  return Object.prototype.hasOwnProperty.call(FANE_HASH, n) ? FANE_HASH[n] : null;
+}
+// ── Slut: faner og links ──
 const FANER = { uge:"fUge", mad:"fMad", faste:"fFaste", ops:"fOps" };
-let fane = "uge";
+let fane = faneFraHash(location.hash) || "uge";
 let remAaben = "";           // noeglen paa det huskepunkt, hvis handlinger er foldet ud
 let visSkjulte = {};         // dag -> vis de skjulte punkter
 let remIndex = {};           // noegle -> { k, x }, bygget ved hver tegning
@@ -3613,6 +3650,10 @@ function visFane(f){
   window.scrollTo(0, 0);
   render();
 }
+window.addEventListener("hashchange", () => {            // et link til en anden fane, mens siden allerede er åben
+  const f = faneFraHash(location.hash);
+  if (f && f !== fane) visFane(f);
+});
 document.querySelector(".faner").addEventListener("click", e => {
   const b = e.target.closest("[data-fane]");
   if (b) visFane(b.dataset.fane);
@@ -3787,6 +3828,7 @@ function affTegn(){
   $("affEditor").innerHTML = affStat.adresser.map((a, ai) => `<div class="aff-adr" data-a="${ai}">
     <div class="aff-adr-hoved"><input type="text" class="st-in" data-felt="adresse" maxlength="40" value="${esc(a.navn)}" placeholder="Adressens navn (fx Hjemme)" aria-label="Adressens navn"><button type="button" class="k-test" data-aff="fjern-adr" aria-label="Fjern adressen">Fjern adresse</button></div>
     ${a.fraktioner.map((f, fi) => `<div class="aff-frak" data-a="${ai}" data-f="${fi}">
+      <span class="aff-ikon-plads" data-ikon>${AFF ? AFF.ikonHtml(f.navn, f.farve) : ""}</span>
       <input type="text" class="st-in" data-felt="navn" list="affNavne" maxlength="40" value="${esc(f.navn)}" placeholder="Fraktion" aria-label="Fraktion">
       <input type="color" data-felt="farve" value="${esc(f.farve)}" aria-label="Farve">
       <label class="aff-lbl">Første tømning<input type="date" class="st-in" data-felt="start" value="${esc(f.start)}"></label>
@@ -3810,7 +3852,8 @@ $("affEditor").addEventListener("input", e => {
   const rk = e.target.closest("[data-f]"), adr = e.target.closest("[data-a]");
   const a = affStat.adresser[Number(adr.dataset.a)];
   if (felt === "adresse") a.navn = e.target.value;
-  else { const f = a.fraktioner[Number(rk.dataset.f)]; f[felt] = e.target.value; const fh = rk.querySelector("[data-forh]"); if (fh) fh.textContent = affForhaand(f); }
+  else { const f = a.fraktioner[Number(rk.dataset.f)]; f[felt] = e.target.value; const fh = rk.querySelector("[data-forh]"); if (fh) fh.textContent = affForhaand(f);
+    if ((felt === "navn" || felt === "farve") && AFF){ const ik = rk.querySelector("[data-ikon]"); if (ik) ik.innerHTML = AFF.ikonHtml(f.navn, f.farve); } }
   affSmudsig = true;
 });
 $("affEditor").addEventListener("change", e => {
@@ -3837,6 +3880,87 @@ $("affGem").addEventListener("click", async () => {
   affSmudsig = false; affSynk(true);
   $("affInfo").textContent = payload.adresser.length ? "Gemt. Kortet «Tømning» vises nu på forsiden." : "Gemt. Der er ingen tidsplaner, så kortet er skjult på forsiden.";
 });
+
+/* ── Tømning: læs fra PDF ───────────────────────────────────────────────
+   En PDF-kalender (eller tekst kopieret ud af den) læses i browseren af pdfaffald.js og bliver et FORSLAG: pr. slags affald de fundne datoer og den tidsplan, de bliver til
+   (første dato, hver n. uge, udgår, ekstra). Intet gemmes, før man har set forslaget, lagt det ind i tidsplanen og trykket Gem. */
+let PDFAFF = null, affForslag = null;
+const affPdfModul = () => (PDFAFF ? Promise.resolve(PDFAFF) : import("./pdfaffald.js").then(m => (PDFAFF = m)));
+const affFmt = iso => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
+const affHverTekst = h => (h === 1 ? "hver uge" : `hver ${h}. uge`);
+/** Tolkningen → et forslag. «adresse» er den adresse, de lægges ind under (nummer i listen). */
+function affLavForslag(tk, linjer, kilde){
+  return { aar: tk.aar, layout: tk.layout, advarsler: tk.advarsler.slice(), kilde, adresse: 0, linjer: linjer.slice(0, 60),
+    poster: tk.fraktioner.map(f => ({ navn: f.navn, datoer: f.datoer, serie: AFF.tilSerie(f.datoer), valgt: true })) };
+}
+function affForslagHtml(){
+  if (!affForslag) return "";
+  const f = affForslag, adr = affStat ? affStat.adresser : [];
+  const poster = f.poster.map((p, i) => {
+    const farve = (AFF.FRAKTIONER.find(([n]) => n === p.navn) || [0, "#5B6770"])[1], s = p.serie;
+    const beskr = `${p.datoer.length} ${p.datoer.length === 1 ? "dato" : "datoer"} · første ${AFF.ugedag(s.start).slice(0, 3)}. ${AFF.datoKort(s.start)} · ${affHverTekst(s.hver)}${s.springes.length ? ` · ${s.springes.length} udgår` : ""}${s.ekstra.length ? ` · ${s.ekstra.length} ekstra` : ""}`;
+    return `<div class="aff-post"><label><input type="checkbox" data-post="${i}"${p.valgt ? " checked" : ""}> ${AFF.ikonHtml(p.navn, farve)} <b>${esc(p.navn)}</b></label><div class="f-note">${esc(beskr)}${s.afkortet ? " (en del af undtagelserne er udeladt)" : ""}</div>
+      <details><summary>Se datoerne</summary><div class="f-note">${p.datoer.map(d => esc(`${AFF.ugedag(d).slice(0, 3)}. ${AFF.datoKort(d)}`)).join(", ")}</div></details></div>`;
+  }).join("");
+  return `<div class="aff-forslag">
+    <div><b>${f.poster.length ? `Fandt ${f.poster.length} slags affald i ${esc(f.aar)}` : "Fandt ingen slags affald med datoer"}</b>${f.kilde ? ` i ${esc(f.kilde)}` : ""}.</div>
+    ${f.advarsler.map(a => `<p class="f-note aff-advarsel">${esc(a)}</p>`).join("")}
+    ${poster}
+    ${f.poster.length ? `${adr.length > 1 ? `<label for="affPdfAdr">Læg dem ind under</label><select class="st-in" id="affPdfAdr">${adr.map((a, i) => `<option value="${i}"${i === f.adresse ? " selected" : ""}>${esc(a.navn || `Adresse ${i + 1}`)}</option>`).join("")}</select>` : ""}
+    <button type="button" class="btn-save" id="affPdfBrug">Læg de valgte ind i tidsplanen</button>
+    <p class="f-note">Kontrollér dem i listen herunder bagefter, og tryk Gem. En slags affald, der allerede står der, bliver erstattet.</p>` : ""}
+    <details><summary>Det, jeg læste (de første ${Math.min(f.linjer.length, 60)} linjer)</summary><pre class="aff-laest">${esc(f.linjer.join("\n"))}</pre></details>
+  </div>`;
+}
+function affPdfTegn(){ $("affPdfForslag").innerHTML = affForslagHtml(); }
+function affNytForslag(tk, linjer, kilde){
+  affForslag = affLavForslag(tk, linjer, kilde); affPdfTegn();
+  $("affPdfInfo").textContent = affForslag.poster.length ? "Se forslaget herunder." : "";
+  $("affPdfFejl").textContent = affForslag.poster.length ? "" : "Der var ingen slags affald med datoer, jeg kunne bruge. Se det, jeg læste, herunder, eller indsæt teksten i feltet.";
+}
+/** Læg de valgte ind under den valgte adresse (en slags affald med samme navn erstattes). */
+function affBrugForslag(){
+  if (!affForslag || !affStat || !AFF) return;
+  const valgte = affForslag.poster.filter(p => p.valgt && p.serie), a = affStat.adresser[Math.min(affForslag.adresse, affStat.adresser.length - 1)];
+  $("affPdfFejl").textContent = ""; $("affPdfInfo").textContent = "";
+  if (!valgte.length){ $("affPdfFejl").textContent = "Sæt hak ved mindst én slags affald."; return; }
+  if (!a){ $("affPdfFejl").textContent = "Der er ingen adresse at lægge dem ind under. Tryk «+ Tilføj adresse» først."; return; }
+  let nye = 0, erstattet = 0; const udenPlads = [];
+  for (const p of valgte){
+    const farve = (AFF.FRAKTIONER.find(([n]) => n === p.navn) || [0, "#5B6770"])[1];
+    const fr = { navn: p.navn, farve, start: p.serie.start, hver: p.serie.hver, springes: p.serie.springes.map(affFmt).join(", "), ekstra: p.serie.ekstra.map(affFmt).join(", ") };
+    const i = a.fraktioner.findIndex(x => String(x.navn).trim().toLowerCase() === p.navn.toLowerCase());
+    if (i >= 0){ a.fraktioner[i] = fr; erstattet++; } else if (a.fraktioner.length < AFF.MAX_FRAKTIONER){ a.fraktioner.push(fr); nye++; } else udenPlads.push(p.navn);
+  }
+  affSmudsig = true; affTegn();
+  $("affPdfInfo").textContent = `${nye + erstattet} slags affald lagt ind under «${a.navn || "adressen"}»${erstattet ? ` (${erstattet} erstattede dem, der stod der)` : ""}. Kontrollér dem i listen herunder, og tryk Gem.`;
+  if (udenPlads.length) $("affPdfFejl").textContent = `Der kan højst være ${AFF.MAX_FRAKTIONER} slags affald pr. adresse, så ${udenPlads.join(", ")} blev ikke lagt ind.`;
+}
+async function affLaesFil(fil){
+  $("affPdfFejl").textContent = ""; $("affPdfInfo").textContent = "";
+  if (!fil) return;
+  if (fil.size > 15e6){ $("affPdfFejl").textContent = "Filen er for stor (over 15 MB)."; return; }
+  try {
+    $("affPdfInfo").textContent = "Læser PDF'en …";
+    const m = await affPdfModul(), { linjer, sider } = await m.laesPdf(await fil.arrayBuffer());
+    affNytForslag(m.tolkKalender(linjer), linjer, `«${fil.name}» (${sider} ${sider === 1 ? "side" : "sider"})`);
+  } catch (e){ $("affPdfInfo").textContent = ""; $("affPdfFejl").textContent = e && e.message ? e.message : "PDF'en kunne ikke læses."; }
+}
+async function affLaesTekst(tekst){
+  $("affPdfFejl").textContent = ""; $("affPdfInfo").textContent = "";
+  if (!String(tekst).trim()){ $("affPdfFejl").textContent = "Indsæt teksten fra PDF'en først."; return; }
+  try { const m = await affPdfModul(), linjer = String(tekst).split(/\r?\n/).filter(x => x.trim()); affNytForslag(m.tolkKalender(linjer), linjer, "den indsatte tekst"); }
+  catch (e){ $("affPdfFejl").textContent = e && e.message ? e.message : "Teksten kunne ikke læses."; }
+}
+$("affPdfFil").addEventListener("change", () => affLaesFil($("affPdfFil").files && $("affPdfFil").files[0]));
+$("affPdfTolk").addEventListener("click", () => affLaesTekst($("affPdfTekst").value));
+$("affPdfForslag").addEventListener("change", e => {
+  if (!affForslag) return;
+  if (e.target.dataset && e.target.dataset.post !== undefined) affForslag.poster[Number(e.target.dataset.post)].valgt = e.target.checked;
+  else if (e.target.id === "affPdfAdr") affForslag.adresse = Number(e.target.value) || 0;
+});
+$("affPdfForslag").addEventListener("click", e => { if (e.target.closest && e.target.closest("#affPdfBrug")) affBrugForslag(); });
+/* ── Slut: tømning PDF ── */
 
 /* ── Tilfældig vælger: egne lister (settings/vaelger) ───────────────── */
 let vlData = {}, VL = null, vlStat = null, vlSmudsig = false;
