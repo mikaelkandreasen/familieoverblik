@@ -225,7 +225,9 @@ Kortet «Tømning» vises på forsiden.
 
 **Ugebreve og skema:** Brevet vises som afsnit med overskrifter. Skemaet i brevet bruges som skema i Skema-vinduet, hvis Aulas kalender ikke har lektionerne. Hent dem med det samme: `python /app/Sync-Aula.py` i `aula`-containerens terminal. Står skemaet ikke, så kør `python /app/Sync-Aula.py --brevform` og send udskriften (den viser kun brevets opbygning, ikke teksten).
 
-**Kantine:** Kortet «Kantine» viser skolens menu, som kantinen sender som en besked hver uge. Aula-hentningen læser den. Kortet er skjult, til der er en menu. Står den ikke, så kør `python /app/Sync-Aula.py` og se efter linjen «kantine:» i udskriften, eller `python /app/Sync-Aula.py --kantineform`.
+**Aftaler mangler i familiekalenderen:** Kalenderne hentes hver time (ikke hver gang du åbner siden). Hent dem med det samme i `cron`-containerens terminal: `CRON_START=0 CRON_ENKELT=1 CRON_FRISK=1 sh /cron.sh`. Gentagne aftaler («hver tirsdag») læses siden 3.10.0 også. Vil du se, hvad kalenderen indeholder en bestemt dag, så kør i `web`-containerens terminal `ls /var/www/ugeplan-data/cache/` og derefter `python3 /opt/familieoverblik/ics.py --fil /var/www/ugeplan-data/cache/FILNAVN --dato i-morgen`.
+
+**Kantine:** Kortet «Kantine» viser skolens menu, som kantinen sender som en besked hver uge. Aula-hentningen læser den. Kortet er skjult, til der er en menu. Står den ikke, så kør `python /app/Sync-Aula.py` og se efter linjen «kantine:» i udskriften, eller `python /app/Sync-Aula.py --kantineform`. `--kantinetekst` viser de nyeste kantine-breve linje for linje.
 
 **Gamle Android-enheder:** Siderne kræver cirka Chrome 85. Android 5.1 kan højst få Chrome 95 (og Android System WebView 95). Find versionen i `chrome://version`. Er den under 85, skal siderne bygges om (se BACKLOG.md).
 

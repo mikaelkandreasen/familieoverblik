@@ -16,6 +16,24 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.10.0] – 2026-11-08
+
+### Rettet (kalendere: manglende aftaler)
+- **Gentagne aftaler vises nu.** Kalenderlæseren i `hent.php` kendte kun enkeltstående begivenheder og **ingen gentagelser** (`RRULE`). En familiekalender er fuld af dem («hver tirsdag», «hver anden uge», «den 2. torsdag hver måned», fødselsdage hvert år), og dem så man kun ved den første forekomst, ikke i morgen. Der er en ny læser i Python (`docker/web/ics.py`), som `hent.php` kalder; den udvider gentagelserne til hver forekomst.
+  - Den kender: `FREQ` (dagligt, ugentligt, månedligt, årligt), `INTERVAL`, `COUNT`, `UNTIL`, `BYDAY` (også «2TU» og «-1FR»), `BYMONTHDAY`, `BYMONTH`, `BYSETPOS`, `WKST`, **undtagelser** (`EXDATE`), ekstra datoer (`RDATE`) og **flyttede eller aflyste forekomster** (`RECURRENCE-ID`). Klokkeslættet holder over sommertid, når aftalen står i en tidszone (TZID).
+  - Den kender også tidszoner med Windows' navne (Outlook), heldagsposter over flere dage, `DURATION` og svævende tid.
+  - Gentagelser, der ikke kan regnes ud (`BYWEEKNO`, `BYYEARDAY`), giver kun den første forekomst. **Fejler Python-læseren, eller findes den ikke, bruges den gamle læser**, så en kalender aldrig forsvinder.
+- **Kalenderne hentes oftere.** Cachen var 6 timer, så en ny aftale til i morgen kunne vente, før den vistes. Den er nu en halv time, så hver time-kørsel henter på ny.
+- **Hent kalenderne nu:** i `cron`-containerens terminal: `CRON_START=0 CRON_ENKELT=1 CRON_FRISK=1 sh /cron.sh` (ignorerer cachen). Se, hvad en kalender indeholder en bestemt dag: i `web`-containerens terminal `ls /var/www/ugeplan-data/cache/` og så `python3 /opt/familieoverblik/ics.py --fil /var/www/ugeplan-data/cache/FILNAVN --dato i-morgen`. Den siger, hvor mange begivenheder der er i filen, hvor mange der gentages, og hvad der står den dag.
+- 49 nye prøver (RFC 5545-eksempler, sommertid, undtagelser, flyttede forekomster, tidszoner, skrald). **PHP-delen er ikke kørt** (kun kontrolleret som tekst), og læseren er ikke afprøvet mod din kalender.
+
+### Kantine
+- Læseren kender flere måder at skrive overskriften på («Ugens menu:», «Menu uge 46:», «Dagens menu:», «Ugemenu:») og en ugedag skrevet alene på en linje med retten på den næste. Står der ingen «Menu:»-linje, bruges mindst tre linjer, der begynder med en ugedag og har en ret («Mandag: …»).
+- **Ny diagnose:** `python /app/Sync-Aula.py --kantinetekst` viser de tre nyeste kantine-breve linje for linje (første 25 linjer, ikke afsenderen) og hvordan menuen blev læst. Send mig udskriften, hvis kortet «Kantine» stadig er tomt.
+
+### Opdatering fra 3.9.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Hent så kalenderne med det samme (kommandoen ovenfor) og genindlæs forsiden.
+
 ## [3.9.0] – 2026-11-08
 
 ### Tilføjet

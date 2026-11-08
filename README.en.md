@@ -75,7 +75,7 @@ You need: a server with Docker (a small mini PC is enough) and [Dockhand](https:
 
 ## Status
 
-**Early release (version 3.x).** The code is covered by **514 automated Python tests and 1,208 JavaScript tests**, but not everything has been tried against the real services:
+**Early release (version 3.x).** The code is covered by **572 automated Python tests and 1,208 JavaScript tests**, but not everything has been tried against the real services:
 - **The Aula login** uses an unofficial library and was tested against a simulation, not Aula itself. It is the most fragile part.
 - **PHP, Apache and Docker** were not run in the development environment, so login, two-step verification and open view must be tried on a real server.
 - Services such as Hyundai, Strava and Open-Meteo can change and break part of the solution.

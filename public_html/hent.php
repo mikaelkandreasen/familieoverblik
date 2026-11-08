@@ -37,7 +37,7 @@ if (is_file(dirname($lib) . '/feeds.php')) require_once dirname($lib) . '/feeds.
 
 const HENT_LOG       = DATA_DIR . '/hent.log';
 const HENT_CACHE_DIR = DATA_DIR . '/cache';
-const ICS_CACHE_HOURS = 6;
+const ICS_CACHE_HOURS = 0.5;       // en halv time: cron henter hver time, så hver kørsel henter kalenderne på ny (før 6 timer: en ny aftale kunne vente længe). ?frisk=1 ignorerer cachen
 
 $isCli = PHP_SAPI === 'cli';
 
@@ -119,7 +119,7 @@ function http_get(string $url, int $timeout = 30): string
 }
 
 /** Hent med lokal cache, så et stort feed ikke trækkes hver time. */
-function http_get_cached(string $url, string $cacheName, int $hours): string
+function http_get_cached(string $url, string $cacheName, float $hours): string
 {
     if (!is_dir(HENT_CACHE_DIR)) @mkdir(HENT_CACHE_DIR, 0770, true);
     $f = HENT_CACHE_DIR . '/' . $cacheName;
@@ -345,8 +345,58 @@ function ics_date(string $params, string $value): ?array
     return null;
 }
 
-/** Træk VEVENTs ud, der overlapper [$from, $to). */
+/**
+ * ICS-læseren i Python (ics.py): kender gentagelser (RRULE), undtagelser (EXDATE) og flyttede eller aflyste forekomster (RECURRENCE-ID), som den gamle læser herunder ikke kender.
+ * Returnerer null, hvis scriptet ikke findes eller fejler; så bruges den gamle læser.
+ * @return array<int,array<string,mixed>>|null
+ */
+function ics_events_py(string $text, DateTimeImmutable $from, DateTimeImmutable $to): ?array
+{
+    $script = '/opt/familieoverblik/ics.py';
+    if (!is_file($script) || !function_exists('proc_open')) return null;
+    $in = json_encode(['text' => $text, 'fra' => $from->format('c'), 'til' => $to->format('c'), 'tz' => TIMEZONE], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    if (!is_string($in)) return null;
+    $p = @proc_open(['python3', $script], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    if (!is_resource($p)) return null;
+    fwrite($pipes[0], $in);
+    fclose($pipes[0]);
+    $ud = (string)stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    if (proc_close($p) !== 0) return null;
+    $j = json_decode($ud, true);
+    if (!is_array($j) || !isset($j['events']) || !is_array($j['events'])) return null;
+
+    $tz  = new DateTimeZone(TIMEZONE);
+    $out = [];
+    foreach ($j['events'] as $e) {
+        try {
+            $start = (new DateTimeImmutable((string)$e['start']))->setTimezone($tz);
+            $end   = isset($e['end']) ? (new DateTimeImmutable((string)$e['end']))->setTimezone($tz) : null;
+            $last  = (new DateTimeImmutable((string)$e['last']))->setTimezone($tz);
+        } catch (Throwable) {
+            continue;
+        }
+        $out[] = [
+            'start'    => $start,
+            'end'      => $end,
+            'last'     => $last,
+            'allDay'   => (bool)($e['allDay'] ?? false),
+            'summary'  => (string)($e['summary'] ?? ''),
+            'location' => (string)($e['location'] ?? ''),
+        ];
+    }
+    return $out;
+}
+
+/** Begivenhederne, der overlapper [$from, $to), også de gentagne: Python-læseren, ellers den gamle. */
 function ics_events(string $text, DateTimeImmutable $from, DateTimeImmutable $to): array
+{
+    return ics_events_py($text, $from, $to) ?? ics_events_php($text, $from, $to);
+}
+
+/** Træk VEVENTs ud, der overlapper [$from, $to). Den gamle læser: kun enkeltstående begivenheder (ingen gentagelser). */
+function ics_events_php(string $text, DateTimeImmutable $from, DateTimeImmutable $to): array
 {
     $out = [];
     $cur = null;
@@ -443,7 +493,7 @@ function job_ics(): string
         $before = $total;
         try {
             $cacheName = 'feed-' . substr(hash('sha256', $feed['url']), 0, 12) . '.ics';
-            $text = http_get_cached($feed['url'], $cacheName, ICS_CACHE_HOURS);
+            $text = http_get_cached($feed['url'], $cacheName, isset($_GET['frisk']) ? 0.0 : ICS_CACHE_HOURS);
 
             foreach (ics_events($text, $monday, $until) as $e) {
                 // En flerdags heldagspost skal stå på hver af sine dage,
