@@ -21,10 +21,46 @@ TID = re.compile(r"^\s*(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})\s
 HILSEN = re.compile(r"^(kære|hej|goddag|godmorgen)\b", re.I)
 LAERERE = re.compile(r"\s*\((?:[A-ZÆØÅ]{1,5})(?:\s*,\s*[A-ZÆØÅ]{1,5})*\)")      # (MO, EKS)
 GRUPPE = re.compile(r"^[A-D]\s*:\s*")                                              # «A: Engelsk», «B: Matematik»
-DO = re.compile(r"^do\.?$", re.I)                                                  # «DO.» = ditto: samme som timen før
+DO = re.compile(r"^(do|samme|ditto)\.?$", re.I)                                          # «DO.» / «samme» = ditto: samme som timen før
+OVERSKRIFT_UGE = re.compile(r"uge\s*\d+\s*$", re.I)                                          # «Barn 1Buge 46», «Ugeplan for uge 46»
+UGEN_DER = re.compile(r"^ugen der\b", re.I)                                               # «Ugen der gik», «Ugen der kommer»: hvor et brev uden hilsen begynder
 GEAR = re.compile(r"idræt|svømning|bevægelse", re.I)                               # som i Sync-Aula.GEAR_PATTERN
 BLOKKE = {"p", "div", "li", "br", "tr", "table", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6", "section", "article", "blockquote", "hr", "dd", "dt", "header", "footer"}
 SPRING = {"script", "style", "head", "title"}
+
+
+class Tabel(list):
+    """En tabel som rækker af kolonnepladser (hver en liste af linjer). spaend: (række, kolonne) → antal rækker en celle strækker sig over. daekket: pladser, der er dækket af en celle fra en tidligere række (rowspan), og som derfor står tomme her."""
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.spaend, self.daekket = {}, set()
+
+
+def _gitter(raekker):
+    """Rækker af celler {l, cs, rs} → en Tabel, hvor hver celle står på sin rigtige kolonneplads, også når en celle fra en tidligere række dækker pladsen (rowspan) eller selv dækker flere kolonner (colspan).
+    Det er den måde, en browser lægger en tabel ud på. Uden det rykker kolonnerne mod venstre i rækkerne efter en sammenflettet celle, og en lektion havner på den forkerte ugedag."""
+    ud, optaget = Tabel(), {}
+    for r, celler in enumerate(raekker):
+        rad, kol, brugt, nye = [], 0, set(), {}
+        for c in celler:
+            while optaget.get(kol, 0) > 0:
+                rad.append([]); ud.daekket.add((r, kol)); brugt.add(kol); kol += 1
+            rad.append(list(c["l"]))
+            if c["rs"] > 1:
+                ud.spaend[(r, kol)] = c["rs"]
+            for j in range(c["cs"]):
+                if j:
+                    rad.append([])
+                if c["rs"] > 1:
+                    nye[kol + j] = c["rs"] - 1
+            kol += c["cs"]
+        while optaget.get(kol, 0) > 0:
+            rad.append([]); ud.daekket.add((r, kol)); brugt.add(kol); kol += 1
+        for k in brugt:
+            optaget[k] -= 1
+        optaget.update(nye)
+        ud.append(rad)
+    return ud
 
 
 class _Brev(HTMLParser):
@@ -37,7 +73,7 @@ class _Brev(HTMLParser):
         self._buf = ""
         self._dyb = 0             # tabeldybde
         self._spring = 0
-        self._span = 1
+        self._cs = self._rs = 1
         self._tabel = None
         self._raekke = None
         self._celle = None
@@ -57,9 +93,7 @@ class _Brev(HTMLParser):
     def _luk_celle(self):
         if self._celle is not None:
             self._flush()
-            self._raekke.append(self._celle)
-            for _ in range(self._span - 1):                    # colspan: pladsen bevares med tomme celler
-                self._raekke.append([])
+            self._raekke.append({"l": self._celle, "cs": self._cs, "rs": self._rs})
             self._celle = None
 
     def _luk_raekke(self):
@@ -88,10 +122,13 @@ class _Brev(HTMLParser):
             self._flush()
             if self._raekke is None:                            # en celle uden <tr>
                 self._raekke = []
-            try:
-                self._span = max(1, min(12, int(dict(attrs).get("colspan") or 1)))
-            except ValueError:
-                self._span = 1
+            a = dict(attrs)
+            def tal(navn, maks):
+                try:
+                    return max(1, min(maks, int(str(a.get(navn) or 1).strip())))
+                except ValueError:
+                    return 1
+            self._cs, self._rs = tal("colspan", 12), tal("rowspan", 30)
             self._celle = []
             return
         if tag == "li":
@@ -116,7 +153,7 @@ class _Brev(HTMLParser):
             if self._dyb == 0:
                 self._luk_raekke()
                 if self._tabel:
-                    self.tabeller.append(self._tabel)
+                    self.tabeller.append(_gitter(self._tabel))
                 self._tabel = None
             return
         if tag in BLOKKE:
@@ -133,7 +170,7 @@ class _Brev(HTMLParser):
             self._dyb = 1
             self._luk_raekke()
             if self._tabel:
-                self.tabeller.append(self._tabel)
+                self.tabeller.append(_gitter(self._tabel))
             self._tabel = None
             self._dyb = 0
         self._flush()
@@ -181,20 +218,28 @@ def find_plan(tabeller):
             kolonner = dagplads
             break
     raekker = []
-    for r in bedst:
+    spaend, daekket = getattr(bedst, "spaend", {}), getattr(bedst, "daekket", set())
+    for ri, r in enumerate(bedst):
         if not r:
             continue
         t = _tid(r[0])
         if not t:
             continue
         start, slut, tekst = t
-        celler = {}
+        celler, spand, dak = {}, {}, []
         for i, celle in enumerate(r[1:], 1):
             k = kolonner.get(i) if kolonner else (i if i <= 7 else None)
-            if k is None or not celle:
+            if k is None:
+                continue
+            if (ri, i) in daekket:                                  # en celle fra en tidligere række dækker pladsen
+                dak.append(str(k))
+                continue
+            if not celle:
                 continue
             celler[str(k)] = list(celle)
-        raekker.append({"tid": tekst, "start": start, "slut": slut, "celler": celler})
+            if spaend.get((ri, i), 1) > 1:
+                spand[str(k)] = spaend[(ri, i)]
+        raekker.append({"tid": tekst, "start": start, "slut": slut, "celler": celler, "spaend": spand, "daekket": dak})
     if len(raekker) < 2:
         return None
     dage = sorted({int(k) for r in raekker for k in r["celler"]})
@@ -222,21 +267,23 @@ def _lektion(linjer):
 
 
 def plan_til_lektioner(plan, barn):
-    """Lektioner pr. ugedag («1»…«7») i samme form som Sync-Aula.build_lessons, plus «note». «Pause» er ingen lektion. En celle med «DO.» forlænger timen før."""
+    """Lektioner pr. ugedag («1»…«7») i samme form som Sync-Aula.build_lessons, plus «note». «Pause» er ingen lektion. En celle med «DO.» eller «samme» forlænger timen før. En celle, der strækker sig over flere
+    rækker (rowspan), varer til slutningen af den sidste af dem, og de rækker, den dækker, regnes ikke som tomme."""
     dage = {str(i): [] for i in range(1, 8)}
     if not plan:
         return dage
+    rk = plan["raekker"]
     forrige = {}                                              # ugedag → den sidste lektion, en «DO.» kan forlænge
-    for r in plan["raekker"]:
+    for i, r in enumerate(rk):
         for k in sorted(r["celler"], key=int):
-            linjer = r["celler"][k]
-            tekst = [l.strip() for l in linjer if l.strip()]
+            tekst = [l.strip() for l in r["celler"][k] if l.strip()]
+            slut = rk[min(i + r.get("spaend", {}).get(k, 1) - 1, len(rk) - 1)]["slut"]
             if not tekst:
                 forrige.pop(k, None)
                 continue
             if any(DO.match(l) for l in tekst):                # ditto: samme som timen før
                 if k in forrige:
-                    forrige[k]["end"] = r["slut"]
+                    forrige[k]["end"] = slut
                 continue
             if all(l.lower() == "pause" for l in tekst):
                 forrige.pop(k, None)
@@ -244,11 +291,14 @@ def plan_til_lektioner(plan, barn):
             titel, note = _lektion(tekst)
             if not titel:
                 continue
-            les = {"child": barn, "start": r["start"], "end": r["slut"], "title": titel, "room": "", "sub": False}
+            les = {"child": barn, "start": r["start"], "end": slut, "title": titel, "room": "", "sub": False}
             if note:
                 les["note"] = note
             dage[k].append(les)
             forrige[k] = les
+        for k in list(forrige):                                # en tom celle afbryder en «samme»-kæde, men ikke hvis en celle ovenfra dækker pladsen
+            if k not in r["celler"] and k not in r.get("daekket", []):
+                forrige.pop(k)
     for lst in dage.values():
         lst.sort(key=lambda x: (x["start"], x["title"]))
     return dage
@@ -267,15 +317,17 @@ def plan_til_skole(plan, barn):
 
 
 def krop(linjer, har_plan):
-    """Selve brevet. Med et skema i brevet kasseres overskriftslinjerne før hilsenen («Barn 4A uge 46», «Uge 46»); uden skema er alt brev."""
+    """Selve brevet. Med et skema i brevet kasseres overskriftslinjerne før brevet («Barn 4A uge 46», «Ugeplan for uge 46»). Brevet begynder ved hilsenen (Kære …) eller, uden hilsen, ved «Ugen der …»; uden skema er alt brev."""
     linjer = [l for l in linjer if l.strip()]
     if not har_plan:
         return "\n".join(linjer)
     g = next((i for i, l in enumerate(linjer) if HILSEN.match(l)), None)
+    if g is None:
+        g = next((i for i, l in enumerate(linjer) if UGEN_DER.match(l)), None)
     if g is not None:
         return "\n".join(linjer[g:])
     i = 0
-    while i < len(linjer) and len(linjer[i]) <= 40 and re.search(r"\buge\s*\d+", linjer[i], re.I):
+    while i < len(linjer) and len(linjer[i]) <= 40 and (OVERSKRIFT_UGE.search(linjer[i]) or re.match(r"^ugeplan\b", linjer[i], re.I)):
         i += 1
     return "\n".join(linjer[i:])
 

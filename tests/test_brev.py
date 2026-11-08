@@ -5,7 +5,7 @@ import brev as B
 ok_all = True
 def t(n, c, x=""):
     global ok_all; ok_all &= bool(c); print("ok  " if c else "FEJL", n, "" if c else x)
-from brevfix import cell, raekke, PAUSE, BREV
+from brevfix import cell, raekke, PAUSE, BREV, BREV2, c2, TOM
 tab, lin = B.laes_html(BREV)
 t("én tabel med 7 rækker (overskrift, 5 timer, pause, …) og brevets tekst uden for tabellen som linjer", len(tab) == 1 and len(tab[0]) == 7 and lin[:3] == ["Barn 4A", "uge 46", "Kære forældre,"] and lin[-1] == "Team 4.", (len(tab), [len(r) for r in tab[0]], lin[:4]))
 t("hver celle er en liste af linjer, og en tom celle er tom (men der)", tab[0][1][1] == ["Billedkunst (AA, BB)", "Linoleumstryk."] and tab[0][4][4] == [] and len(tab[0][4]) == 6)
@@ -55,4 +55,28 @@ t("krop uden hilsen: korte «uge nn»-linjer foran springes over, resten er brev
 sk = B.skelet(BREV)
 t("skelettet viser tags og tekstmængde, men ingen tekst fra brevet (hverken fag, navne eller brødtekst)", "<table>" in sk and "<td>" in sk and "[tekst" in sk and not any(x in sk for x in ("Billedkunst", "Kære", "Barn", "Svømning", "skolefest")), sk[:300])
 t("skelettet afkortes, så det er til at sende", len(B.skelet(BREV * 20, maks=500)) < 600)
+# ═══ anden klasse: sammenflettede celler, «samme», ingen hilsen, overskrifter uden kolon ═══
+tab2, lin2 = B.laes_html(BREV2)
+p2 = B.find_plan(tab2)
+t("rowspan: rækken efter en sammenflettet celle har stadig fem dagspladser; onsdag og torsdag er dækket (ikke tomme), og fredag står på fredags plads", p2 and len(tab2[0][3]) == 6 and tab2[0][3][5] == ["Dansk", "bibliotekstime"] and (3, 3) in tab2[0].daekket and (3, 4) in tab2[0].daekket and tab2[0].spaend == {(2, 3): 5, (2, 4): 2}, (tab2[0][3], tab2[0].spaend, tab2[0].daekket))
+t("find_plan holder rede på dækkede dage og spænd pr. række", p2["raekker"][1]["spaend"] == {"3": 5, "4": 2} and p2["raekker"][2]["daekket"] == ["3", "4"] and p2["raekker"][2]["celler"]["5"] == ["Dansk", "bibliotekstime"] and p2["raekker"][4]["daekket"] == ["3"], [(r["tid"], r["daekket"]) for r in p2["raekker"]][:5])
+t("tider med mellemrum omkring bindestregen (7:45 - 8:00) og tankestreg (9:35 – 10:20) kendes, og rækken «HUSK!» er ikke en time", [r["tid"] for r in p2["raekker"]][:3] == ["7:45 - 8:00", "8:00 - 8:30", "8:30 - 9:15"] and all(r["tid"] != "HUSK!" for r in p2["raekker"]) and len(p2["raekker"]) == 10, [r["tid"] for r in p2["raekker"]])
+l2 = B.plan_til_lektioner(p2, "Barn")
+t("en celle, der strækker sig over fem rækker (onsdag), er én lektion fra 08.00 til 11.05, med hele teksten som titel", ("08.00", "11.05", "I er sammen med 0. klasse hele dagen") in [(x["start"], x["end"], x["title"]) for x in l2["3"]] and len([x for x in l2["3"] if x["start"] < "11.05" and x["end"] > "08.00" and x["title"] != "Morgenbånd"]) == 1, l2["3"])
+t("torsdag: Idræt over to rækker er 08.00–09.15, og den efterfølgende time står på torsdag (ikke rykket)", [(x["start"], x["end"], x["title"]) for x in l2["4"]][:3] == [("07.45", "08.00", "Fortælletime"), ("08.00", "09.15", "Idræt"), ("09.35", "10.20", "Dansk")] or [(x["start"], x["end"], x["title"]) for x in l2["4"]], [(x["start"], x["end"], x["title"]) for x in l2["4"]])
+t("fredag: biblioteksdansk kl. 8.30 står på fredag, og matematik efter pausen også (kolonnerne rykker ikke mod venstre efter de sammenflettede celler)", ("08.30", "09.15", "Dansk") in [(x["start"], x["end"], x["title"]) for x in l2["5"]] and ("09.35", "10.20", "Matematik") in [(x["start"], x["end"], x["title"]) for x in l2["5"]], [(x["start"], x["end"], x["title"]) for x in l2["5"]])
+t("«samme» (og «Samme») er ditto og forlænger timen før: mandags dansk 9.35 varer til 11.05, tirsdags UUV også, og noten «samme» bliver ikke en note", [(x["start"], x["end"]) for x in l2["1"] if x["title"] == "Dansk" and x["start"] == "09.35"] == [("09.35", "11.05")] and [(x["start"], x["end"]) for x in l2["2"] if x["title"] == "UUV"] == [("09.35", "11.05")] and all(x.get("note", "") != "samme" for d in l2.values() for x in d), l2["1"])
+t("tomme rækker (pauser og fridage uden tekst) giver ingen lektioner, og «HUSK!»-rækken heller ikke", all(x["start"] not in ("09.15", "11.05", "12.30", "13.25") for d in l2.values() for x in d))
+t("note og titel: «Dansk / Skriv om din weekend» → titel Dansk, note «Skriv om din weekend»; tre linjer samles i noten med ·", [x for x in l2["1"] if x["start"] == "08.00"][0]["note"] == "Skriv om din weekend" and [x for x in l2["2"] if x["title"] == "UUV"][0]["note"] == "Vi arbejder med materialet · Denne uge: PYT", [x for x in l2["2"] if x["title"] == "UUV"])
+brod2, plan2 = B.laes_brev(BREV2)
+t("et brev UDEN hilsen begynder ved «Ugen der gik»: «Barn 1Buge 46» (uden ordgrænse før «uge») og alt i tabellen er væk, og afslutningen er med", brod2.split("\n")[0] == "Ugen der gik" and "1Buge" not in brod2 and "Morgenbånd" not in brod2 and brod2.endswith("Venlig hilsen\nTeam 1.") and plan2 is not None, brod2[:80])
+t("krop: uden hilsen og uden «Ugen der» fjernes korte overskriftslinjer, der ender på «uge nn» eller starter med «Ugeplan», også «1Buge 46»", B.krop(["Barn 1Buge 46", "Ugeplan for uge 46", "Husk tøj."], True) == "Husk tøj." and B.krop(["Barn 1Buge 46", "Husk tøj."], True) == "Husk tøj.")
+t("«samme» og «Ditto» er ditto, men «samme som mandag» og «samme tid» er almindelig tekst", all(B.DO.match(x) for x in ("samme", "Samme", "DO.", "do", "ditto", "Samme.")) and not any(B.DO.match(x) for x in ("samme som mandag", "samme tid", "sammen", "Dokumentar")))
+# rowspan og colspan sammen, i en lille tabel
+lille = '<table><tr><td>Tid</td><td>Mandag</td><td>Tirsdag</td><td>Onsdag</td></tr><tr><td>8:00-9:00</td><td rowspan=2>A</td><td colspan=2>B</td></tr><tr><td>9:00-10:00</td><td>C</td><td>D</td></tr><tr><td>10:00-11:00</td><td>E</td><td>F</td><td>G</td></tr></table>'
+tl = B.laes_html(lille)[0][0]; pl = B.find_plan([tl])
+t("rowspan og colspan sammen: B dækker tirsdag og onsdag, A dækker mandag i to rækker, så C og D rykker til tirsdag og onsdag", pl["raekker"][0]["celler"] == {"1": ["A"], "2": ["B"]} and pl["raekker"][1]["celler"] == {"2": ["C"], "3": ["D"]} and pl["raekker"][1]["daekket"] == ["1"] and pl["raekker"][2]["celler"] == {"1": ["E"], "2": ["F"], "3": ["G"]}, [r["celler"] for r in pl["raekker"]])
+t("A varer over to rækker (08.00–10.00), og E starter kl. 10", (lambda l: [(x["title"], x["start"], x["end"]) for x in l["1"]] == [("A", "08.00", "10.00"), ("E", "10.00", "11.00")])(B.plan_til_lektioner(pl, "Barn")))
+t("en rowspan, der går ud over tabellens sidste række, giver ingen fejl og slutter ved den sidste række", (lambda p: B.plan_til_lektioner(p, "Barn")["1"][0]["end"] == "10.00")(B.find_plan(B.laes_html('<table><tr><td>Tid</td><td>Mandag</td></tr><tr><td>8:00-9:00</td><td rowspan=9>X</td></tr><tr><td>9:00-10:00</td></tr></table>')[0])))
+t("tvivlsomme rowspan/colspan-værdier (0, tekst, negative, enorme) giver ingen fejl", B.laes_html('<table><tr><td rowspan="x">a</td><td colspan="0">b</td><td rowspan="-3">c</td><td colspan="99999">d</td></tr></table>')[0] is not None)
 sys.exit(0 if ok_all else 1)
