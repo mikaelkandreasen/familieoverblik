@@ -16,6 +16,20 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.8.1] – 2026-11-08
+
+### Rettet (skemaet i ugebrevet, andet barns klasse)
+Det andet barns ugeplan er bygget anderledes end det første, og læseren fra 3.6.0 kunne ikke tage højde for det:
+- **Sammenflettede celler (rowspan og colspan).** Hos det andet barn strækker nogle celler sig over flere rækker (fx onsdag «I er sammen med 0. klasse hele dagen»). I en HTML-tabel rykker kolonnerne så mod venstre i de rækker, der følger, hvis man tæller celler i stedet for pladser, og en lektion havner på den forkerte ugedag. Læseren lægger nu tabellen ud som en browser gør (hver celle på sin rigtige plads, dækkede pladser holdes ude), og en celle over flere rækker varer til slutningen af den sidste af dem.
+- **«samme» er ditto.** I den klasse skriver læreren «samme» (og «Samme») i stedet for «DO.». Det forlænger nu timen før. «Samme som mandag» og lignende er stadig almindelig tekst.
+- **Brev uden hilsen.** Brevet begynder ved «Ugen der …», når der ikke er en «Kære …», og overskriftslinjer som «Barn 1Buge 46» (hvor «uge» sidder fast i klassens navn) og «Ugeplan for uge 46» kasseres nu.
+- **Overskrifter uden kolon** («Ugen der gik», «Ugen der kommer», «Ekstra») vises nu som overskrifter, når et afsnit følger. Før var det kun overskrifter, der endte på kolon.
+- Nye prøver bygger en opdigtet klasse med den samme opbygning (sammenflettede celler, «samme», tomme pausesrækker, en «HUSK!»-række og et brev uden hilsen) og kontrollerer ugedag og tidspunkt for hver lektion. 16 nye prøver. **Ikke afprøvet med selve brevets HTML**: jeg kender kun den flade tekst. Viser Skema-vinduet stadig noget forkert, så kør `python /app/Sync-Aula.py --brevform` og send udskriften (kun opbygning, ingen tekst).
+- Noter i skemaet vises som lærerne har skrevet dem. De kan indeholde fornavne (fx «Ida og Emil/ PC»); forbogstaver i parentes fjernes stadig.
+
+### Opdatering fra 3.8.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Hent så skema og breve med det samme: `python /app/Sync-Aula.py`.
+
 ## [3.8.0] – 2026-11-08
 
 ### Tilføjet

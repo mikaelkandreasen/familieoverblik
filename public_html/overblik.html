@@ -1711,22 +1711,26 @@ const kantineHtml = kv => kv.raekker.map(r => `<div class="kant-r${r.idag ? " id
 // ── Ugebrev: tekst og afsnit ──
 const BREV_TID = /^\d{1,2}[:.]\d{2}\s*[-–—]\s*\d{1,2}[:.]\d{2}$/;
 const BREV_HILSEN = /^(kære|hej|goddag|godmorgen)\b/i;
+const BREV_UGEN_DER = /^ugen der\b/i;                    // et brev uden hilsen begynder ofte med «Ugen der gik»
 const BREV_SLUT = /^(med (ønsket|venlig)|venlig hilsen|mvh|de bedste hilsner|hilsen)\b/i;
 /** Selve brevet. Nyere data har «body» (Sync-Aula læser skemaet ud af brevet). Ældre data har kun «full», hvor skemaet står som løse linjer før hilsenen: så klippes der ved hilsenen. */
 function brevKrop(l){
   if (typeof l?.body === "string" && l.body.trim()) return l.body;
   const full = String(l?.full || l?.preview || "");
   const lin = full.split("\n").map(x => x.trim());
-  const t = lin.findIndex(x => BREV_TID.test(x)), g = lin.findIndex(x => BREV_HILSEN.test(x));
+  const t = lin.findIndex(x => BREV_TID.test(x)), g = lin.findIndex((x, i) => i > t && (BREV_HILSEN.test(x) || BREV_UGEN_DER.test(x)));
   return t >= 0 && g > t ? lin.slice(g).join("\n") : full;
 }
-/** Brevets linjer som afsnit: hilsen, overskrifter («Ugen der kommer:»), «Emne: tekst» med emnet fremhævet, almindelige afsnit og afslutning (hilsenen til sidst og det, der følger). */
+/** Brevets linjer som afsnit: hilsen, overskrifter («Ugen der kommer:» eller «Ugen der kommer» og «Ekstra», hvis et afsnit følger), «Emne: tekst» med emnet fremhævet, almindelige afsnit og afslutning (hilsenen til sidst og det, der følger). */
 function brevAfsnit(tekst){
   let slut = false;
-  return String(tekst || "").split("\n").map(x => x.trim()).filter(Boolean).map((x, i) => {
+  const lin = String(tekst || "").split("\n").map(x => x.trim()).filter(Boolean);
+  return lin.map((x, i) => {
     if (slut || BREV_SLUT.test(x)){ slut = true; return { type: "slut", tekst: x }; }
     if (i === 0 && BREV_HILSEN.test(x)) return { type: "hilsen", tekst: x };
     if (/^[^.!?:]{2,40}:$/.test(x)) return { type: "h", tekst: x.slice(0, -1) };
+    // en kort linje uden tegnsætning, hvor et rigtigt afsnit følger («Ugen der gik», «Ekstra»), er en overskrift, også uden kolon
+    if (x.length <= 32 && x.split(/\s+/).length <= 4 && /^[A-ZÆØÅ]/.test(x) && !/[.!?,;:]$/.test(x) && (lin[i + 1] || "").length > 40 && !BREV_SLUT.test(lin[i + 1])) return { type: "h", tekst: x };
     const m = /^([A-ZÆØÅ][^.!?:]{2,38}):\s+(\S.*)$/.exec(x);
     return m ? { type: "p", label: m[1], tekst: m[2] } : { type: "p", tekst: x };
   });
