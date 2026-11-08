@@ -51,6 +51,9 @@ function api_read_token_may_write(string $path): bool
     return str_starts_with($path, 'planner/')
         || $path === 'settings/recurring'
         || $path === 'settings/birthdays'
+        || $path === 'settings/affald'     // tømningskalenderen (opsætningen gemmer den)
+        || $path === 'settings/visning'    // hvordan kort vises på forsiden (fx jokes i toppen)
+        || $path === 'settings/vaelger'    // egne lister til den tilfældige vælger
         || $path === 'settings/notes';   // opslagstavlen: telefonen skriver direkte
 }
 

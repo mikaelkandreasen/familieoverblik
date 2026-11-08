@@ -65,6 +65,14 @@ t("import: nye lægges ind med nyt id, dublet (også med andre store/små bogsta
 t("import: dato, status og prioritet bevares, stemmer renses for dubletter, kommentarer kommer med", imp["oprettet"] == "2026-01-02" and imp["status"] == "Planlagt" and imp["prioritet"] == "P2" and imp["stemmer"] == ["anna", "peter"] and imp["kommentarer"] == [{"af": "Dev", "tekst": "hej", "tid": "2026-11-07"}], imp)
 t("import: en ugyldig dato bliver dagens", [x for x in lst if x["titel"] == "Uden dato"][0]["oprettet"] == "2026-11-07")
 t("import: tom liste og ikke-liste afvises", fejl("importer", {"punkter": []}, "1 til 500") and fejl("importer", {"punkter": "x"}, "1 til 500") and fejl("importer", {}, "1 til 500"))
+# opdater: en fil med «opdater: true» ændrer status og kommentarer på punkter, der findes
+j = ok("importer", {"punkter": [{"titel": "importeret ét", "kategori": "billeder"}]}); t("uden «opdater» springes et punkt, der findes, stadig over", j["tilfoejet"] == 0 and j["sprunget_over"] == 1 and j["opdateret"] == 0, j)
+foer = [x for x in ok("liste")["punkter"] if x["titel"] == "Importeret ét"][0]
+j = ok("importer", {"opdater": True, "punkter": [{"titel": "IMPORTERET ét", "kategori": "billeder", "status": "Færdig", "prioritet": "P1", "kommentarer": [{"af": "Udvikling", "tekst": "Bygget i 3.4.0"}]}, {"titel": "Helt nyt punkt", "kategori": "andet", "status": "Planlagt"}, {"titel": "Importeret ét", "kategori": "billeder", "status": "ugyldig"}]})
+efter = [x for x in ok("liste")["punkter"] if x["titel"] == "Importeret ét"][0]
+t("med «opdater: true» opdateres status og prioritet, kommentaren lægges til (titel uanset store/små bogstaver), og nye punkter lægges stadig ind", j["opdateret"] == 1 and j["tilfoejet"] == 1 and j["sprunget_over"] == 1 and efter["status"] == "Færdig" and efter["prioritet"] == "P1" and efter["kommentarer"][-1] == {"af": "Udvikling", "tekst": "Bygget i 3.4.0", "tid": "2026-11-07"} and efter["id"] == foer["id"] and len(efter["stemmer"]) == len(foer["stemmer"]), (j, efter))
+t("opdateringen beholder id, stemmer, beskrivelse og den oprindelige titel; kun en ugyldig status afvises (uden at ændre noget)", efter["beskrivelse"] == foer["beskrivelse"] and efter["titel"] == "Importeret ét" and efter["oprettet"] == foer["oprettet"])
+t("«opdater» skal være præcis true (ikke en tekst eller et tal)", ok("importer", {"opdater": "ja", "punkter": [{"titel": "Importeret ét", "kategori": "billeder", "status": "Idé"}]})["opdateret"] == 0)
 # loft
 tmp2 = tempfile.mkdtemp(prefix="fo-b2-"); os.makedirs(f"{tmp2}/data/private"); E2 = {**E, "FO_DATA": f"{tmp2}/data"}
 big = [{"titel": f"P{i}", "kategori": "andet"} for i in range(500)]

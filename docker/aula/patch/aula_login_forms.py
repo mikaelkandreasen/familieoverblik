@@ -11,10 +11,19 @@ og når et svar fra broker.unilogin.dk eller login.aula.dk er en af de to formul
 og giver biblioteket svaret på selve afsendelsen, som om siden aldrig havde været der. Alt andet røres ikke.
 SAML-sider (med SAMLResponse) har hverken selected-aktoer eller en bekræftelsesknap og lades urørt.
 
+Billeder: Aulas login loader et billede (typisk et lille sporingsbillede, der sætter en cookie), og først bagefter sendes man videre. En browser gør det af sig selv;
+aula-biblioteket gør det ikke. Efter en formular, tilføjelsen har sendt, hentes derfor billederne på svarsiden (<img src> og JavaScript-billeder: new Image().src = …)
+FØR omdirigeringen følges og siden gives til biblioteket. Kun https og kun værter hos Aula og Unilogin; højst 6 pr. side.
+
+Efter hver formular, tilføjelsen har sendt, skrives en linje om SVARET (adresse uden query, titel, tekst, formularernes feltnavne og knapper, links og
+omdirigeringer, aldrig værdier), så man kan se, hvor login-kæden stopper. Svarer broker'en med en side UDEN formular, men med en omdirigering (meta refresh eller
+JavaScript) til broker.unilogin.dk eller login.aula.dk, følges den (højst 3 gange), så biblioteket får den side, det venter (SAML-formularen).
+
 Aktiveres af sitecustomize.py ved Pythons start. Indstillinger (miljøvariabler):
   AULA_LOGIN_PATCH   1 (standard) eller 0 for at slå det helt fra
   AULA_AKTOER        værdien til selected-aktoer. Standard KONTAKT
   AULA_ACCEPT_FELT   «navn=værdi» til bekræftelsen, hvis knappen ikke selv har et navn. Standard: intet
+  AULA_LOGIN_DETALJER  1 (standard) skriver siderne og svarene ned (se ovenfor), 0 gør det stille
 Hvad der gøres, skrives til stderr med forstavelsen «aula-login:». Bekræftelsessidens tekst skrives, så du kan se, hvad der accepteres.
 """
 import os
@@ -25,6 +34,8 @@ from urllib.parse import urljoin, urlsplit
 
 HOSTE = {"broker.unilogin.dk", "login.aula.dk"}
 MAX_HOP = 4
+MAX_FOELG = 3
+MAX_BILLEDER = 6
 ROLLE_FELT = "selected-aktoer"
 
 
@@ -38,11 +49,19 @@ class _Parser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.forms, self.form, self.select, self.knap = [], None, None, None
         self.tekst, self._skjul = [], 0
+        self.titel, self._i_titel, self.links, self._link, self.meta_refresh = "", False, [], None, ""
 
     def handle_starttag(self, tag, attrs):
         a = {k: (v if v is not None else "") for k, v in attrs}
         if tag in ("script", "style"):
             self._skjul += 1
+        if tag == "title":
+            self._i_titel = True
+        elif tag == "meta" and a.get("http-equiv", "").lower() == "refresh":
+            self.meta_refresh = a.get("content", "")
+        elif tag == "a" and a.get("href"):
+            self._link = {"href": a["href"], "tekst": ""}
+            self.links.append(self._link)
         if tag == "form":
             self.form = {"action": a.get("action", ""), "method": a.get("method", "get").lower(), "kontroller": []}
             self.forms.append(self.form)
@@ -69,6 +88,10 @@ class _Parser(HTMLParser):
     def handle_endtag(self, tag):
         if tag in ("script", "style") and self._skjul:
             self._skjul -= 1
+        if tag == "title":
+            self._i_titel = False
+        elif tag == "a":
+            self._link = None
         if tag == "form":
             self.form = self.select = self.knap = None
         elif tag == "select":
@@ -79,6 +102,10 @@ class _Parser(HTMLParser):
     def handle_data(self, data):
         if not self._skjul:
             self.tekst.append(data)
+        if self._i_titel:
+            self.titel += data
+        if self._link is not None:
+            self._link["tekst"] += data
         if self.knap is not None:
             self.knap["tekst"] += data
         if self.select is not None and self.select["valg"]:
@@ -90,6 +117,96 @@ def laes_formularer(html):
     p.feed(html)
     p.close()
     return p.forms, re.sub(r"\s+", " ", " ".join(p.tekst)).strip()
+
+
+def laes_side(html):
+    """Alt, der er værd at vide om en side, til loggen og til at finde en omdirigering. Aldrig feltværdier."""
+    p = _Parser()
+    p.feed(html)
+    p.close()
+    return {"forms": p.forms, "tekst": re.sub(r"\s+", " ", " ".join(p.tekst)).strip(), "titel": re.sub(r"\s+", " ", p.titel).strip(),
+            "links": p.links, "meta_refresh": p.meta_refresh}
+
+
+_META = re.compile(r"url\s*=\s*['\"]?([^'\";]+)", re.I)
+_JS = re.compile(r"""(?:window\.|document\.|top\.|self\.)?location(?:\.href|\.assign|\.replace)?\s*(?:=|\()\s*["']([^"']+)["']""")
+
+
+def find_omdirigering(html, url, side=None):
+    """Hvor en side sender videre uden en formular: meta refresh eller JavaScript. Returnerer en fuld adresse eller None."""
+    side = side or laes_side(html)
+    m = _META.search(side["meta_refresh"] or "")
+    mal = m.group(1).strip() if m else None
+    if not mal:
+        m = _JS.search(html)
+        mal = m.group(1).strip() if m else None
+    if not mal or mal.startswith(("#", "javascript:")):
+        return None
+    return urljoin(url, mal)
+
+
+_IMG_TAG = re.compile(r"<img\b[^>]*>", re.I)
+_IMG_SRC = re.compile(r"""\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""", re.I)
+_JS_SRC = re.compile(r"""\.src\s*=\s*["']([^"']+)["']""")
+
+
+def find_billeder(html, url):
+    """Adresserne på billeder, en browser ville hente: <img src> og JavaScript-billeder (…src = "…"). Fulde adresser, uden dubletter og uden data:-adresser."""
+    kilder = []
+    for tag in _IMG_TAG.findall(html):
+        m = _IMG_SRC.search(tag)
+        if m:
+            kilder.append((m.group(1) or m.group(2) or m.group(3) or "").strip())
+    kilder += [m.group(1).strip() for m in _JS_SRC.finditer(html)]
+    ud = []
+    for k in kilder:
+        if not k or k.lower().startswith(("data:", "javascript:", "blob:")):
+            continue
+        a = urljoin(url, k)
+        if a not in ud:
+            ud.append(a)
+    return ud
+
+
+def _tilladt_billedvaert(host):
+    h = (host or "").lower()
+    return h in HOSTE or h in ("aula.dk", "unilogin.dk") or h.endswith((".aula.dk", ".unilogin.dk"))
+
+
+def _sti(u):
+    sp = urlsplit(u)
+    return f"{sp.netloc}{sp.path}"                                   # uden query og #: de kan indeholde koder
+
+
+def beskriv_svar(resp):
+    """Én linje til loggen om et svar: status, adresse (uden query), titel, tekst, formularernes feltNAVNE og knapper, links og omdirigeringer."""
+    url = str(resp.url)
+    dele = [f"HTTP {getattr(resp, 'status_code', '?')} {_sti(url)}"]
+    loc = resp.headers.get("location") or ""
+    if loc:
+        dele.append(f"→ {_sti(urljoin(url, loc))}")
+    if "html" not in (resp.headers.get("content-type") or "").lower():
+        dele.append(f"({(resp.headers.get('content-type') or 'ukendt type').split(';')[0]})")
+        return "svar: " + " · ".join(dele)
+    side = laes_side(resp.text)
+    if side["titel"]:
+        dele.append(f"titel «{side['titel'][:80]}»")
+    dele.append(f"tekst «{side['tekst'][:200]}»")
+    fs = []
+    for f in side["forms"]:
+        navne = sorted({c["name"] for c in f["kontroller"] if c["name"]})
+        knapper = [((c.get("tekst") or "").strip() or c["value"])[:24] for c in f["kontroller"] if _er_sendeknap(c)]
+        fs.append(f"{f['method'].upper()} {_sti(urljoin(url, f['action'] or url))} felter: {','.join(navne) or 'ingen'}; knapper: {','.join(k for k in knapper if k) or 'ingen'}")
+    dele.append(("formularer: " + " | ".join(fs)) if fs else "INGEN formularer")
+    if side["links"]:
+        dele.append("links: " + ", ".join(f"{(l['tekst'].strip() or '?')[:20]}→{_sti(urljoin(url, l['href']))}" for l in side["links"][:6]))
+    bill = find_billeder(resp.text, url)
+    if bill:
+        dele.append("billeder: " + ", ".join(_sti(b) for b in bill[:MAX_BILLEDER]) + (f" (+{len(bill) - MAX_BILLEDER})" if len(bill) > MAX_BILLEDER else ""))
+    om = find_omdirigering(resp.text, url, side)
+    if om:
+        dele.append(f"omdirigering til {_sti(om)}")
+    return "svar: " + " · ".join(dele)
 
 
 # ─── Hvilken formular er det? ─────────────────────────────────────
@@ -218,11 +335,56 @@ def _plan(resp, kwargs, set_):
         _log(f"{p['type']}-siden kom igen efter afsendelse. Stopper (se -vv).")
         return None
     set_.add(noegle)
+    _log_svar(resp, f"{p['type']}-siden")
     if p["type"] == "rolle":
         _log(f"vælger rollen {p['felter'][ROLLE_FELT]} ({ROLLE_FELT})")
     else:
         _log(f"accepterer bekræftelsessiden. Siden siger: «{p['tekst'][:300]}». Felter sendt: {', '.join(sorted(p['felter'])) or 'ingen'}")
     return p
+
+
+def _detaljer():
+    return os.environ.get("AULA_LOGIN_DETALJER", "1").strip() != "0"
+
+
+def _log_svar(resp, hvad):
+    if _detaljer():
+        try:
+            _log(f"{hvad}: {beskriv_svar(resp)[len('svar: '):]}")
+        except Exception as e:                                            # loggen må aldrig vælte et login
+            _log(f"{hvad}: kunne ikke beskrives ({e})")
+
+
+def _omdirigering_at_foelge(resp, kwargs):
+    """Adressen, hvis svaret er en HTML-side uden formular, der sender videre til broker'en eller Aula. Ellers None."""
+    if not _skal_roeres(resp, kwargs):
+        return None
+    side = laes_side(resp.text)
+    if side["forms"]:
+        return None
+    mal = find_omdirigering(resp.text, str(resp.url), side)
+    if not mal:
+        return None
+    if urlsplit(mal).scheme != "https" or (urlsplit(mal).hostname or "").lower() not in HOSTE:
+        _log(f"svaret har ingen formular og sender videre til {_sti(mal)}, men det er ikke broker'en eller Aula. Følges ikke.")
+        return None
+    return mal
+
+
+def _billeder_at_hente(resp, kwargs):
+    """Billederne på en HTML-svarside fra broker'en eller Aula, som skal hentes, før man går videre. Andre værter og http hentes ikke."""
+    if not _skal_roeres(resp, kwargs):
+        return []
+    ud = []
+    for b in find_billeder(resp.text, str(resp.url)):
+        sp = urlsplit(b)
+        if sp.scheme == "https" and _tilladt_billedvaert(sp.hostname):
+            ud.append(b)
+        else:
+            _log(f"billedet {_sti(b)} hentes ikke (ikke https hos Aula eller Unilogin).")
+    if len(ud) > MAX_BILLEDER:
+        _log(f"siden har {len(ud)} billeder. Henter kun de første {MAX_BILLEDER}.")
+    return ud[:MAX_BILLEDER]
 
 
 def _headers(resp):
@@ -240,24 +402,56 @@ def install(httpx=None):
 
     async def send_async(self, request, *args, **kwargs):
         resp = await orig_async(self, request, *args, **kwargs)
-        set_ = set()
+        set_, sendt = set(), False
         for _ in range(MAX_HOP):
             p = _plan(resp, kwargs, set_)
             if p is None:
                 break
             req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
             resp = await orig_async(self, req, *args, **kwargs)
+            sendt = True
+            _log_svar(resp, "efter afsendelse")
+        for tur in range((MAX_FOELG if sendt else 0) + 1):
+            if sendt:
+                for b in _billeder_at_hente(resp, kwargs):
+                    try:
+                        br = await orig_async(self, self.build_request("GET", b, headers={**_headers(resp), "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"}), *args, **{**kwargs, "follow_redirects": True})
+                        _log(f"billede hentet: {_sti(b)} (HTTP {getattr(br, 'status_code', '?')})")
+                    except Exception as e:                                       # et billede, der ikke kan hentes, må ikke vælte login
+                        _log(f"billedet {_sti(b)} kunne ikke hentes ({type(e).__name__}). Går videre.")
+            mal = _omdirigering_at_foelge(resp, kwargs) if sendt and tur < MAX_FOELG else None
+            if mal is None:
+                break
+            _log(f"svaret har ingen formular, men en omdirigering til {_sti(mal)}. Følger den.")
+            resp = await orig_async(self, self.build_request("GET", mal, headers=_headers(resp)), *args, **kwargs)
+            _log_svar(resp, "efter omdirigering")
         return resp
 
     def send_sync(self, request, *args, **kwargs):
         resp = orig_sync(self, request, *args, **kwargs)
-        set_ = set()
+        set_, sendt = set(), False
         for _ in range(MAX_HOP):
             p = _plan(resp, kwargs, set_)
             if p is None:
                 break
             req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
             resp = orig_sync(self, req, *args, **kwargs)
+            sendt = True
+            _log_svar(resp, "efter afsendelse")
+        for tur in range((MAX_FOELG if sendt else 0) + 1):
+            if sendt:
+                for b in _billeder_at_hente(resp, kwargs):
+                    try:
+                        br = orig_sync(self, self.build_request("GET", b, headers={**_headers(resp), "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"}), *args, **{**kwargs, "follow_redirects": True})
+                        _log(f"billede hentet: {_sti(b)} (HTTP {getattr(br, 'status_code', '?')})")
+                    except Exception as e:                                       # et billede, der ikke kan hentes, må ikke vælte login
+                        _log(f"billedet {_sti(b)} kunne ikke hentes ({type(e).__name__}). Går videre.")
+            mal = _omdirigering_at_foelge(resp, kwargs) if sendt and tur < MAX_FOELG else None
+            if mal is None:
+                break
+            _log(f"svaret har ingen formular, men en omdirigering til {_sti(mal)}. Følger den.")
+            resp = orig_sync(self, self.build_request("GET", mal, headers=_headers(resp)), *args, **kwargs)
+            _log_svar(resp, "efter omdirigering")
         return resp
 
     httpx.AsyncClient.send = send_async

@@ -1,0 +1,94 @@
+import fs from "fs";
+import * as VLMOD from "../../public_html/vaelgerlister.js";
+const ROD = new URL("../../", import.meta.url).pathname;
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const tick = () => new Promise(r => setImmediate(r));
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const medMod = k => k.replace(/import\("\.\/vaelgerlister\.js"\)/g, "Promise.resolve(VLMOD)");
+// ═════════ Opsætningen ═════════
+const kodeI = medMod(fs.readFileSync("/tmp/vl_idx_block.js", "utf8"));
+function bygI(){
+  const els = {}; const el = id => (els[id] ??= { id, value: "", checked: false, disabled: false, innerHTML: "", textContent: "", _h: {}, addEventListener(t, f){ (this._h[t] ??= []).push(f); } });
+  const gemt = []; const save = async (path, payload) => { gemt.push({ path, payload }); };
+  const api = new Function("$", "esc", "save", "VLMOD", kodeI + "; return { vlTegn, vlSynk, vlFraStat, set data(v){ vlData = v; }, get stat(){ return vlStat; }, set stat(v){ vlStat = v; }, get smudsig(){ return vlSmudsig; } };")(el, esc, save, VLMOD);
+  return { api, els, el, gemt };
+}
+const U = bygI(); await tick(); await tick(); const A = U.api;
+t("uden data vises ingen lister, standardlisterne er ikke skjult, og «Tilføj liste» er slået til", A.stat.lister.length === 0 && U.els.vlSkjul.checked === false && U.els.vlNy.disabled === false && U.els.vlEditor.innerHTML === "");
+A.data = { lister: [{ navn: 'Aften "mad" <x>', valg: ["Pasta", "Pizza"] }], skjulStandard: true }; A.vlSynk(true);
+t("serverens lister vises med navn og valg (ét pr. linje), alt escapes, og «skjul standardlisterne» er sat", A.stat.lister[0].tekst === "Pasta\nPizza" && /value="Aften &quot;mad&quot; &lt;x&gt;"/.test(U.els.vlEditor.innerHTML) && />Pasta\nPizza<\/textarea>/.test(U.els.vlEditor.innerHTML) && !/<x>/.test(U.els.vlEditor.innerHTML) && U.els.vlSkjul.checked === true);
+const ev = (felt, v, i = "0") => ({ target: { dataset: { vl: felt }, value: v, closest: () => ({ dataset: { i } }) } });
+U.els.vlEditor._h.input[0](ev("navn", "Aftensmad")); U.els.vlEditor._h.input[0](ev("valg", "Taco\nSuppe\n\n  Sushi  "));
+t("at skrive i felterne opdaterer tilstanden og markerer den som ikke gemt", A.stat.lister[0].navn === "Aftensmad" && A.stat.lister[0].tekst.startsWith("Taco") && A.smudsig === true);
+U.els.vlNy._h.click[0]({}); t("«Tilføj liste» lægger en tom liste til", A.stat.lister.length === 2 && A.stat.lister[1].navn === "");
+const f1 = A.vlFraStat(A.stat);
+t("en helt tom række ignoreres ved Gem, og de andre renses (tomme linjer væk, trimmet)", f1.fejl.length === 0 && f1.payload.lister.length === 1 && f1.payload.lister[0].valg.join() === "Taco,Suppe,Sushi" && f1.payload.skjulStandard === true);
+A.stat.lister.push({ navn: "", tekst: "kun valg" }, { navn: "Uden valg", tekst: "  " }, { navn: "aftensmad", tekst: "dublet" });
+const f2 = A.vlFraStat(A.stat);
+t("fejl: manglende navn, ingen valg og to lister med samme navn (uanset store/små bogstaver) forklares", f2.fejl.length === 3 && /skriv et navn/.test(f2.fejl.join()) && /«Uden valg»: skriv mindst ét valg/.test(f2.fejl.join()) && /to lister med det navn/.test(f2.fejl.join()), f2.fejl.join(" | "));
+U.els.vlGem._h.click[0]({}); await tick();
+t("Gem med fejl viser dem og gemmer ikke", U.gemt.length === 0 && /skriv et navn/.test(U.els.vlFejl.textContent));
+A.stat.lister.splice(1);
+await U.els.vlGem._h.click[0]({});
+t("Gem uden fejl sender til settings/vaelger med renset payload og melder antallet", U.gemt.length === 1 && U.gemt[0].path === "settings/vaelger" && U.gemt[0].payload.lister[0].navn === "Aftensmad" && /Gemt \(1 liste\)/.test(U.els.vlInfo.textContent) && U.els.vlFejl.textContent === "");
+A.stat.lister.splice(0); await U.els.vlGem._h.click[0]({});
+t("Gem uden lister gemmer en tom plan og siger det", U.gemt.at(-1).payload.lister.length === 0 && /ingen egne lister/.test(U.els.vlInfo.textContent));
+U.els.vlSkjul.checked = false; U.els.vlSkjul._h.change[0]({}); t("afkrydsningen «skjul standardlisterne» gemmes i tilstanden", A.stat.skjul === false);
+A.stat = { skjul: false, lister: [{ navn: "A", tekst: "x" }, { navn: "B", tekst: "y" }] }; A.vlTegn();
+U.els.vlEditor._h.click[0]({ target: { closest: s => s === "[data-vl-fjern]" ? { closest: () => ({ dataset: { i: "0" } }) } : null } });
+t("«Fjern liste» fjerner den valgte", A.stat.lister.length === 1 && A.stat.lister[0].navn === "B");
+const Ux = bygI(); await tick(); await tick(); Ux.api.data = { lister: [{ navn: "Server", valg: ["a"] }] }; Ux.api.vlSynk(true);
+Ux.els.vlEditor._h.input[0](ev("navn", "Mine rettelser")); Ux.api.data = { lister: [{ navn: "Ny fra server", valg: ["b"] }] }; Ux.api.vlSynk(false);
+t("en polling overskriver ikke rettelser, der ikke er gemt (men en tvungen hentning efter Gem gør)", Ux.api.stat.lister[0].navn === "Mine rettelser" && (Ux.api.vlSynk(true), Ux.api.stat.lister[0].navn === "Ny fra server"));
+const fuld = bygI(); await tick(); await tick(); fuld.api.data = { lister: Array.from({ length: 30 }, (_, i) => ({ navn: "L" + i, valg: ["a"] })) }; fuld.api.vlSynk(true);
+t("ved 30 lister er «Tilføj liste» slået fra", fuld.els.vlNy.disabled === true);
+// ═════════ Vælgersiden ═════════
+const kodeV = medMod(fs.readFileSync("/tmp/vl_side_block.js", "utf8"));
+async function bygV(svar){
+  const els = {}; const mkEl = id => (els[id] ??= Object.defineProperty({ id, value: "", textContent: "", children: [], _h: {}, appendChild(c){ this.children.push(c); }, addEventListener(t, f){ (this._h[t] ??= []).push(f); } }, "innerHTML", { get(){ return this._html || ""; }, set(v){ this._html = v; this.children = []; }, enumerable: true }));
+  const $ = mkEl; ["liste", "listeNavn", "listeInfo", "gemListe", "eksempel"].forEach(mkEl); const document = { createElement: tag => ({ tag, children: [], value: "", textContent: "", label: "", appendChild(c){ this.children.push(c); } }) };
+  const kald = []; const fetch = async (url, o = {}) => { kald.push({ url, m: o.method || "GET", b: o.body ? JSON.parse(o.body) : null }); return svar(url, o); };
+  let laes = 0, husket = 0; const EKSEMPLER = { Aftensmad: "Pasta\nPizza", "Ja eller nej": "Ja\nNej" };
+  new Function("$", "document", "fetch", "HEAD", "EKSEMPLER", "laesListe", "husk", "VLMOD", kodeV)($, document, fetch, {}, EKSEMPLER, () => { laes++; }, () => { husket++; }, VLMOD);
+  await tick(); await tick(); await tick();
+  return { els, kald, tael: () => ({ laes, husket }) };
+}
+const ok = d => ({ ok: true, status: 200, json: async () => d });
+const grupper = els => els.eksempel.children.filter(c => c.tag === "optgroup");
+let V = await bygV(() => ok({ "settings/vaelger": { payload: { lister: [{ navn: "Madplan", valg: ["Taco", "Suppe"] }, { navn: "Weekend", valg: ["Biograf"] }], skjulStandard: false } } }));
+t("rullemenuen har «Dine lister» først og «Eksempler» bagefter, med de rigtige navne og værdier", grupper(V.els).map(g => g.label).join() === "Dine lister,Eksempler" && grupper(V.els)[0].children.map(o => o.value + "=" + o.textContent).join() === "egen:0=Madplan,egen:1=Weekend" && grupper(V.els)[1].children.map(o => o.value).join() === "std:Aftensmad,std:Ja eller nej");
+t("hentningen går til api.php med settings/vaelger", V.kald[0].url === "api.php?get=settings/vaelger" && V.kald[0].m === "GET");
+V.els.eksempel.value = "egen:0"; V.els.eksempel._h.change[0]({});
+t("vælges en egen liste, sættes valgene ind (ét pr. linje) i tekstfeltet, listen læses, og menuen nulstilles", V.els.liste.value === "Taco\nSuppe" && V.tael().laes === 1 && V.tael().husket === 1 && V.els.eksempel.value === "");
+V.els.eksempel.value = "std:Ja eller nej"; V.els.eksempel._h.change[0]({});
+t("vælges et indbygget eksempel, virker det som før (også med mellemrum og kolon i navnet)", V.els.liste.value === "Ja\nNej");
+V.els.eksempel.value = "egen:99"; V.els.eksempel._h.change[0]({}); V.els.eksempel.value = ""; V.els.eksempel._h.change[0]({});
+t("en ukendt eller tom værdi gør ingenting (listen er uændret)", V.els.liste.value === "Ja\nNej");
+V = await bygV(() => ok({ "settings/vaelger": { payload: { lister: [{ navn: "Kun egne", valg: ["a"] }], skjulStandard: true } } }));
+t("«skjul standardlisterne»: kun de egne vises", grupper(V.els).map(g => g.label).join() === "Dine lister");
+V = await bygV(() => ({ ok: false, status: 404, json: async () => ({}) }));
+const cerr = console.error; console.error = () => {};
+t("kan listerne ikke hentes (404 eller netværksfejl), vises de indbyggede eksempler som før", grupper(V.els).map(g => g.label).join() === "Eksempler");
+V = await bygV(() => { throw new Error("offline"); }); console.error = cerr;
+t("…også uden net", grupper(V.els).map(g => g.label).join() === "Eksempler");
+V = await bygV(() => ok({ "settings/vaelger": null }));
+t("et tomt svar (intet gemt endnu) giver kun eksemplerne", grupper(V.els).map(g => g.label).join() === "Eksempler");
+// gem som liste
+V = await bygV(u => u.includes("get=") ? ok({ "settings/vaelger": { payload: { lister: [{ navn: "Madplan", valg: ["Taco"] }] } } }) : ok({ rev: 1 }));
+V.els.liste.value = "Pasta\n\n Pizza \nTaco"; V.els.listeNavn.value = "  Fredag  ";
+await V.els.gemListe._h.click[0]({}); await tick();
+const post = V.kald.find(k => k.m === "POST");
+t("«Gem som liste» sender til api.php?path=settings/vaelger med den nye liste (renset) ved siden af de gamle", post.url === "api.php?path=settings/vaelger" && post.b.payload.lister.map(l => l.navn).join() === "Madplan,Fredag" && post.b.payload.lister[1].valg.join() === "Pasta,Pizza,Taco", JSON.stringify(post));
+t("…og melder det, og den nye liste står straks i menuen", /Gemt: «Fredag»/.test(V.els.listeInfo.textContent) && grupper(V.els)[0].children.map(o => o.textContent).join() === "Madplan,Fredag");
+V.els.liste.value = "Ny\nTekst"; V.els.listeNavn.value = "madplan"; await V.els.gemListe._h.click[0]({}); await tick();
+t("et navn, der findes (uanset store/små bogstaver), erstatter listen, og det siges", /Opdateret: «madplan»/.test(V.els.listeInfo.textContent) && V.kald.filter(k => k.m === "POST").at(-1).b.payload.lister.length === 2);
+const antal = V.kald.length; V.els.listeNavn.value = ""; await V.els.gemListe._h.click[0]({});
+t("uden navn eller uden valg forklares det, og der sendes intet", /Skriv et navn/.test(V.els.listeInfo.textContent) && V.kald.length === antal);
+V.els.listeNavn.value = "Tom"; V.els.liste.value = "  \n "; await V.els.gemListe._h.click[0]({});
+t("en tom liste forklares", /mindst ét valg/.test(V.els.listeInfo.textContent) && V.kald.length === antal);
+V = await bygV(u => u.includes("get=") ? ok({}) : { ok: false, status: 403, json: async () => ({}) }); V.els.liste.value = "a"; V.els.listeNavn.value = "X"; await V.els.gemListe._h.click[0]({});
+t("afviser serveren (403), vises fejlen i stedet for at påstå, at det er gemt", /Kunne ikke gemme: Log ind igen/.test(V.els.listeInfo.textContent) && !/Gemt:/.test(V.els.listeInfo.textContent));
+// statisk
+const ix = fs.readFileSync(ROD + "public_html/index.html", "utf8"), api = fs.readFileSync(ROD + "public_html/api.php", "utf8");
+t("settings/vaelger er i opsætningens henteliste og i API'ets skrive-tilladelser, og siden «Tilfældig vælger» findes i træet", /"settings\/vaelger"\]/.test(ix) && api.includes("$path === 'settings/vaelger'") && ix.includes('<h2 class="f-over">Tilfældig vælger</h2>') && ix.includes('["Sider", ["Tilfældig vælger"]]'));
+process.exit(T.every(Boolean) ? 0 : 1);

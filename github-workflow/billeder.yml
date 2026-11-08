@@ -27,7 +27,17 @@ jobs:
           python3 tests/test_scripts.py
           python3 tests/test_totp.py
           python3 tests/test_backlog.py
+          python3 tests/test_aulapatch.py
+          python3 tests/test_aula_diagnose.py
+          python3 tests/test_aaben_visning.py
+          python3 tests/test_pak.py
+          python3 tests/test_praesentation.py
           sudo python3 tests/test_rettigheder.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Prøv siderne (JavaScript)
+        run: python3 tests/frontend/kor_alle.py
 
   billeder:
     name: Byg ${{ matrix.billede }}

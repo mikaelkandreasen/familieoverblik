@@ -14,11 +14,35 @@ require_once __DIR__ . '/store.php';   // DATA_DIR, til tælleren nedenfor
 
 const GATE_TOKEN = '__GATE_TOKEN__';
 
+// Åben visning (Opsætning → Login og sikkerhed). Er den slået til, må forsiden hente det, den viser, uden PIN-cookie. Kun LÆSNING (GET),
+// kun disse scripts og kun disse handlinger. Alt, der ændrer noget, og alt andet (indstillinger, sikkerhedskopi, wifi, kalendere, oversættelse) kræver stadig cookien.
+// Sættes ved opstart ud fra indstillingen («ja» eller «nej»).
+const GATE_AABEN_VISNING = '__AABEN_VISNING__';
+const GATE_AABNE_LAESNINGER = [
+    'vejr.php' => [''], 'tema.php' => [''], 'joke.php' => [''], 'elpris.php' => [''], 'bil.php' => [''], 'info.php' => [''], 'sprog.php' => [''],
+    'tegneserie.php' => ['', 'dag', 'historik'], 'strava.php' => ['aktiviteter'], 'indkob.php' => ['items'], 'billeder.php' => ['liste', 'hent'],
+];
+
 /** Har browseren den cookie, login.php giver efter korrekt PIN? */
-function gate_ok(): bool
+function gate_cookie_ok(): bool
 {
     $c = (string)($_COOKIE['ugeplan_ok'] ?? '');
     return strlen(GATE_TOKEN) >= 32 && hash_equals(GATE_TOKEN, $c);
+}
+
+/** Må denne forespørgsel læse uden login, fordi åben visning er slået til? */
+function gate_aaben_laesning(): bool
+{
+    if (GATE_AABEN_VISNING !== 'ja') return false;
+    if (!in_array($_SERVER['REQUEST_METHOD'] ?? '', ['GET', 'HEAD'], true)) return false;
+    $tilladt = GATE_AABNE_LAESNINGER[basename((string)($_SERVER['SCRIPT_NAME'] ?? ''))] ?? null;
+    return $tilladt !== null && in_array((string)($_GET['action'] ?? ''), $tilladt, true);
+}
+
+/** Login-cookien, eller en læsning, som åben visning tillader. */
+function gate_ok(): bool
+{
+    return gate_cookie_ok() || gate_aaben_laesning();
 }
 
 // ─── Forkerte koder ────────────────────────────────────────────────

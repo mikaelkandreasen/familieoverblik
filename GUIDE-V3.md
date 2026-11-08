@@ -70,6 +70,11 @@ Det er det eneste, der kræver en terminal, og Dockhand har en:
 3. Scan QR-koderne med MitID-appen (dansk IP-adresse kræves).
 4. Under **Opsætning → Familie og forbindelser** udfylder du børnenes `calendar_id` (kolonnen «ID» fra `aula profile` i terminalen), MitID-brugernavn og Anthropic-nøgle, og trykker **Gem**.
 
+**Fejler login?** Hver prøve kræver, at du scanner QR-koderne igen, så prøv ikke mange gange i træk.
+- **Send mig linjerne, der starter med `aula-login:`** og fejlteksten nederst. Der står ingen koder i dem. Siden 3.3.2 beskriver de, hvad Aula svarede.
+- **Prøv uden vores tilføjelse:** `AULA_LOGIN_PATCH=0 aula --username DIT-MITID-BRUGERNAVN login`. Virker det, er tilføjelsen unødvendig, og vi slår den fra som standard.
+- **Prøv med en anden rolle:** `AULA_AKTOER=KONTAKT` er standard (forælder). Tilbydes en anden, står den i fejlteksten.
+
 Synkroniseringen kører hver morgen kl. 07:00. Er login udløbet (efter nogle måneder), står det i containerens log. Så gentager du punkt 1 til 3.
 
 ### 1.7 Resten
@@ -179,7 +184,40 @@ Under **Sider ▾ → Backlog (idéer og ønsker)** på forsiden ligger en side,
 - **Hent** som Markdown (kan lægges ind i `BACKLOG.md`), CSV (regneark) eller JSON. **Læg ind** tager JSON og springer punkter over, der allerede findes (samme titel og kategori). Brug `backlog-start.json` fra projektet til at lægge de nuværende punkter ind første gang.
 - Højst 500 punkter, 50 kommentarer og 40 stemmer pr. punkt. Gemmes i `private/backlog.json` (med i sikkerhedskopien). Alle med PIN-koden kan ændre alt.
 
-## 9. Hvad der er afprøvet, og hvad der ikke er
+## 9. Tilpas forsiden og opsætningen
+
+**Layout (nederst på forsiden → Tilpas layout):** Hvert kort har ▲ ▼ (flyt), en **størrelsesknap** (Smal, Halv, Bred) og **✕** (skjul helt). Halv betyder, at to kort står side om side. De skjulte kort ligger som knapper i panelet nederst, og et tryk viser dem igen. **Nulstil** går tilbage til standarden. Layoutet gemmes kun på den enhed, du bruger.
+
+**Tema på denne enhed (nederst på forsiden):** *Som opsat* følger farverne fra Opsætning → Farver (ens på alle enheder). De andre valg (automatisk lys/mørk, lys, varm, mørk, høj kontrast) gælder kun den enhed, du står på, fx mørkt på væggen om aftenen.
+
+**Opsætning:** Træet til venstre (på en telefon en valgmenu øverst) viser én side ad gangen. Det samme sted ligger alt det, der før stod under hinanden.
+
+**Tømning (Opsætning → Kort på oversigten → Tømning):**
+1. Giv adressen et navn (fx Hjemme). Tryk **+ Tilføj fraktion**.
+2. Vælg fraktionen (Restaffald, Papir …), en farve, **den første tømning** (en dato, hvor der er tømning, også en i fortiden) og **hver hvor mange uger**.
+3. En tømning, der udgår (helligdag), skrives under **Udgår**, og en ekstra under **Ekstra**. Datoer: 24.12.2026 eller 2026-12-24, flere adskilt af komma.
+4. Under hver fraktion står de næste datoer, så du kan se med det samme, om det passer. Tryk **Gem**.
+Kortet «Tømning» vises på forsiden. Aftenen før står der under **Vigtigt snart**, at spanden skal sættes ud. Du kan have flere adresser (fx en slægtnings).
+
+**Dagens joke i toppen:** Opsætning → Dagens joke → *Hvor skal joken vises?*
+
+**Tilfældig vælger:** Opsætning → Tilfældig vælger. Du kan også skrive en liste på selve siden og trykke **Gem som liste**. Listerne står under **Indsæt en liste** på alle enheder.
+
+**Elpris:** Knappen **Kun søjler** i kortets overskrift skjuler alt andet end søjlediagrammet. Valget gemmes på enheden.
+
+**Vejr:** Timerne vises hver tredje time, og farven viser vejrtypen. Vinden står som styrke, retning og stød. Det første svar efter opdateringen mangler vind (det kommer ved næste hentning).
+
+**Kalenderens kilde:** I kalenderdialogen (Opsætning → Kalendere) er feltet **Navn og kilde** den tekst, der står som kilde på forsiden under «Vis kilder». Uden tekst bruges det gamle gæt ud fra ikonet.
+
+**Åben visning (Opsætning → Login og sikkerhed → Hvem må se forsiden?):** Standarden er, at alt kræver PIN. Vælger du *Forsiden kan ses uden PIN-kode*, kan alle på dit netværk se forsiden (skema, breve, fødselsdage, tømning, vejr, elpris, bil) uden at logge ind. Det er praktisk til en væg-skærm, der skal starte af sig selv. Indstillinger, billeder-siden, gæste-wifi, backlog, kalendere, oversættelse og sikkerhedskopi kræver stadig PIN. Læsenøglen står åbent i siden, så alle på netværket kan også ændre det, skærmen selv ændrer (afkrydsninger og opslagstavlen). Brug det kun på et netværk, du stoler på, og ikke på gæste-wifi. Kortene Strava og Indkøb vises kun, når siden er åbnet efter en PIN-kode. Du kan altid logge ind via **Opsætning** (så spørges der efter PIN).
+
+**Drej et billede (Opsætning → Pauseskærm):** Hver miniature har to knapper nederst til venstre: drej mod uret og drej med uret. Billedet lægges ind igen som et nyt (det kommer forrest i listen), og det gamle slettes bagefter.
+
+**Fuld skærm (nederst på forsiden):** Knappen **Fuld skærm** viser siden uden Chromes adresselinje. Den hjælper især på en gammel tablet (Android 5.1 med Chrome 95), hvor Chrome ellers ikke har en fuldskærmsknap. Går siden ud af fuld skærm (genindlæsning eller et sidestifte), går den i fuld skærm igen ved første tryk. **Afslut fuld skærm** slår det fra. Vil du også skjule Androids egne knapper og statuslinjen, kræver det en kioskapp (fx Fully Kiosk Browser) eller at siden føjes til startskærmen som app.
+
+**Gamle Android-enheder:** Siderne kræver cirka Chrome 85. Android 5.1 kan højst få Chrome 95 (og Android System WebView 95). Find versionen i `chrome://version`. Er den under 85, skal siderne bygges om (se BACKLOG.md).
+
+## 10. Hvad der er afprøvet, og hvad der ikke er
 
 Afprøvet her (uden Docker og uden PHP, som ikke findes i min sandkasse):
 - Opstartsprogrammet `bootstrap.py` som en rigtig proces: nøgler, opsætningskode og låsning, validering, rendering af alle filer, sikkerhedskopi og gendannelse (også angreb som `../`, symlinks og ødelagte indstillinger), fødselsdage, op til 4 voksne og 8 børn og farvepladser. 81 prøver.
@@ -189,6 +227,6 @@ Afprøvet her (uden Docker og uden PHP, som ikke findes i min sandkasse):
 - Compose, workflow og Dockerfiles som tekst: at de peger på filer, der findes, og passer sammen. 39 prøver.
 - Guiden, indstillingerne og sikkerhedsindstillingerne mod en simuleret server (personrækker, fødselsdage, nøgler, sikkerhedskopi, QR-kode og gendannelseskoder): 94 prøver.
 - **Backlog:** hele logikken som en rigtig proces (oprettelse, ændring, stemmer, kommentarer, sletning, import, eksport, grænser, samtidige skrivninger og beskyttelse mod regnearksformler): 34 prøver, og selve siden (filtre, sortering, at alt skrevet escapes, hele forløbet): 51 prøver.
-- Fødselsdagstemaet (30 prøver) og personfarverne i panelet (17 prøver): datoer, skudår, alder, flag, til og fra, afledte farver og at alle tre CSS-regler bruger dem.
+- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1027 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
 
 **Ikke afprøvet:** selve `docker build`, GitHub-workflowet, at Dockhand kan hente fra ghcr.io og starte stakken, **al PHP** (`login.php`, `totp.php`, `instans.php`, `sikkerhedskopi.php`, `backlog.php`) og Dockhands terminal til MitID-login. For PHP er kun den logik, der ligger i Python, afprøvet. Selve PHP-filerne er gennemlæst og kontrolleret som tekst (parenteser, at de bruger samme formler som den afprøvede model, at cookien kun sættes ét sted). **Test login med totrinsbekræftelse, før du stoler på det:** slå det til, åbn siden i et privat vindue, og prøv både PIN og kode, en forkert kode, en gendannelseskode og «husk enhed».

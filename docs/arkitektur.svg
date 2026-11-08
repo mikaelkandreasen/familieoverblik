@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="t d" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">
+  <title id="t">Sådan hænger Familieoverblik sammen</title>
+  <desc id="d">GitHub bygger billederne, Dockhand henter dem og starter fire containere på din server. Telefon og væg-skærm åbner siden på det lokale net.</desc>
+  <defs>
+    <marker id="pil" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#4b5d63"/></marker>
+    <style>
+      .kasse{fill:#ffffff;stroke:#c9d3d6;stroke-width:1.5}
+      .mork{fill:#12302c}
+      .navn{font-size:17px;font-weight:700;fill:#12302c}
+      .lille{font-size:12.5px;fill:#4b5d63}
+      .hvid{fill:#ffffff}
+      .linje{stroke:#4b5d63;stroke-width:1.8;fill:none;marker-end:url(#pil)}
+      .stiplet{stroke:#8a9aa0;stroke-width:1.5;stroke-dasharray:5 5;fill:none}
+    </style>
+  </defs>
+  <rect width="960" height="560" fill="#f4f7f6"/>
+  <text x="30" y="40" font-size="22" font-weight="700" fill="#12302c">Sådan hænger det sammen</text>
+
+  <!-- GitHub -->
+  <rect class="kasse" x="30" y="70" width="190" height="86" rx="10"/>
+  <text class="navn" x="46" y="102">Dit GitHub-repo</text>
+  <text class="lille" x="46" y="124">Koden (uploadet i en browser)</text>
+  <text class="lille" x="46" y="142">Ingen git-kendskab nødvendig</text>
+  <rect class="kasse" x="270" y="70" width="190" height="86" rx="10"/>
+  <text class="navn" x="286" y="102">GitHub Actions</text>
+  <text class="lille" x="286" y="124">Kører prøverne og bygger</text>
+  <text class="lille" x="286" y="142">fem Docker-billeder</text>
+  <rect class="kasse" x="510" y="70" width="190" height="86" rx="10"/>
+  <text class="navn" x="526" y="102">ghcr.io</text>
+  <text class="lille" x="526" y="124">Billederne ligger her</text>
+  <text class="lille" x="526" y="142">(web, aula, bil, cron, frameo)</text>
+  <rect class="kasse" x="750" y="70" width="180" height="86" rx="10"/>
+  <text class="navn" x="766" y="102">Dockhand</text>
+  <text class="lille" x="766" y="124">Henter og starter stakken</text>
+  <text class="lille" x="766" y="142">Opdatér med ét tryk</text>
+  <path class="linje" d="M220,113 L266,113"/><path class="linje" d="M460,113 L506,113"/><path class="linje" d="M700,113 L746,113"/>
+
+  <!-- din server -->
+  <rect x="30" y="200" width="900" height="260" rx="14" fill="#e6efed" stroke="#b9ccc8" stroke-width="1.5"/>
+  <text x="48" y="228" font-size="15" font-weight="700" fill="#12302c">Din egen server (fx en lille mini-pc), kun på dit lokale net</text>
+  <path class="linje" d="M840,156 L840,196"/>
+
+  <rect class="kasse" x="52" y="250" width="200" height="150" rx="10"/>
+  <text class="navn" x="68" y="278">web</text>
+  <text class="lille" x="68" y="300">Apache + PHP</text>
+  <text class="lille" x="68" y="318">Forsiden, opsætning,</text>
+  <text class="lille" x="68" y="336">guiden, backlog, login</text>
+  <text class="lille" x="68" y="354">(PIN og totrinskode)</text>
+  <text class="lille" x="68" y="378">Opstartsprogram i Python</text>
+
+  <rect class="kasse" x="272" y="250" width="200" height="150" rx="10"/>
+  <text class="navn" x="288" y="278">cron</text>
+  <text class="lille" x="288" y="300">Henter hver time:</text>
+  <text class="lille" x="288" y="318">vejr, elpris, kalendere,</text>
+  <text class="lille" x="288" y="336">tegneserie, tømning …</text>
+
+  <rect class="kasse" x="492" y="250" width="200" height="150" rx="10"/>
+  <text class="navn" x="508" y="278">aula</text>
+  <text class="lille" x="508" y="300">Hver morgen kl. 07:</text>
+  <text class="lille" x="508" y="318">skema og ugebreve</text>
+  <text class="lille" x="508" y="336">(dit eget MitID-login,</text>
+  <text class="lille" x="508" y="354">gemt kun hos dig)</text>
+
+  <rect class="kasse" x="712" y="250" width="200" height="150" rx="10"/>
+  <text class="navn" x="728" y="278">bil</text>
+  <text class="lille" x="728" y="300">Batteri og rækkevidde</text>
+  <text class="lille" x="728" y="318">fra Hyundai</text>
+  <text class="lille" x="728" y="336">(valgfri)</text>
+
+  <rect x="52" y="414" width="860" height="32" rx="8" class="mork"/>
+  <text class="hvid" x="68" y="435" font-size="14" font-weight="700">Fælles datavolumen: indstillinger, nøgler, billeder, sikkerhedskopier</text>
+  <path d="M152,400 L152,414 M372,400 L372,414 M592,400 L592,414 M812,400 L812,414" stroke="#12302c" stroke-width="2"/>
+
+  <!-- skærme -->
+  <rect class="kasse" x="30" y="486" width="200" height="54" rx="10"/>
+  <text class="navn" x="46" y="510">Væg-skærm</text><text class="lille" x="46" y="528">Fuld skærm, pauseskærm</text>
+  <rect class="kasse" x="260" y="486" width="200" height="54" rx="10"/>
+  <text class="navn" x="276" y="510">Telefon og tablet</text><text class="lille" x="276" y="528">iPhone og Android</text>
+  <rect class="kasse" x="490" y="486" width="200" height="54" rx="10"/>
+  <text class="navn" x="506" y="510">Computer</text><text class="lille" x="506" y="528">Opsætning og backlog</text>
+  <path class="stiplet" d="M130,486 L130,460 M360,486 L360,460 M590,486 L590,460"/>
+  <text class="lille" x="710" y="506">Åbnes som en almindelig</text>
+  <text class="lille" x="710" y="524">hjemmeside på det lokale net</text>
+</svg>

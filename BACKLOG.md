@@ -1,6 +1,6 @@
 # Backlog: Familieoverblik
 
-Sidst opdateret 7. november 2026. Baseret på version **3.3.0**.
+Sidst opdateret 7. november 2026. Baseret på version **3.5.1**.
 
 **Sådan læses den**
 - **Prioritet:** P1 = næste, P2 = derefter, P3 = når der er tid, P4 = parkeret (fremtid).
@@ -163,3 +163,32 @@ Ikke planlagt nu. Her er det, jeg fandt, så det ikke skal findes igen.
 ## Definition af færdig (gælder alle punkter)
 
 Prøver, som kan køre uden netværk (falske tjenester), opdateret guide og changelog, ingen nye hemmeligheder uden for `private/`, nye endpoints bag login, og en ærlig liste over det, jeg ikke har kunnet afprøve.
+
+
+---
+
+## Status efter 3.5.0 (8. november 2026)
+
+Familiens egne punkter i appens backlog (de 12, I selv har lagt ind), og hvad der er sket:
+
+| Punkt | Status |
+|---|---|
+| Fravalg af kort på oversigten | Færdig i 3.4.0 |
+| Forsidekort side om side (halv størrelse) | Færdig i 3.4.0 |
+| Opsætningssiden som træ | Færdig i 3.4.0 |
+| Kilder på kalender (tekstfelt) | Færdig i 3.4.0 |
+| Spinner: gem foruddefinerede valg | Færdig i 3.4.0 |
+| Elpris: klap sammen til søjlegrafen | Færdig i 3.4.0 |
+| Vejrkort: enklere, vind, farver | Færdig i 3.4.0 |
+| Pauseskærm uden rullelinje | Færdig i 3.4.0 |
+| Joke i toppen | Færdig i 3.4.0 |
+| Lys/mørk/varm tema på oversigten | Færdig i 3.4.0 |
+| Tømningskalender (Renosyd) | Manuel tidsplan færdig. Automatisk del afventer afklaring af loginet |
+| Rotering af billeder | Færdig i 3.5.0 |
+| Åben visning med PIN til indstillinger | Færdig i 3.5.0 (slået fra som standard) |
+| Aula kantinemenu | Afventer et eksempel på en besked fra Aula |
+
+## Ny idé: browser-tjek og ældre enheder (fra 8. november)
+
+- **Browser-tjek (`browser.html`)** og en venlig besked på siderne, hvis browseren er for gammel («Din browser er for gammel»), i stedet for en blank side. Ca. et par timer.
+- **Støtte under Chrome 85** (ældre Android-enheder, fx 4.4): oversættelse af `?.`, `??` og `??=` samt reserver til `gap` i fleksible rækker (2 til 3 dage). Under Chrome 61 mangler `<script type="module">`, og så skal alle sider bygges som almindeligt, ældre JavaScript med reserver til `grid` (1 til 2 uger, frarådes). Se spørgsmålet om Android 5.1.

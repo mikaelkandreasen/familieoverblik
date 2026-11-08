@@ -31,15 +31,18 @@ t("Dockerfile web: python3 (ikke python3-minimal, som mangler json/tarfile), tzd
 t("Dockerfile web: entrypoint og bootstrap lægges ind, og datavolumet er erklæret", "ENTRYPOINT" in L("docker/web/Dockerfile") and "VOLUME /var/www/ugeplan-data" in L("docker/web/Dockerfile"))
 t("Dockerfile aula: PYTHONPATH finder tilføjelsen og config.py fra volumet, og tilstanden ligger i volumet", "PYTHONPATH=/patch:/data/private/aula-config" in L("docker/aula/Dockerfile") and "AULA_STATE_DIR=/data/private/aula-state" in L("docker/aula/Dockerfile"))
 t("Dockerfile aula: aula==1.15.0 og Python 3.14 som standard (aula 1.x kræver mindst 3.14)", "aula==1.15.0" in L("docker/aula/Dockerfile") and "ARG PYTHON_VERSION=3.14" in L("docker/aula/Dockerfile"))
+# En browser-upload til GitHub og en udpakning med Pythons zipfile mister «kørbar»-markeringen. Derfor må billederne ikke afhænge af den:
+# scriptet skal enten gøres kørbart i Dockerfilen (chmod +x) eller startes med «sh script».
 for sh in ("docker/web/entrypoint.sh", "docker/aula/loop.sh", "docker/cron/cron.sh"):
-    t(f"{sh}: kørbar og starter med #!/bin/sh", os.stat(os.path.join(ROD, sh)).st_mode & stat.S_IXUSR and L(sh).startswith("#!/bin/sh"))
+    dfil = L(os.path.dirname(sh) + "/Dockerfile"); navn = os.path.basename(sh)
+    t(f"{sh}: starter med #!/bin/sh, og Dockerfilen gør det kørbart eller starter det med sh (ikke afhængig af filens rettigheder)", L(sh).startswith("#!/bin/sh") and (f"chmod +x /opt/familieoverblik/{navn}" in dfil or re.search(r'"sh",\s*"[^"]*' + re.escape(navn) + '"', dfil)))
 t("entrypoint: kører bootstrap start og overlader så til Apaches egen entrypoint", "bootstrap.py start" in L("docker/web/entrypoint.sh") and 'exec docker-php-entrypoint "$@"' in L("docker/web/entrypoint.sh"))
 # workflow
 w = yaml.safe_load(L(".github/workflows/billeder.yml")); on = w.get(True, w.get("on"))
 t("workflow: kører ved tag v*, manuelt og hver uge (sikkerhedsrettelser i basisbillederne), og må kun læse kode og skrive pakker", on["push"]["tags"] == ["v*"] and "workflow_dispatch" in on and on["schedule"][0]["cron"] == "17 3 * * 1" and w["permissions"] == {"contents": "read", "packages": "write"})
 b = w["jobs"]["billeder"]
 t("workflow: bygger alle fem billeder, og først efter prøverne", b["strategy"]["matrix"]["billede"] == ["web", "aula", "bil", "cron", "frameo"] and b["needs"] == "proev")
-t("workflow: prøverne kører Python-prøvesættene (opstart, scripts, totrinsbekræftelse, backlog)", all(x in str(w["jobs"]["proev"]) for x in ("tests/test_bootstrap.py", "tests/test_scripts.py", "tests/test_totp.py", "tests/test_backlog.py")))
+t("workflow: prøverne kører Python-prøvesættene (opstart, scripts, totrinsbekræftelse, backlog)", all(x in str(w["jobs"]["proev"]) for x in ("tests/test_bootstrap.py", "tests/test_scripts.py", "tests/test_totp.py", "tests/test_backlog.py", "tests/frontend/kor_alle.py", "tests/test_aaben_visning.py", "tests/test_pak.py", "tests/test_praesentation.py")))
 trin = {s.get("name") or s.get("uses"): s for s in b["steps"]}
 t("workflow: login til ghcr.io med GITHUB_TOKEN (ingen hemmeligheder skal oprettes)", "docker/login-action@v3" in trin and trin["docker/login-action@v3"]["with"]["registry"] == "ghcr.io" and "GITHUB_TOKEN" in trin["docker/login-action@v3"]["with"]["password"])
 t("workflow: Python 3.15 først (må fejle), 3.14 bagefter kun hvis 3.15 ikke lykkedes", trin["Byg (Python 3.15)"]["continue-on-error"] is True and "PYTHON_VERSION=3.15" in trin["Byg (Python 3.15)"]["with"]["build-args"] and "steps.py315.outcome != 'success'" in trin["Byg (Python 3.14)"]["if"] and "PYTHON_VERSION=3.14" in trin["Byg (Python 3.14)"]["with"]["build-args"])

@@ -1,0 +1,15 @@
+import fs from "fs";
+const ROD = new URL("../../", import.meta.url).pathname;
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const kode = fs.readFileSync("/tmp/kilde_block.js", "utf8");
+const whoOf = id => ({ anna: { name: "Anna" }, sofie: { name: "Sofie" } }[id]);
+const kalenderKilde = new Function("whoOf", kode + "; return kalenderKilde;")(whoOf);
+t("uden egen tekst: ⚽ er DBU KampKlar, 🤾 er Holdsport, ellers «<person>s kalender» (som før)", kalenderKilde({ icon: "⚽", who: "sofie" }) === "DBU KampKlar" && kalenderKilde({ icon: "🤾" }) === "Holdsport" && kalenderKilde({ icon: "", who: "anna" }) === "Annas kalender" && kalenderKilde({ who: "ukendt" }) === "Kalender" && kalenderKilde({}) === "Kalender");
+t("med egen tekst vinder den over ikonet (ikonet siger ikke, hvor et link kommer fra)", kalenderKilde({ icon: "⚽", kilde: "FC Hjørring U12", who: "sofie" }) === "FC Hjørring U12" && kalenderKilde({ icon: "", kilde: "Skolen", who: "anna" }) === "Skolen");
+t("tekst med mellemrum trimmes, og tom eller kun mellemrum falder tilbage til det gamle", kalenderKilde({ kilde: "  Skolen  " }) === "Skolen" && kalenderKilde({ kilde: "   ", icon: "🤾" }) === "Holdsport" && kalenderKilde({ kilde: "", who: "anna" }) === "Annas kalender");
+t("en kilde, der ikke er tekst (gamle data, skrald), ignoreres uden fejl", [null, undefined, 5, {}, [], true].every(k => kalenderKilde({ kilde: k, who: "anna" }) === "Annas kalender"));
+const hent = fs.readFileSync(ROD + "public_html/hent.php", "utf8"), ov = fs.readFileSync(ROD + "public_html/overblik.html", "utf8"), ix = fs.readFileSync(ROD + "public_html/index.html", "utf8");
+t("serveren lægger feedets navn på hver begivenhed som «kilde» (hent.php)", /'kilde'\s+=> \(string\)\(\$feed\['label'\] \?\? ''\)/.test(hent));
+t("fritidslinjerne på forsiden tager kilden med, både den sammenkædede og den alene (leisureOn)", (ov.match(/kilde:feed\[i\]\.kilde/g) || []).length === 1 && (ov.match(/kilde:f\.kilde/g) || []).length === 1);
+t("feltet i kalenderdialogen hedder «Navn og kilde» og forklarer, at det vises på forsiden", /<label for="kNavn">Navn og kilde /.test(ix) && /står i listen og som kilde på forsiden/.test(ix));
+process.exit(T.every(Boolean) ? 0 : 1);

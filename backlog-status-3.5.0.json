@@ -1,0 +1,38 @@
+{
+ "format": 1,
+ "opdater": true,
+ "punkter": [
+  {
+   "titel": "rotering af billeder",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.5.0: knapper til at dreje mod uret og med uret på hver miniature i pauseskærmens billedliste (Opsætning → Pauseskærm)."
+    }
+   ]
+  },
+  {
+   "titel": "Åben visning med PIN kun til indstillinger og sikkerhedskopi",
+   "kategori": "sikkerhed",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.5.0: Opsætning → Login og sikkerhed → Hvem må se forsiden? Slået fra som standard. Læs advarslen under valget, før du slår det til."
+    }
+   ]
+  },
+  {
+   "titel": "Aula kantine menu",
+   "kategori": "andet",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Afventer et eksempel på en kantinebesked fra Aula (afsender, overskrift og tekst, uden personoplysninger), så kortet kan finde den rigtige besked og læse ugen ud af den."
+    }
+   ]
+  }
+ ]
+}

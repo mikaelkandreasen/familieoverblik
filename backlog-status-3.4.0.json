@@ -1,0 +1,127 @@
+{
+ "format": 1,
+ "opdater": true,
+ "punkter": [
+  {
+   "titel": "fravalg af kort på oversigten",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: ✕ på hvert kort i «Tilpas layout», og de skjulte kort kan hentes tilbage via knapperne i panelet."
+    }
+   ]
+  },
+  {
+   "titel": "forside kortene skal kunne sidde side om side",
+   "kategori": "skærm",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: størrelsesknappen skifter mellem Smal, Halv og Bred. To halve kort står side om side (under hinanden på en telefon)."
+    }
+   ]
+  },
+  {
+   "titel": "opsætnings siden skal simplificeres",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: Opsætning er et træ med en side pr. hovedoverskrift, i fire grupper. På en telefon er det en valgmenu."
+    }
+   ]
+  },
+  {
+   "titel": "kilderne er forkerte på kalender",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: feltet «Navn og kilde» i kalenderdialogen bruges som kilde på forsiden. Uden tekst bruges det gamle gæt. Kilden opdateres ved næste hentning af kalenderne (inden for en time)."
+    }
+   ]
+  },
+  {
+   "titel": "Ændring af spinneren",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: egne lister gemmes under Opsætning → Tilfældig vælger, eller med «Gem som liste» på selve siden, og de står under «Indsæt en liste» på alle enheder."
+    }
+   ]
+  },
+  {
+   "titel": "pauseskærmsbillederne skal ikke vise scroll linjen",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: rullelinjen skjules, mens pauseskærmen er oppe, så billedet fylder hele skærmen."
+    }
+   ]
+  },
+  {
+   "titel": "el pris overblik simplificering",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: knappen «Kun søjler» på elpriskortet skjuler alt andet end søjlediagrammet (gemmes pr. enhed)."
+    }
+   ]
+  },
+  {
+   "titel": "vejr udsigts kortet skal laves mere overskueligt og indeholde vind information",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: vejrkortet viser hver 3. time, farver efter vejrtype (sol, skyet, regn, sne, torden) og vind (m/s, retning og stød). Vinddata kommer først ved næste hentning (inden for en halv time)."
+    }
+   ]
+  },
+  {
+   "titel": "Dagens joke kort skal ikke være et kort",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: under Dagens joke vælger du «I toppen af forsiden, kun selve joken»."
+    }
+   ]
+  },
+  {
+   "titel": "Dark /light tema",
+   "kategori": "andet",
+   "status": "Færdig",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "Bygget i 3.4.0: nederst på forsiden vælger du Tema: som opsat, automatisk (lys/mørk), lys, varm, mørk eller høj kontrast på netop den enhed."
+    }
+   ]
+  },
+  {
+   "titel": "Tømningskalender fra Renosyd (Skanderborg)",
+   "kategori": "kalender",
+   "status": "I gang",
+   "kommentarer": [
+    {
+     "af": "Udvikling",
+     "tekst": "3.4.0 har kortet «Tømning» med en tidsplan, du selv skriver (første dato og antal uger pr. fraktion, flere adresser, datoer der udgår eller kommer ekstra) og påmindelse aftenen før. Den automatiske del fra Renosyd mangler stadig svar på de tre afklaringsspørgsmål."
+    }
+   ]
+  }
+ ]
+}

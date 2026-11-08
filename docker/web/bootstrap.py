@@ -235,6 +235,7 @@ def anvend(payload, instans, kun_foerste=False):
     if "sv" in payload: d["sv"] = valider_sv(payload["sv"])
     if "sted" in payload: d["sted"] = valider_sted(payload["sted"])
     if "pin" in payload and payload["pin"] not in (None, ""): d["pin"] = valider_pin(payload["pin"])
+    if "adgang" in payload: d["adgang"] = valider_adgang(payload["adgang"])
     if "hemmeligheder" in payload:
         for k, v in valider_hemmeligheder(payload["hemmeligheder"]).items():
             if v == "": d["hemmeligheder"].pop(k, None)
@@ -243,11 +244,35 @@ def anvend(payload, instans, kun_foerste=False):
     d["opsat"] = True; d.pop("opsaetningskode", None)
     return d, {"ok": True, "foerste": foerste, "pin": d["pin"] if foerste else None}
 
+ADGANG_VALG = ("laast", "aaben_visning")
+def valider_adgang(x):
+    if x not in ADGANG_VALG: raise Fejl("Adgangen skal være «laast» (PIN til alt) eller «aaben_visning» (forsiden kan ses uden PIN).")
+    return x
+
+# Åben visning: de scripts og den fil, forsiden bruger. De må læses (GET) uden PIN-cookie. Skal følge GATE_AABNE_LAESNINGER i ugeplan-lib/gate.php (en prøve sammenligner).
+AABNE_PHP = ("vejr", "tema", "joke", "elpris", "bil", "info", "sprog", "tegneserie", "strava", "indkob", "billeder")
+def aaben_visning_htaccess(t):
+    """Omskriver spærreregler i .htaccess til åben visning. Kaster Fejl, hvis skabelonen ikke ligner det, der forventes (så en ændret skabelon ikke stille giver en forkert adgang)."""
+    cond = r"RewriteCond %\{HTTP_COOKIE\} !ugeplan_ok=\S+ \[NC\]\n"
+    side_regel = r"RewriteRule ^(index\.html|overblik\.html|billeder\.html|gaest-wifi\.html|vaelger\.html|backlog\.html)?$ login.php?to=$1 [L,QSA]"
+    m = re.search(r"([ \t]*)(" + cond + r")[ \t]*" + re.escape(side_regel) + r"\n", t)
+    if not m: raise Fejl("Kunne ikke finde side-reglen i .htaccess. Åben visning er ikke slået til.")
+    ind, c = m.group(1), m.group(2)
+    ny = (f"{ind}# ÅBEN VISNING (Opsætning → Login og sikkerhed): forsiden og vælgeren kan ses uden PIN. Alt andet kræver stadig PIN.\n"
+          f"{ind}{c}{ind}RewriteRule ^$ overblik.html [R=302,L]\n"
+          f"{ind}{c}{ind}RewriteRule ^(index\\.html|billeder\\.html|gaest-wifi\\.html|backlog\\.html)$ login.php?to=$1 [L,QSA]\n")
+    t = t[:m.start()] + ny + t[m.end():]
+    for regel in [f"RewriteRule ^{n}\\.php(/|$) - [F,L]" for n in AABNE_PHP] + ["RewriteRule ^config\\.js$ - [F,L]"]:
+        r = re.compile(r"([ \t]*)(" + cond + r")([ \t]*" + re.escape(regel) + r"\n)")
+        if not r.search(t): raise Fejl("Kunne ikke finde reglen «" + regel + "» i .htaccess. Åben visning er ikke slået til.")
+        t = r.sub(lambda x: f"{x.group(1)}{x.group(2)}{x.group(1)}RewriteCond %{{REQUEST_METHOD}} !^(GET|HEAD)$\n{x.group(3)}", t, count=1)
+    return t
+
 def sikker_visning(d):
     h = d.get("hemmeligheder", {})
     return {"opsat": d["opsat"], "sv": d["sv"], "sted": d["sted"],
             "hemmeligheder": {k: (h.get(k, "") if k in ("aula_model", "mitid_brugernavn", "hyundai_bruger", "hyundai_vin") else None) for k in HEMMELIGE_NOEGLER},
-            "sat": {k: bool(h.get(k)) for k in HEMMELIGE_NOEGLER}, "pin_laengde": len(d["pin"])}
+            "sat": {k: bool(h.get(k)) for k in HEMMELIGE_NOEGLER}, "pin_laengde": len(d["pin"]), "adgang": d.get("adgang", "laast")}
 
 
 # ── render ───────────────────────────────────────────────────────────
@@ -284,10 +309,11 @@ def _traer(src, dst, erstat, skip=()):
             for k, v in erstat.items(): t = t.replace(k, v)
             skriv(d, t)
 
-def lokal_patch(rel, t, opsat):
+def lokal_patch(rel, t, opsat, adgang="laast"):
     """Kun lokalt netværk og http: ingen tvungen HTTPS, og login-cookien må bruges uden. Er opsætningen ikke gennemført, sendes login til guiden."""
     if rel == ".htaccess":
         t = re.sub(r"[ \t]*RewriteCond %\{HTTPS\} !=on\n.*?[ \t]*RewriteRule \^ https:[^\n]*\n", "", t, count=1, flags=re.S)
+        if adgang == "aaben_visning": t = aaben_visning_htaccess(t)
     elif rel == "login.php":
         t = t.replace("'secure'   => true", "'secure'   => false")
         if not opsat and "start.html" not in t:
@@ -296,12 +322,12 @@ def lokal_patch(rel, t, opsat):
 
 def render(d):
     t = d["tokens"]
-    erstat = {"__READ_TOKEN__": t["read"], "__WRITE_TOKEN__": t["write"], "__CRON_TOKEN__": t["cron"], "__GATE_TOKEN__": t["gate"], "__PIN__": d["pin"], "__API_BASE__": API_BASE}
+    erstat = {"__AABEN_VISNING__": "ja" if d.get("adgang") == "aaben_visning" else "nej", "__READ_TOKEN__": t["read"], "__WRITE_TOKEN__": t["write"], "__CRON_TOKEN__": t["cron"], "__GATE_TOKEN__": t["gate"], "__PIN__": d["pin"], "__API_BASE__": API_BASE}
     os.makedirs(HTML, exist_ok=True); os.makedirs(LIB, exist_ok=True)
     _traer(os.path.join(SKABELON, "html"), HTML, erstat)
     _traer(os.path.join(SKABELON, "lib"), LIB, erstat)
     for rel in (".htaccess", "login.php"):
-        p = os.path.join(HTML, rel); skriv(p, lokal_patch(rel, laes(p), d["opsat"]))
+        p = os.path.join(HTML, rel); skriv(p, lokal_patch(rel, laes(p), d["opsat"], d.get("adgang", "laast")))
     p = os.path.join(HTML, "config.js"); js = laes(p)
     skriv(p, re.sub(r"// <<PEOPLE-START>>\n.*?// <<PEOPLE-END>>", lambda m: "// <<PEOPLE-START>>\n" + personblok(d["sv"]) + "// <<PEOPLE-END>>", js, flags=re.S))
     for n in ("CHANGELOG.md", "VERSION"):
@@ -626,23 +652,32 @@ def backlog_kommando(handling, payload):
         if handling == "importer":
             ind = payload.get("punkter")
             if not isinstance(ind, list) or not ind or len(ind) > BL_MAX_PUNKTER: raise Fejl(f"Filen skal indeholde 1 til {BL_MAX_PUNKTER} punkter.")
-            fund = {(p["titel"].lower(), p["kategori"]) for p in d["punkter"]}; tilfoejet = sprunget = 0
+            opdater = payload.get("opdater") is True          # {"opdater": true, "punkter": […]}: findes punktet, opdateres status, prioritet og kommentarer i stedet for at det springes over
+            fund = {(p["titel"].lower(), p["kategori"]): p for p in d["punkter"]}; tilfoejet = sprunget = opdateret = 0
             for x in ind:
                 if not isinstance(x, dict): sprunget += 1; continue
                 try:
                     nøgle = (bl_tekst(x.get("titel"), 120, "Titel", kraevet=True).lower(), bl_valg(x.get("kategori", "andet"), BL_KATEGORIER, "Kategori"))
-                    if nøgle in fund: sprunget += 1; continue
+                    if nøgle in fund:
+                        if not opdater: sprunget += 1; continue
+                        eks = fund[nøgle]
+                        if x.get("status") is not None: eks["status"] = bl_valg(x["status"], BL_STATUSSER, "Status")
+                        if x.get("prioritet") is not None: eks["prioritet"] = bl_valg(x["prioritet"], BL_PRIORITETER, "Prioritet")
+                        for k in (x.get("kommentarer") or [])[:BL_MAX_KOMMENTARER] if isinstance(x.get("kommentarer"), list) else []:
+                            if isinstance(k, dict) and len(eks["kommentarer"]) < BL_MAX_KOMMENTARER:
+                                eks["kommentarer"].append({"af": bl_hvem(k.get("af") or "Udvikling"), "tekst": bl_tekst(k.get("tekst"), 1000, "Kommentar", kraevet=True), "tid": tid})
+                        eks["opdateret"] = tid; opdateret += 1; continue
                     p = bl_nyt_punkt(d, x, bl_hvem(x.get("af") or "Importeret"), bl_tekst(x.get("oprettet") or tid, 10, "Dato"))
                     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", p["oprettet"]): p["oprettet"] = p["opdateret"] = tid
                     p["stemmer"] = [bl_hvem(v) for v in (x.get("stemmer") or [])][:BL_MAX_STEMMER] if isinstance(x.get("stemmer"), list) else []
                     p["stemmer"] = list(dict.fromkeys(v.lower() for v in p["stemmer"]))
                     for k in (x.get("kommentarer") or [])[:BL_MAX_KOMMENTARER] if isinstance(x.get("kommentarer"), list) else []:
                         if isinstance(k, dict): p["kommentarer"].append({"af": bl_hvem(k.get("af") or "Importeret"), "tekst": bl_tekst(k.get("tekst"), 1000, "Kommentar", kraevet=True), "tid": tid})
-                    fund.add(nøgle); tilfoejet += 1
+                    fund[nøgle] = p; tilfoejet += 1
                 except Fejl:
                     sprunget += 1
                     if len(d["punkter"]) >= BL_MAX_PUNKTER: break
-            bl_gem(d); return {"ok": True, "tilfoejet": tilfoejet, "sprunget_over": sprunget}
+            bl_gem(d); return {"ok": True, "tilfoejet": tilfoejet, "sprunget_over": sprunget, "opdateret": opdateret}
         p = bl_find(d, payload.get("id"))
         if handling == "slet":
             d["punkter"] = [x for x in d["punkter"] if x["id"] != p["id"]]; bl_gem(d); return {"ok": True}

@@ -16,6 +16,127 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.5.4] – 2026-11-08
+
+### Tilføjet (ingen ændring i selve løsningen)
+- **Licens: MIT** (`LICENSE`, ophavsret «Familieoverblik contributors»). Projektet er nu open source. Der er ingen tredjepartskode kopieret ind, og de to biblioteker, billederne installerer (`aula` og `hyundai-kia-connect-api`), er begge MIT.
+- **`THIRD_PARTY.md`:** hvilke biblioteker der installeres i billederne og på hvilke vilkår, hvilke tjenester løsningen kontakter (de har egne vilkår), og varemærker.
+- README'erne, `docs/DELING.md`, det sociale kort og `CLAUDE.md` er rettet til: licensen står der, og opslagene nævner den. `DELING.md` peger på, at tegneseriekortet (GoComics) er slået til som standard og viser billeder direkte fra GoComics.
+
+### Opdatering fra 3.5.3
+Intet at gøre i opsætningen. Upload `LICENSE` og `THIRD_PARTY.md` sammen med resten, så GitHub viser licensen på repoets forside.
+
+## [3.5.3] – 2026-11-08
+
+### Tilføjet (ingen ændring i selve løsningen)
+- **Præsentation til GitHub og sociale medier.**
+  - `README.md` (dansk) og `README.en.md` er skrevet om til en forside for projektet: hvad det er, hvad det kan, hvordan det hænger sammen, kom i gang, privatliv og sikkerhed, ærlig status, ansvar og tak. Ingen skærmbilleder (der er et sted til dem) og ingen licens (den vælger ejeren).
+  - `docs/DELING.md`: tjekliste, før projektet gøres offentligt, tekster til GitHub (beskrivelse, emner, udgave), opslag til LinkedIn, Facebook, Reddit, X/Bluesky og Mastodon (dansk og engelsk, med grænser for længden), svar på de spørgsmål, der kommer, og en disposition til en kort video.
+  - `docs/social-preview.png` (1280×640, til GitHub), `docs/social-linkedin-1200x630.png` og `docs/arkitektur.svg` (hvordan det hænger sammen).
+- Ny prøve `tests/test_praesentation.py`: alle links i README'erne peger på filer, der findes, billederne har de rigtige mål, diagrammet er gyldigt, opslagene holder sig inden for deres grænser, og der står ingen personnavne eller hemmeligheder i de offentlige filer.
+
+### Opdatering fra 3.5.2
+Intet at gøre i opsætningen. Upload filerne, hvis du vil have den nye forside i dit repo.
+
+## [3.5.2] – 2026-11-08
+
+### Tilføjet (ingen ændring i selve løsningen)
+- **`CLAUDE.md`: overdragelse til den næste Claude eller udvikler.** Hvad projektet er, hvordan man kommer i gang på ti minutter, hvor tingene ligger, arbejdsregler, faldgruber, opskrifter (ny indstilling, nyt kort, nyt endpoint, ny udgave), status, åbne punkter og kendte svage steder. Skrevet, så en Claude, der får zip-filen uden at kende historien, kan bygge videre uden at gætte.
+- **`tests/alle.py`** kører alle prøver (Python og JavaScript) og giver en samlet oversigt.
+- **`vaerktoej/pak.py`** pakker en udgave: zip-filen og guiden til Notepad++ (UTF-8 med BOM, CRLF). Prøvet i `tests/test_pak.py`, som også kører i GitHub-workflowet.
+- `README.md` og `UDVIKLING.md` peger på de nye filer.
+- Prøven af shell-scripts er ikke længere afhængig af filens «kørbar»-markering, som en upload i browseren og nogle udpakningsværktøjer ikke bevarer. Billederne afhænger ikke af den (Dockerfilen kører `chmod +x` eller starter scriptet med `sh`). Fundet ved at køre alle prøver i en frisk udpakning.
+
+### Opdatering fra 3.5.1
+Intet at gøre i opsætningen. Upload filerne, hvis du vil have de nye filer i dit repo.
+
+## [3.5.1] – 2026-11-08
+
+### Tilføjet
+- **Knappen «Fuld skærm»** nederst på forsiden (ved siden af «Tilpas layout»). Chrome på Android har ingen fuldskærmsknap, og en side må kun gå i fuld skærm efter et tryk. Knappen virker i Chrome, Firefox og andre browsere med Fullscreen API, **også den præfikserede udgave i ældre Chrome (Android 5)**. Knappen er skjult på enheder uden Fullscreen API (fx iPhone) og i en installeret app, der allerede er i fuld skærm. Chrome går ud af fuld skærm, når siden skifter eller genindlæses; derfor **huskes valget på enheden**, og første tryk efter en genindlæsning går i fuld skærm igen. «Afslut fuld skærm» slår det fra. Valget huskes først, når browseren har sagt ja.
+
+### Rettet
+- Teksten om flere fødselsdage på samme dag brugte `Array.at()` (Chrome 92) og kunne vælte siden i ældre browsere. Den bruger nu almindelig indeksering. Siderne kræver nu cirka Chrome 85 (valgfri kæde `?.`, `??=` og mellemrum i fleksible rækker), så de kan køre i Chrome 95, som er den sidste til Android 5.
+- Oversættelser af «Fuld skærm» og «Afslut fuld skærm».
+
+### Opdatering fra 3.5.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**.
+
+## [3.5.0] – 2026-11-08
+
+### Tilføjet
+- **Åben visning** (#3). Under Opsætning → Login og sikkerhed vælger du **Hvem må se forsiden?**: *Kun med PIN-kode* (standard) eller *Forsiden kan ses uden PIN-kode (PIN til alt andet)*.
+  Er åben visning slået til, kan **forsiden (`overblik.html`) og vælgeren** ses uden login, og roden (`/`) sender til forsiden. De data, forsiden viser (vejr, joke, elpris, bil, tegneserie, tema, billeder til pauseskærmen, sprog, version, Strava-aktiviteter og indkøbsliste), kan **læses** (GET) uden PIN. `config.js` kan hentes, fordi forsiden skal bruge læsenøglen.
+  **Alt andet kræver stadig PIN** (eller totrinsbekræftelse): indstillinger (`index.html`), billeder-siden, gæste-wifi, backlog, kalendere, wifi, oversættelse, sikkerhedskopi, totrinsbekræftelse og enhver skrivning til disse scripts.
+  Pas på: læsenøglen står åbent, så alle på netværket også kan ændre det, skærmen selv ændrer (afkrydsninger, opslagstavlen, huskepunkter). Vælg det kun på et netværk, du stoler på. Valget gælder med det samme og gemmes i sikkerhedskopien.
+  Afprøvet med en lille tolker af `.htaccess` (alle sider og scripts, GET/HEAD/POST/PUT/DELETE, med og uden cookie) og med PHP-reglen i `gate.php` spejlet efter kildeteksten. 24 prøver. Selve Apache og PHP er stadig ikke kørt.
+- **Drej billeder** (#12). Hver miniature i pauseskærmens billedliste har knapper til at **dreje mod uret og med uret**. Billedet hentes, drejes i browseren, lægges ind som et nyt billede, og først bagefter slettes det gamle (så intet kan gå tabt, hvis noget fejler).
+- `backlog-status-3.5.0.json` sætter de to punkter til Færdig i jeres backlog.
+
+### Rettet
+- Læsning af åben visning gik gennem hvert scripts egen cookie-kontrol. Alle scripts bruger nu den fælles `gate_ok()`, og en prøve sikrer, at ingen har deres egen cookie-kontrol ved siden af.
+
+### Opdatering fra 3.4.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Åben visning er slået fra, til du slår den til.
+
+## [3.4.0] – 2026-11-08
+
+Bygget ud fra familiens egen backlog (punkterne, I selv har lagt ind på backlog-siden).
+
+### Tilføjet
+- **Skjul et kort helt** (#17). I «Tilpas layout» har hvert kort en **✕**. De skjulte kort samles som knapper i panelet (**＋ Kortets navn**), så de kan hentes tilbage. Valget gemmes pr. enhed.
+- **Halv størrelse** (#10). Størrelsesknappen på hvert kort skifter mellem **Smal** (i kolonnen), **Halv** (to kort side om side) og **Bred** (hele rækken). På en telefon står halve kort under hinanden.
+- **Opsætning som træ** (#9). Én side pr. hovedoverskrift, i fire grupper: Familie, Kort på oversigten, Tjenester, Sider og System. Til venstre på en computer, som valgmenu på en telefon. Den valgte side huskes. En sektion, der først vises, når serveren har svaret, kommer med i træet, når den vises.
+- **Tømning** (#2, den manuelle del). Nyt kort på forsiden og en side i opsætningen. For hver fraktion skriver du **én dato med tømning og antal uger imellem**; resten regnes ud. Datoer, der **udgår** (helligdage), og **ekstra** datoer (storskrald). Flere adresser. Kortet viser næste tømning pr. fraktion med farve og ugedag, og aftenen før står «sæt spanden ud» under **Vigtigt snart**. Den automatiske del fra Renosyd venter på afklaring af loginet.
+- **Dagens joke i toppen** (#18). Under Dagens joke vælger du, om joken er et kort eller står **i toppen af forsiden, kun selve joken**. Gælder alle enheder.
+- **Egne lister til den tilfældige vælger** (#13). Under Opsætning → Tilfældig vælger, eller med **Gem som liste** på selve siden. Listerne står under «Indsæt en liste» på alle enheder, og standardlisterne kan skjules.
+- **Elpris: «Kun søjler»** (#15). Skjuler alt på kortet undtagen søjlediagrammet (billigste periode, tal, noter og prognose for de næste dage). Gemmes pr. enhed.
+- **Enklere vejrkort med vind** (#16). Timerne vises hver tredje time. Hver time, dag og «i dag»-linjen er farvet efter vejrtype (sol, let skyet, overskyet, tåge, regn, sne, torden), og natten er markeret. **Vind** står med styrke, retning og stød («8 m/s fra SV, stød 14, jævn vind») for i dag og for hver af de næste dage.
+- **Kilde på kalenderposter** (#11). Feltet **Navn og kilde** i kalenderdialogen vises som kilde på forsiden (fx «Holdsport» eller «Skolen»). Uden tekst bruges det gamle gæt ud fra ikonet.
+- **Tema pr. enhed** (#20). Nederst på forsiden vælger du **Tema: som opsat**, **automatisk** (lys eller mørk efter enheden), **lys**, **varm**, **mørk** eller **høj kontrast** på netop den enhed. Valget går forud for de fælles farver, og siden blinker ikke ved indlæsning.
+- **Backlog-import kan opdatere** status, prioritet og kommentarer på punkter, der findes (en fil med `"opdater": true`). `backlog-status-3.4.0.json` sætter de byggede punkter til Færdig i jeres backlog.
+- Oversættelser (English, Deutsch) af de nye knapper, valg og tekster.
+
+### Rettet
+- **Pauseskærmen** (#14) viser ikke længere sidens rullelinje. Billedet fylder hele skærmen.
+- Fødselsdagsfeltet i opsætningsguiden sammenlignede med et tidspunkt i UTC og kunne i visse tidszoner godkende «i morgen» sent på dagen. Det bruger nu dagens lokale dato.
+- En vejrkode, der mangler (`null`), blev regnet som sol.
+- Ordet «constructor» blev accepteret som et gemt temavalg.
+- **Prøverne:** alle sidernes JavaScript-prøver (984) ligger nu i projektet og **kører i GitHub-workflowet**, i alle tidszoner. Fire prøvefiler pegede på den gamle 2.6.0-kilde i stedet for denne.
+
+### Ændret
+- Forsiden henter nu også `settings/affald`, `settings/visning` og `settings/vaelger`. `api.php` tillader, at skærmen gemmer dem (to linjer i listen over stier).
+- Service workerens cache er `shell-v2` (to nye filer: `affald.js` og `tema-forvalg.js`).
+- **Workflowet er udvidet** med en JavaScript-prøve. Du behøver ikke opdatere din egen kopi, men `github-workflow/billeder.yml` har den nye version.
+
+### Opdatering fra 3.3.3
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Vinddata til vejrkortet og kilder på kalenderposter dukker op ved næste hentning (inden for en halv time til en time). Åbn **Sider ▾ → Backlog**, og læg `backlog-status-3.4.0.json` ind under «Læg en JSON-fil ind» for at sætte de byggede punkter til Færdig.
+
+## [3.3.3] – 2026-11-07
+
+### Rettet (Aula-login)
+- **Billedet, der skal loade, før man sendes videre.** Efter rolle og bekræftelse viser Aulas login en side, der loader et billede (typisk et lille sporingsbillede, der sætter en cookie), og først bagefter sendes man videre. En browser gør det af sig selv. Aula-biblioteket gør det ikke, og det er den mest sandsynlige årsag til `SAMLError: No form found in page`.
+  Tilføjelsen henter nu billederne på svarsiden (`<img src>` og JavaScript-billeder) **før** den følger omdirigeringen og giver siden til biblioteket. Kun https og kun værter hos Aula og Unilogin (andre hentes ikke og står i loggen), højst 6 pr. side, med `Referer` og `Accept: image/*`. Et billede, der ikke kan hentes, vælter ikke login.
+- Loggen viser nu også, hvilke billeder en side indeholder (`billeder: …`), og hvilke der blev hentet.
+- Rettet: en loft-fejl, så højst 3 omdirigeringer følges. Prøven af endeløse omdirigeringer prøvede ikke det rigtige før.
+- 14 nye prøver (40 i alt i `tests/test_aula_diagnose.py`).
+- **Stadig ikke afprøvet mod Aula.** Er billedet ikke løsningen, eller bygger siden adressen op i JavaScript, vil loggen vise, hvad siden indeholder.
+
+### Opdatering fra 3.3.2
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, tryk **Redeploy**, og log ind igen i `aula`-containerens terminal.
+
+## [3.3.2] – 2026-11-07
+
+### Rettet / Tilføjet (Aula-login)
+Første rigtige Aula-login fra containeren: MitID blev godkendt, rolle og bekræftelsesside blev udfyldt, men så stoppede det med `SAMLError: No form found in page`. Svaret efter bekræftelsen indeholdt altså ingen formular, som aula-biblioteket kan arbejde videre med. Hvad svaret indeholder, kunne vi ikke se. Derfor:
+- **Diagnose:** Efter hver formular, tilføjelsen sender, skrives en linje om svaret: status, adresse uden query, titel, tekst, formularernes feltnavne og knapper, links og omdirigeringer. Aldrig værdier eller koder. Der skrives også en linje om selve bekræftelsessiden. `AULA_LOGIN_DETALJER=0` gør det stille.
+- **Omdirigering:** Er svaret en side uden formular, men med en omdirigering (meta refresh eller JavaScript) til `broker.unilogin.dk` eller `login.aula.dk`, følges den (højst 3 gange), så biblioteket får den side, det venter. Andre værter og http følges aldrig.
+- 26 nye prøver (`tests/test_aula_diagnose.py`), og de 39 eksisterende prøver af tilføjelsen (`tests/test_aulapatch.py`) kører nu i projektet og i GitHub-workflowet.
+- **Ikke afprøvet mod Aula.** Tilføjelsen er kun afprøvet mod en falsk httpx. Om omdirigeringen er det, der mangler, vil loggen vise.
+
+### Opdatering fra 3.3.1
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Log så ind igen i `aula`-containerens terminal og send linjerne med `aula-login:`.
+
 ## [3.3.1] – 2026-11-07
 
 ### Rettet

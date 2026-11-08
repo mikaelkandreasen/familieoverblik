@@ -273,8 +273,8 @@ $("fil").addEventListener("change", async e => {
     let d; try { d = JSON.parse(await fil.text()); } catch { throw new Error("Filen er ikke gyldig JSON."); }
     const liste = Array.isArray(d) ? d : d && Array.isArray(d.punkter) ? d.punkter : null;
     if (!liste) throw new Error("Filen skal være en liste af punkter eller {\"punkter\": [...]}.");
-    const r = await api("POST", { handling: "importer", punkter: liste });
-    $("info").textContent = `Lagt ind: ${r.tilfoejet} nye punkter${r.sprunget_over ? `, ${r.sprunget_over} sprunget over (findes allerede eller er ugyldige)` : ""}.`;
+    const r = await api("POST", { handling: "importer", punkter: liste, opdater: !Array.isArray(d) && d.opdater === true });
+    $("info").textContent = `Lagt ind: ${r.tilfoejet} nye punkter${r.opdateret ? `, ${r.opdateret} opdateret (status og kommentarer)` : ""}${r.sprunget_over ? `, ${r.sprunget_over} sprunget over (findes allerede eller er ugyldige)` : ""}.`;
     await laes();
   } catch (err){ fejl(err.message); }
   e.target.value = "";
