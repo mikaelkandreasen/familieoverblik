@@ -16,6 +16,16 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.5.7] – 2026-11-08
+
+### Rettet (alvorlig fejl siden 3.4.0)
+- **Forsiden viste «kunne ikke hente data: HTTP 400».** Serverens liste over gyldige stier (`store_valid_path` i `ugeplan-lib/store.php`) kendte ikke de tre indstillinger, 3.4.0 og 3.5.0 indførte: **`settings/affald`** (Tømning), **`settings/visning`** (joke i toppen) og **`settings/vaelger`** (egne lister til den tilfældige vælger). Forsiden bad om dem i samme forespørgsel som alt andet, så **hele hentningen blev afvist**, og både skema og breve manglede, selvom de var hentet fra Aula. Også at gemme Tømning, joke-visning og vælger-lister blev afvist.
+- Fejlen kom fra mig: jeg tilføjede stierne i `api.php` (skrivetilladelsen), men ikke i den anden liste, og prøverne kunne ikke se det, fordi de kun tjekkede den ene liste, og PHP ikke kan køres i udviklingsmiljøet.
+- **Ny prøve `tests/test_stier.py`** læser serverens regler direkte ud af PHP-koden og sammenligner dem med **alle** stier, siderne bruger, og med skrivetilladelserne. Jeg har kontrolleret, at prøven fejler på den gamle regel. Den tjekker også, at forsiden højst beder om 16 stier ad gangen (grænsen er 40).
+
+### Opdatering fra 3.5.6
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Tøm eventuelt browserens cache (eller genindlæs siden to gange), så den nye side bruges.
+
 ## [3.5.6] – 2026-11-08
 
 ### Rettet (Aula-login)

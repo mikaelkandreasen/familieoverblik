@@ -30,6 +30,7 @@ jobs:
           python3 tests/test_aulapatch.py
           python3 tests/test_aula_diagnose.py
           python3 tests/test_aula_overdrag.py
+          python3 tests/test_stier.py
           python3 tests/test_aaben_visning.py
           python3 tests/test_pak.py
           python3 tests/test_praesentation.py

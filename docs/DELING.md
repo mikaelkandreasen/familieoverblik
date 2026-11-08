@@ -87,7 +87,7 @@ How it runs: four Docker containers (web, cron, aula, car) built by GitHub Actio
 
 Things I want to be upfront about:
 - It is unofficial and not affiliated with Aula. The Aula part uses an unofficial Python library and was tested against a simulation, not Aula itself. It is the most fragile part.
-- Early release. About 420 Python tests and 1,000+ JS tests pass, but PHP/Apache/Docker were not run in my development environment, so please expect rough edges.
+- Early release. About 430 Python tests and 1,000+ JS tests pass, but PHP/Apache/Docker were not run in my development environment, so please expect rough edges.
 - It was built together with Claude (Anthropic).
 - The UI and docs are Danish (English and German UI text exist), so it is mostly useful if you have Aula.
 

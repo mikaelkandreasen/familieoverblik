@@ -7,7 +7,7 @@
  *   calendar/2026-W35  aftaler fra Outlook                          (PC'en skriver)
  *   aula/2026-W35      skema, ugebreve, huskepunkter                (PC'en skriver)
  *   ics/2026-W35       kampe, ferier m.m. fra ICS-feeds             (cron skriver)
- *   settings/…         recurring, birthdays, markets, weather, dated, important, notes
+ *   settings/…         recurring, birthdays, markets, weather, dated, important, notes, affald, visning, vaelger
  *
  * JSON afkodes som objekter, ikke assoc-arrays. Det er med vilje: PHP kan
  * ikke skelne et tomt objekt fra en tom liste, når begge er array(), og
@@ -26,7 +26,7 @@ function store_valid_path(string $path): bool
         $wk = (int)substr($path, -2);
         return $wk >= 1 && $wk <= 53;
     }
-    return (bool)preg_match('#^settings/(recurring|birthdays|markets|weather|dated|important|notes)$#', $path);
+    return (bool)preg_match('#^settings/(recurring|birthdays|markets|weather|dated|important|notes|affald|visning|vaelger)$#', $path);
 }
 
 function store_file(string $path): string

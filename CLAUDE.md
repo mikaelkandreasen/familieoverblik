@@ -51,7 +51,7 @@ Det kører i Docker på familiens egen server og styres med Dockhand, uden SSH. 
 
 ## 5. Opskrifter
 
-**Ny indstilling, som skærmen selv gemmer (`settings/<navn>`):** tilføj stien i `api_read_token_may_write()` i `public_html/api.php`; tilføj den i listen over stier i `overblik.html` og `index.html` (og i `applyDoc` begge steder); lav et modul med en `rens()`-funktion, der gør data brugbare (aldrig en fejl, grænser på længder); skriv prøver for `rens()` og for siden.
+**Ny indstilling, som skærmen selv gemmer (`settings/<navn>`):** tilføj navnet i `store_valid_path()` i `ugeplan-lib/store.php` (glemmes det, svarer serveren 400 «ugyldig sti» på **hele** forsidens hentning; `tests/test_stier.py` fanger det), tilføj stien i `api_read_token_may_write()` i `public_html/api.php`; tilføj den i listen over stier i `overblik.html` og `index.html` (og i `applyDoc` begge steder); lav et modul med en `rens()`-funktion, der gør data brugbare (aldrig en fejl, grænser på længder); skriv prøver for `rens()` og for siden.
 
 **Nyt kort på forsiden:** `<section class="card" data-kort="navn" hidden>` i kolonnen `#stak`. Det kommer automatisk med i «Tilpas layout» (skjul, størrelse, rækkefølge). Skriv tegnefunktionen, så den tåler skrald fra serveren. Tilføj udtræk i `tests/frontend/udtraek.py` og en prøve. Tilføj kortets tekster i `sprog/sprog.json`.
 
