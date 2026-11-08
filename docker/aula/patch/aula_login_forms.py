@@ -16,7 +16,7 @@ aula-biblioteket gør det ikke. Efter en formular, tilføjelsen har sendt, hente
 FØR omdirigeringen følges og siden gives til biblioteket. Kun https og kun værter hos Aula og Unilogin; højst 6 pr. side.
 
 Efter hver formular, tilføjelsen har sendt, skrives en linje om SVARET (adresse uden query, titel, tekst, formularernes feltnavne og knapper, links og
-omdirigeringer, aldrig værdier), så man kan se, hvor login-kæden stopper. Svarer broker'en med en side UDEN formular, men med en omdirigering (meta refresh eller
+omdirigeringer, aldrig værdier), så man kan se, hvor login-kæden stopper. Svarer broker'en med en HTTP-omdirigering (302) eller en side UDEN formular, men med en omdirigering (meta refresh eller
 JavaScript) til broker.unilogin.dk eller login.aula.dk, følges den (højst 3 gange), så biblioteket får den side, det venter (SAML-formularen).
 
 Aktiveres af sitecustomize.py ved Pythons start. Indstillinger (miljøvariabler):
@@ -34,7 +34,8 @@ from urllib.parse import urljoin, urlsplit
 
 HOSTE = {"broker.unilogin.dk", "login.aula.dk"}
 MAX_HOP = 4
-MAX_FOELG = 3
+MAX_FOELG = 6
+HTTP_OMDIRIGERING = (301, 302, 303)          # følges med GET (som en browser gør efter en POST). 307 og 308 skal gentage POST'en og følges ikke.
 MAX_BILLEDER = 6
 ROLLE_FELT = "selected-aktoer"
 
@@ -371,6 +372,26 @@ def _omdirigering_at_foelge(resp, kwargs):
     return mal
 
 
+def _http_omdirigering(resp, kwargs):
+    """Målet, hvis selve svaret er en HTTP-omdirigering (302) til broker'en eller Aula. Biblioteket venter en side med en formular og kan ikke bruge en tom omdirigering
+    (det gav «No form found in page», efter at vi havde accepteret bekræftelsessiden: Aula svarede med en 302 til after-post-broker-login). Andre mål følges ikke."""
+    if kwargs.get("stream"):
+        return None
+    status = getattr(resp, "status_code", 0)
+    lok = resp.headers.get("location") or ""
+    if not lok or status not in HTTP_OMDIRIGERING:
+        if lok and status in (307, 308):
+            _log(f"svaret er en omdirigering (HTTP {status}) til {_sti(urljoin(str(resp.url), lok))}, men den skal gentage POST'en, og det gør tilføjelsen ikke. Følges ikke.")
+        return None
+    if (urlsplit(str(resp.url)).hostname or "").lower() not in HOSTE:
+        return None
+    mal = urljoin(str(resp.url), lok)
+    if urlsplit(mal).scheme != "https" or (urlsplit(mal).hostname or "").lower() not in HOSTE:
+        _log(f"svaret er en omdirigering (HTTP {status}) til {_sti(mal)}, men det er ikke broker'en eller Aula. Følges ikke.")
+        return None
+    return mal
+
+
 def _billeder_at_hente(resp, kwargs):
     """Billederne på en HTML-svarside fra broker'en eller Aula, som skal hentes, før man går videre. Andre værter og http hentes ikke."""
     if not _skal_roeres(resp, kwargs):
@@ -402,54 +423,64 @@ def install(httpx=None):
 
     async def send_async(self, request, *args, **kwargs):
         resp = await orig_async(self, request, *args, **kwargs)
-        set_, sendt = set(), False
-        for _ in range(MAX_HOP):
-            p = _plan(resp, kwargs, set_)
-            if p is None:
+        set_, sendt, foelg, poster = set(), False, 0, 0
+        for _ in range(MAX_HOP + MAX_FOELG + 2):                  # en side kan være en formular, en omdirigering, en ny formular …: skiftevis, med en fast grænse
+            p = _plan(resp, kwargs, set_) if poster < MAX_HOP else None            # højst MAX_HOP formularer i alt
+            if p is not None:
+                req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
+                resp = await orig_async(self, req, *args, **kwargs)
+                sendt = True
+                poster += 1
+                _log_svar(resp, "efter afsendelse")
+                continue
+            if not sendt:
                 break
-            req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
-            resp = await orig_async(self, req, *args, **kwargs)
-            sendt = True
-            _log_svar(resp, "efter afsendelse")
-        for tur in range((MAX_FOELG if sendt else 0) + 1):
-            if sendt:
-                for b in _billeder_at_hente(resp, kwargs):
-                    try:
-                        br = await orig_async(self, self.build_request("GET", b, headers={**_headers(resp), "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"}), *args, **{**kwargs, "follow_redirects": True})
-                        _log(f"billede hentet: {_sti(b)} (HTTP {getattr(br, 'status_code', '?')})")
-                    except Exception as e:                                       # et billede, der ikke kan hentes, må ikke vælte login
-                        _log(f"billedet {_sti(b)} kunne ikke hentes ({type(e).__name__}). Går videre.")
-            mal = _omdirigering_at_foelge(resp, kwargs) if sendt and tur < MAX_FOELG else None
+            for b in _billeder_at_hente(resp, kwargs):
+                try:
+                    br = await orig_async(self, self.build_request("GET", b, headers={**_headers(resp), "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"}), *args, **{**kwargs, "follow_redirects": True})
+                    _log(f"billede hentet: {_sti(b)} (HTTP {getattr(br, 'status_code', '?')})")
+                except Exception as e:                                       # et billede, der ikke kan hentes, må ikke vælte login
+                    _log(f"billedet {_sti(b)} kunne ikke hentes ({type(e).__name__}). Går videre.")
+            if foelg >= MAX_FOELG:
+                break
+            http = _http_omdirigering(resp, kwargs)
+            mal = http or _omdirigering_at_foelge(resp, kwargs)
             if mal is None:
                 break
-            _log(f"svaret har ingen formular, men en omdirigering til {_sti(mal)}. Følger den.")
+            foelg += 1
+            _log(f"svaret er en omdirigering (HTTP {resp.status_code}) til {_sti(mal)}. Følger den." if http else f"svaret har ingen formular, men en omdirigering til {_sti(mal)}. Følger den.")
             resp = await orig_async(self, self.build_request("GET", mal, headers=_headers(resp)), *args, **kwargs)
             _log_svar(resp, "efter omdirigering")
         return resp
 
     def send_sync(self, request, *args, **kwargs):
         resp = orig_sync(self, request, *args, **kwargs)
-        set_, sendt = set(), False
-        for _ in range(MAX_HOP):
-            p = _plan(resp, kwargs, set_)
-            if p is None:
+        set_, sendt, foelg, poster = set(), False, 0, 0
+        for _ in range(MAX_HOP + MAX_FOELG + 2):                  # en side kan være en formular, en omdirigering, en ny formular …: skiftevis, med en fast grænse
+            p = _plan(resp, kwargs, set_) if poster < MAX_HOP else None            # højst MAX_HOP formularer i alt
+            if p is not None:
+                req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
+                resp = orig_sync(self, req, *args, **kwargs)
+                sendt = True
+                poster += 1
+                _log_svar(resp, "efter afsendelse")
+                continue
+            if not sendt:
                 break
-            req = self.build_request("POST", p["url"], data=p["felter"], headers=_headers(resp))
-            resp = orig_sync(self, req, *args, **kwargs)
-            sendt = True
-            _log_svar(resp, "efter afsendelse")
-        for tur in range((MAX_FOELG if sendt else 0) + 1):
-            if sendt:
-                for b in _billeder_at_hente(resp, kwargs):
-                    try:
-                        br = orig_sync(self, self.build_request("GET", b, headers={**_headers(resp), "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"}), *args, **{**kwargs, "follow_redirects": True})
-                        _log(f"billede hentet: {_sti(b)} (HTTP {getattr(br, 'status_code', '?')})")
-                    except Exception as e:                                       # et billede, der ikke kan hentes, må ikke vælte login
-                        _log(f"billedet {_sti(b)} kunne ikke hentes ({type(e).__name__}). Går videre.")
-            mal = _omdirigering_at_foelge(resp, kwargs) if sendt and tur < MAX_FOELG else None
+            for b in _billeder_at_hente(resp, kwargs):
+                try:
+                    br = orig_sync(self, self.build_request("GET", b, headers={**_headers(resp), "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"}), *args, **{**kwargs, "follow_redirects": True})
+                    _log(f"billede hentet: {_sti(b)} (HTTP {getattr(br, 'status_code', '?')})")
+                except Exception as e:                                       # et billede, der ikke kan hentes, må ikke vælte login
+                    _log(f"billedet {_sti(b)} kunne ikke hentes ({type(e).__name__}). Går videre.")
+            if foelg >= MAX_FOELG:
+                break
+            http = _http_omdirigering(resp, kwargs)
+            mal = http or _omdirigering_at_foelge(resp, kwargs)
             if mal is None:
                 break
-            _log(f"svaret har ingen formular, men en omdirigering til {_sti(mal)}. Følger den.")
+            foelg += 1
+            _log(f"svaret er en omdirigering (HTTP {resp.status_code}) til {_sti(mal)}. Følger den." if http else f"svaret har ingen formular, men en omdirigering til {_sti(mal)}. Følger den.")
             resp = orig_sync(self, self.build_request("GET", mal, headers=_headers(resp)), *args, **kwargs)
             _log_svar(resp, "efter omdirigering")
         return resp

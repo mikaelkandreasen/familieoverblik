@@ -102,6 +102,93 @@ SAMLPX = SAML.replace("<form", '<img src="https://login.aula.dk/pixel.gif"><form
 r, err = koer(pixel_kæde(SAMLPX)); t("en SAML-side med et billede: billedet hentes, og siden (med formularen) gives til biblioteket uden omdirigering", "SAMLResponse" in r.text and [l[1].split("/")[-1] for l in log][-1] == "pixel.gif" and "Følger den" not in err, [l[:2] for l in log])
 r, err = koer(lambda req, kw: httpx.Response(str(req.url), text=PX)); t("en side, tilføjelsen ikke har sendt noget til, får ingen billeder hentet (andres flow røres ikke)", len(log) == 1 and err == "")
 httpx_log_headers.clear()
+# ── HTTP-omdirigeringer (302), som i den rigtige Aula-log ──
+def red_kæde(*trin, slut=SAML):
+    """bekræftelsessiden → POST → en kæde af 302'er (Location-værdier) → slutsiden."""
+    kaldt = []
+    def pages(req, kw):
+        u = str(req.url)
+        if req.method == "GET" and "post-broker-login" in u and not kaldt: return httpx.Response(u, text=BEKR)
+        if req.method == "POST": kaldt.append(1); return httpx.Response(B + "post-broker-login", status=302, text="", location=trin[0]) if trin else httpx.Response(u, text=slut)
+        for k, lok in enumerate(trin):
+            if u.endswith(lok.rsplit("/", 1)[-1]) or lok in u:
+                return httpx.Response(u, status=302, text="", location=trin[k + 1]) if k + 1 < len(trin) else httpx.Response(u, text=slut)
+        return httpx.Response(u, text=slut)
+    return pages
+for sync in (False, True):
+    navn = "synkron" if sync else "asynkron"
+    r, err = koer(red_kæde("/auth/realms/broker/broker/after-post-broker-login"), sync=sync)
+    t(f"[{navn}] POST af «Næste» giver en tom 302 til after-post-broker-login: den følges med GET, og SAML-siden gives til biblioteket (præcis fejlen fra den rigtige log)", "SAMLResponse" in r.text and [l[0] for l in log] == ["GET", "POST", "GET"] and log[2][1] == "https://broker.unilogin.dk/auth/realms/broker/broker/after-post-broker-login", [l[:2] for l in log])
+    t(f"[{navn}] loggen siger, at svaret er en omdirigering (HTTP 302) og at den følges", "omdirigering (HTTP 302) til broker.unilogin.dk/auth/realms/broker/broker/after-post-broker-login. Følger den." in err, err)
+r, err = koer(red_kæde("/a/etape1", "https://login.aula.dk/b/etape2", "/c/etape3"))
+t("flere 302'er i træk (også til login.aula.dk) følges hele vejen til siden, biblioteket venter", "SAMLResponse" in r.text and [l[0] for l in log] == ["GET", "POST", "GET", "GET", "GET"] and log[3][1] == "https://login.aula.dk/b/etape2", [l[:2] for l in log])
+r, err = koer(red_kæde("https://ond.example.com/stjaal"))
+t("en 302 til en anden vært følges ikke: biblioteket får 302'en, som den er, og det siges i loggen", r.status_code == 302 and len(log) == 2 and "ikke broker'en eller Aula. Følges ikke" in err, (r.status_code, err))
+r, err = koer(red_kæde("http://login.aula.dk/uden-https"))
+t("en 302 til http (ikke https) følges ikke", r.status_code == 302 and len(log) == 2)
+def p307(req, kw):
+    u = str(req.url)
+    if req.method == "GET" and "post-broker-login" in u: return httpx.Response(u, text=BEKR)
+    return httpx.Response(B + "post-broker-login", status=307, text="", location="/x")
+r, err = koer(p307)
+t("en 307 (gentag POST) følges ikke, og det forklares", r.status_code == 307 and len(log) == 2 and "skal gentage POST" in err, err)
+def p303(req, kw):
+    u = str(req.url)
+    if req.method == "GET" and "post-broker-login" in u and len(log) == 1: return httpx.Response(u, text=BEKR)
+    if req.method == "POST": return httpx.Response(B + "post-broker-login", status=303, text="", location="/auth/realms/broker/broker/efter")
+    return httpx.Response(u, text=SAML)
+r, err = koer(p303); t("303 følges også (med GET)", "SAMLResponse" in r.text and log[-1][0] == "GET")
+def uden_lokation(req, kw):
+    u = str(req.url)
+    if req.method == "GET" and "post-broker-login" in u: return httpx.Response(u, text=BEKR)
+    return httpx.Response(B + "post-broker-login", status=302, text="")
+r, err = koer(uden_lokation); t("en 302 uden Location giver ingen fejl: svaret gives uændret tilbage", r.status_code == 302 and len(log) == 2)
+def endeløs(req, kw):
+    u = str(req.url)
+    if req.method == "GET" and "post-broker-login" in u and len(log) == 1: return httpx.Response(u, text=BEKR)
+    return httpx.Response(u, status=302, text="", location="https://login.aula.dk/rundt")
+r, err = koer(endeløs)
+t(f"en endeløs kæde af 302'er stoppes efter højst {F.MAX_FOELG} skridt, og biblioteket får det sidste svar", len([l for l in log if l[0] == "GET"]) == 1 + F.MAX_FOELG and r.status_code == 302, len(log))
+r, err = koer(lambda req, kw: httpx.Response(str(req.url), status=302, text="", location="https://login.aula.dk/x"))
+t("en 302 på en forespørgsel, tilføjelsen ikke har sendt noget til, røres ikke (biblioteket styrer selv sine egne omdirigeringer)", r.status_code == 302 and len(log) == 1 and err == "")
+r, err = koer(red_kæde("/a/etape1"))
+t("efter en omdirigering hentes billederne på slutsiden stadig, før siden gives videre (hvis den har nogen)", "SAMLResponse" in r.text)
+
+# ── formular → omdirigering → formular → omdirigering (en ny bekræftelsesside efter en omdirigering) ──
+def to_trin(req, kw):
+    u = str(req.url); antal_post = len([l for l in log if l[0] == "POST"])
+    if req.method == "GET" and "post-broker-login" in u and len(log) == 1: return httpx.Response(u, text=BEKR)
+    if req.method == "POST" and antal_post == 1: return httpx.Response(B + "post-broker-login", status=302, text="", location="/auth/realms/broker/broker/mellem")
+    if req.method == "GET" and u.endswith("/mellem"): return httpx.Response(u, text=BEKR.replace("post-broker-login?", "post-broker-login-2?"))
+    if req.method == "POST" and antal_post == 2: return httpx.Response(B + "post-broker-login-2", status=302, text="", location="https://login.aula.dk/slut")
+    return httpx.Response(u, text=SAML)
+for sync in (False, True):
+    r, err = koer(to_trin, sync=sync)
+    t(f"[{'synkron' if sync else 'asynkron'}] en ny bekræftelsesside efter en omdirigering udfyldes også, og kæden ender i SAML-siden", "SAMLResponse" in r.text and [l[0] for l in log] == ["GET", "POST", "GET", "POST", "GET"], [l[:2] for l in log])
+r, err = koer(to_trin)
+t("loggen viser begge afsendelser og begge omdirigeringer", err.count("efter afsendelse") == 2 and err.count("Følger den") == 2, err.count("efter afsendelse"))
+def evig_formular(req, kw):
+    u = str(req.url)
+    if req.method == "GET" and "post-broker-login" in u and len(log) == 1: return httpx.Response(u, text=BEKR)
+    n = len([l for l in log if l[0] == "POST"])
+    return httpx.Response(B + f"post-broker-login-{n}", text=BEKR.replace("post-broker-login?", f"post-broker-login-{n}?"))
+r, err = koer(evig_formular)
+t("en endeløs række af nye formularer stoppes af grænsen: højst MAX_HOP afsendelser i alt (ingen uendelig løkke)", len([l for l in log if l[0] == "POST"]) == F.MAX_HOP, len(log))
+
+# ── hele kæden som i den rigtige Aula-log (8. november): rolle → «Næste» → 302 → SAML ──
+ROLLE = '<html><head><title>Unilogin</title></head><body><div>Unilogin Uni login Log ind som</div><form action="/auth/realms/broker/login-actions/post-broker-login?session_code=S1&amp;execution=E1" method="post"><label><input type="radio" name="selected-aktoer" value="ELEV"> Elev</label><label><input type="radio" name="selected-aktoer" value="KONTAKT"> Forælder eller kontaktperson</label></form><a href="/auth/realms/broker/login-actions/restart">« Tilbage</a><img src="/auth/resources/kbqcu/login/unilogin/img/UVM_STIL_black_min.svg"></body></html>'
+def rigtig_log(req, kw):
+    u = str(req.url); n = len([l for l in log if l[0] == "POST"])
+    if req.method == "GET" and "post-broker-login" in u and len(log) == 1: return httpx.Response(u, text=ROLLE)
+    if req.method == "POST" and n == 1: return httpx.Response(B + "post-broker-login", text=BEKR)
+    if req.method == "POST" and n == 2: return httpx.Response(B + "post-broker-login", status=302, text="", location="https://broker.unilogin.dk/auth/realms/broker/broker/after-post-broker-login")
+    if u.endswith("after-post-broker-login"): return httpx.Response(u, text=SAML)
+    return httpx.Response(u, text="", status=404)
+for sync in (False, True):
+    r, err = koer(rigtig_log, sync=sync)
+    t(f"[{'synkron' if sync else 'asynkron'}] den rigtige kæde: rolle KONTAKT, «Næste» (accept), 302 til after-post-broker-login, og biblioteket får SAML-siden", "SAMLResponse" in r.text and [l[0] for l in log if not l[1].endswith(".svg")] == ["GET", "POST", "POST", "GET"] and log[1][2].get("selected-aktoer") == "KONTAKT" and "accept" in log[2][2] and log[-1][1].endswith("after-post-broker-login"), [(l[0], l[1][-40:], l[2]) for l in log])
+t("loggen er den samme slags som den, brugeren sendte, og indeholder ingen koder (session_code, execution)", "vælger rollen KONTAKT" in err and "accepterer bekræftelsessiden" in err and "efter afsendelse: HTTP 302" in err and "S1" not in err and "session_code" not in err and "execution" not in err, err)
+
 # ── tavs tilstand ──
 os.environ["AULA_LOGIN_DETALJER"] = "0"
 r, err = koer(kæde(meta("https://login.aula.dk/videre")))

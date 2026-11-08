@@ -16,6 +16,18 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.5.5] – 2026-11-08
+
+### Rettet (Aula-login)
+Loggen fra et rigtigt login (version 3.3.3 med diagnose) viste, hvor det gik galt: MitID blev godkendt, rolle-siden («Log ind som: Forælder eller kontaktperson») blev udfyldt, siden med knappen **Næste** blev accepteret, og så svarede Aula med en **omdirigering (HTTP 302)** til `after-post-broker-login`. Tilføjelsen gav den tomme omdirigering videre til aula-biblioteket, som venter en side med en formular, og derfor kom fejlen `No form found in page`.
+- **HTTP-omdirigeringer (301, 302, 303) følges nu** med GET, når de peger på `broker.unilogin.dk` eller `login.aula.dk` (højst 6 skridt). Andre mål og http følges ikke. 307 og 308 (gentag POST) følges ikke, og det står i loggen.
+- **Formularer og omdirigeringer kan afløse hinanden:** er siden efter en omdirigering en ny rolle- eller bekræftelsesside, udfyldes den også. Højst 4 afsendelser og 6 omdirigeringer i alt.
+- Hele kæden fra den rigtige log er gentaget i en prøve (rolle, «Næste», 302, SAML-siden). 21 nye prøver, og de gamle består.
+- **Stadig ikke afprøvet mod Aula.** Ligger der flere trin efter omdirigeringen, viser loggen (`aula-login:`) dem.
+
+### Opdatering fra 3.5.4
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, tryk **Redeploy**, og kør `aula --username DIT-MITID-BRUGERNAVN login` i `aula`-containerens terminal igen. Send linjerne med `aula-login:` og fejlteksten, hvis det ikke lykkes.
+
 ## [3.5.4] – 2026-11-08
 
 ### Tilføjet (ingen ændring i selve løsningen)

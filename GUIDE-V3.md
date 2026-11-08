@@ -70,7 +70,7 @@ Det er det eneste, der kræver en terminal, og Dockhand har en:
 3. Scan QR-koderne med MitID-appen (dansk IP-adresse kræves).
 4. Under **Opsætning → Familie og forbindelser** udfylder du børnenes `calendar_id` (kolonnen «ID» fra `aula profile` i terminalen), MitID-brugernavn og Anthropic-nøgle, og trykker **Gem**.
 
-**Fejler login?** Hver prøve kræver, at du scanner QR-koderne igen, så prøv ikke mange gange i træk.
+**Fejler login?** Hver prøve kræver, at du scanner QR-koderne igen, så prøv ikke mange gange i træk. Siden 3.5.5 følger tilføjelsen Aulas omdirigeringer efter rolle- og «Næste»-siderne.
 - **Send mig linjerne, der starter med `aula-login:`** og fejlteksten nederst. Der står ingen koder i dem. Siden 3.3.2 beskriver de, hvad Aula svarede.
 - **Prøv uden vores tilføjelse:** `AULA_LOGIN_PATCH=0 aula --username DIT-MITID-BRUGERNAVN login`. Virker det, er tilføjelsen unødvendig, og vi slår den fra som standard.
 - **Prøv med en anden rolle:** `AULA_AKTOER=KONTAKT` er standard (forælder). Tilbydes en anden, står den i fejlteksten.
