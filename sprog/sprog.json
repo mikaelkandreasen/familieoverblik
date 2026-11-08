@@ -435,7 +435,8 @@
     "Eller indsæt teksten fra PDF'en": "Or paste the text from the PDF",
     "Læs teksten": "Read the text",
     "Læg de valgte ind i tidsplanen": "Add the selected ones to the schedule",
-    "Se datoerne": "See the dates"
+    "Se datoerne": "See the dates",
+    "← Forsiden": "← Home"
    }
   },
   "de": {
@@ -871,7 +872,8 @@
     "Eller indsæt teksten fra PDF'en": "Oder den Text aus der PDF einfügen",
     "Læs teksten": "Text lesen",
     "Læg de valgte ind i tidsplanen": "Die Ausgewählten in den Zeitplan übernehmen",
-    "Se datoerne": "Daten ansehen"
+    "Se datoerne": "Daten ansehen",
+    "← Forsiden": "← Startseite"
    }
   }
  }
