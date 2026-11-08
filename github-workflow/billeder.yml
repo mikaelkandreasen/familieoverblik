@@ -32,6 +32,7 @@ jobs:
           python3 tests/test_aula_overdrag.py
           python3 tests/test_brev.py
           python3 tests/test_kantine.py
+          python3 tests/test_ics.py
           python3 tests/test_sync_breve.py
           python3 tests/test_stier.py
           python3 tests/test_aaben_visning.py

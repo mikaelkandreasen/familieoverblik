@@ -39,6 +39,20 @@ t("«Kantine» kendes også som «Kantinens» og «kantinen» med små bogstaver
 op = K.opbygning({"items": [{"subject": "Kantinen uge 46", "text": EKSEMPEL, "sender": "Skolen"}], "complete": True})
 t("opbygningen til fejlfinding viser feltnavne, antal og om beskeden blev fundet (uge 46, 5 retter), men intet af indholdet", "kantine-besked fundet: uge 46, 5 retter" in op and "items" in op and "subject" in op and not any(x in op for x in ("Kartoffel", "Frikadeller", "Skolen", "Kylling")), op)
 t("opbygningen af noget uden kantine siger NEJ i stedet for at fejle", "NEJ" in K.opbygning([{"subject": "x", "text": "y"}]) and "NEJ" in K.opbygning(None))
+# ── mere tolerant ──
+m = lambda tekst: K.find_kantine([{"subject": "Kantinen uge 46", "text": tekst}])
+t("«Ugens menu:», «Menu uge 46:», «Dagens menu:» og «Menu for uge 46» kendes som menu-overskrifter", all(m(f"{o}\nSuppe\nPizza\nFisk") and m(f"{o}\nSuppe\nPizza\nFisk")["dage"] == {"1": "Suppe", "2": "Pizza", "3": "Fisk"} for o in ("Ugens menu:", "Menu uge 46:", "Dagens menu:", "Menu for uge 46", "Ugemenu: ")))
+f = m("Menu:\nMandag\nKartoffelsuppe\nTirsdag\nFrikadeller\nOnsdag\nPasta")
+t("…efter «Menu:»: retterne er på de rigtige dage, og ugedagene er ikke retter", f and f["dage"] == {"1": "Kartoffelsuppe", "2": "Frikadeller", "3": "Pasta"}, f)
+f = m("Hej alle\nMandag: Suppe\nTirsdag: Pizza\nOnsdag: Fisk\nTorsdag: Ris\nFredag: Pasta\nGod appetit")
+t("uden «Menu:»-linje bruges mindst tre linjer, der begynder med en ugedag og har en ret (og teksten omkring røres ikke)", f and f["dage"] == {"1": "Suppe", "2": "Pizza", "3": "Fisk", "4": "Ris", "5": "Pasta"}, f)
+t("to mærkede linjer uden «Menu:» er ikke nok (kunne være en tilfældig sætning)", m("Mandag: Suppe\nTirsdag: Pizza\nVi ses") is None)
+# diagnosen
+svar = {"items": [{"subject": "Kantinen uge 45", "content_html": "<p>Hej</p><p>Ingen liste her</p>", "send_datetime": "2026-11-02T08:00:00+01:00", "sender_name": "Navn Efternavn"}, {"subject": "Kantinen uge 46", "content_html": "<p>Menu:</p>" + "".join(f"<p>Ret nummer {i}</p>" for i in range(30)), "send_datetime": "2026-11-09T08:00:00+01:00", "sender_name": "Navn Efternavn"}, {"subject": "Skolefest", "content_html": "<p>x</p>"}]}
+v = K.tekstvisning(svar)
+t("diagnosen viser antal kantine-breve, de nyeste først (uge 46 før uge 45), linjerne nummereret og afkortet til 25 med en note om resten, og om «Menu»-linjen findes og hvor mange retter, der blev læst", v.startswith("2 breve handler om kantinen. De 2 nyeste:") and v.index("uge 46") < v.index("uge 45") and "  1| Menu:" in v and " 25| Ret nummer 23" in v and "Ret nummer 24" not in v and "og 6 linjer mere" in v and "«Menu»-linje: nr. 1" in v and "læst som 7 retter" in v and "«Menu»-linje: FINDES IKKE" in v and "læst som 0 retter" in v, v[:400])
+t("diagnosen viser ikke afsenderens navn", "Efternavn" not in v and "sender" not in v.lower())
+t("uden kantine-breve siger den det i stedet for at fejle", K.tekstvisning([{"subject": "x", "text": "y"}]).startswith("0 breve handler om kantinen") and K.tekstvisning(None).startswith("0 breve"))
 # ── Sync-Aula.py ──
 os.environ["AULA_STATE_DIR"] = tempfile.mkdtemp(prefix="fo-kant-")
 cfg = types.ModuleType("config"); cfg.ANTHROPIC_API_KEY = ""; cfg.ANTHROPIC_MODEL = "x"; cfg.API_BASE = "https://x"; cfg.MITID_USERNAME = "x"; cfg.WRITE_TOKEN = "x"; cfg.CHILDREN = [{"name": "Barn", "calendar_id": 1}]
@@ -96,6 +110,9 @@ t("uden læsbart ugenummer gættes der ikke (ingen placering), og det siges", "k
 t("ugenummeret passer også ved årsskiftet (uge 1 i 2027 starter 4. januar)", S.placer_kantine([{"id": "2027-W01", "monday": D(2027, 1, 4)}], {"uge": 1, "dage": DAGE5}).startswith("kantine: menuen for uge 1"))
 ud = io.StringIO()
 S.aula_json = faelles(lambda a: {"items": [{"subject": "Kantinen uge 46", "text": EKSEMPEL, "forfatter": "Navn"}]})
+ud0 = io.StringIO()
+with contextlib.redirect_stdout(ud0): S.kantinetekst()
+t("--kantinetekst viser den nyeste kantine-besked linje for linje (og ikke andet)", "1 breve handler om kantinen" in ud0.getvalue() and "Kartoffel/ porre suppe" in ud0.getvalue() and "læst som 5 retter" in ud0.getvalue(), ud0.getvalue()[:300])
 with contextlib.redirect_stdout(ud): S.kantineform()
 v = ud.getvalue()
 t("--kantineform viser opbygningen og om menuen blev fundet, men intet af indholdet", "kantine-besked fundet: uge 46, 5 retter" in v and not any(x in v for x in ("Kartoffel", "Frikadeller", "Navn", "Kylling")), v[:200])

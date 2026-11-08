@@ -21,7 +21,7 @@ EMNE_NOEGLER = ("subject", "title", "thread_subject", "headline", "name")
 TEKST_NOEGLER = ("text", "content", "content_html", "body", "html", "message", "preview", "description", "raw_text", "plain_text")
 DATO_NOEGLER = ("send_datetime", "sent_datetime", "sent_at", "sent", "created", "created_at", "date", "timestamp", "start_datetime", "last_message_date", "latest_message_date", "updated_at")
 KANTINE = re.compile(r"^\W*kantine[nr]?\b", re.I)
-MENU = re.compile(r"^\W*menu(?:en)?\s*(?::\s*(?P<rest>.*))?$", re.I)
+MENU = re.compile(r"^\W*(?:ugens\s+|dagens\s+|uge)?menu(?:en)?(?:\s+(?:for\s+)?uge\s*\d{1,2})?\s*(?::\s*(?P<rest>.*))?$", re.I)
 SLUT = re.compile(r"^(mvh|med venlig|venlig hilsen|hilsen|kærlig hilsen|de bedste|god appetit|bemærk|obs\b|husk\b|p\.?s\b)", re.I)
 DAGE = ("mandag", "tirsdag", "onsdag", "torsdag", "fredag")
 DAGMAERKE = re.compile(r"^\W*(?P<dag>man(?:dag)?|tir(?:s(?:dag)?)?|ons(?:dag)?|tor(?:s(?:dag)?)?|fre(?:dag)?)\b\.?\s*[:\-–—]?\s*(?P<rest>.*)$", re.I)
@@ -49,7 +49,8 @@ def _linjer(tekst):
 
 
 def parse_menu(tekst):
-    """[(ugedag 1–5 eller None, ret), …] fra linjerne efter «Menu:». Stopper ved en afslutning (Mvh …) eller en ny overskrift (linje, der ender på kolon). Højst 7 retter."""
+    """[(ugedag 1–5 eller None, ret), …] fra linjerne efter «Menu:» (også «Ugens menu:», «Menu uge 46:»). Er en ugedag skrevet alene på en linje, er retten på linjen efter den.
+    Står der ingen «Menu:»-linje, men mindst tre linjer, der begynder med en ugedag og har en ret efter («Mandag: …»), bruges de. Stopper ved en afslutning (Mvh …) eller en ny overskrift (linje, der ender på kolon). Højst 7 retter."""
     lin = _linjer(tekst)
     start = forste = None
     for i, l in enumerate(lin):
@@ -58,10 +59,18 @@ def parse_menu(tekst):
             start, forste = i, (m.group("rest") or "").strip()      # «Menu: Suppe» har første ret på samme linje
             break
     if start is None:
-        return []
-    ud = []
-    for l in ([forste] if forste else []) + lin[start + 1:]:
-        if SLUT.match(l) or (l.endswith(":") and len(l) <= 40):
+        mærkede = [l for l in lin if (m := DAGMAERKE.match(KUGLE.sub("", l).strip())) and m.group("rest").strip()]
+        if len(mærkede) < 3:
+            return []
+        start, forste = -1, ""                                      # uden overskrift: hele teksten gennemgås
+    ud, i = [], 0
+    efter = ([forste] if forste else []) + lin[start + 1:]
+    while i < len(efter):
+        l = efter[i]
+        i += 1
+        if SLUT.match(l) or (l.endswith(":") and len(l) <= 40 and not DAGMAERKE.match(l)):
+            if start == -1:
+                continue
             break
         l = KUGLE.sub("", l).strip()
         if not l:
@@ -71,6 +80,12 @@ def parse_menu(tekst):
         if m and m.group("rest").strip():
             dag = next((k for k, d in enumerate(DAGE, 1) if d.startswith(m.group("dag").lower()[:3])), None)
             l = m.group("rest").strip()
+        elif m and i < len(efter) and not DAGMAERKE.match(KUGLE.sub("", efter[i]).strip()):      # ugedagen alene på linjen: retten står på den næste
+            dag = next((k for k, d in enumerate(DAGE, 1) if d.startswith(m.group("dag").lower()[:3])), None)
+            l = KUGLE.sub("", efter[i]).strip()
+            i += 1
+        elif start == -1:
+            continue                                                # uden «Menu:»-overskrift tæller kun de mærkede linjer
         ud.append((dag, l))
         if len(ud) >= 7:
             break
@@ -129,6 +144,28 @@ def find_kantine(svar):
     if not kandidater:
         return None
     return max(kandidater, key=lambda k: (k["dato"].timestamp() if k["dato"] else 0, k["uge"] or 0))
+
+
+def tekstvisning(svar, maks=3):
+    """De nyeste kantine-breve linje for linje (emne, dato og de første 25 linjer, hver højst 90 tegn), og hvordan menuen blev læst. Til at se, hvorfor en menu ikke findes. Viser ikke afsenderen."""
+    if isinstance(svar, dict) and isinstance(svar.get("items"), list):
+        svar = svar["items"]
+    kandidater = []
+    for p in _poster(svar):
+        lin = _linjer(p["tekst"])
+        if KANTINE.match(p["emne"]) or KANTINE.match(lin[0] if lin else ""):
+            kandidater.append((p["dato"].timestamp() if p["dato"] else 0, p, lin))
+    kandidater.sort(key=lambda x: -x[0])
+    ud = [f"{len(kandidater)} breve handler om kantinen. De {min(maks, len(kandidater))} nyeste:"]
+    for nr, (_, p, lin) in enumerate(kandidater[:maks], 1):
+        retter = parse_menu(p["tekst"])
+        mlinje = next((i for i, l in enumerate(lin) if MENU.match(l)), None)
+        ud.append(f"--- brev {nr}: emne «{p['emne'][:80]}», {p['dato'].date().isoformat() if p['dato'] else 'ukendt dato'}, {len(lin)} linjer, «Menu»-linje: {('nr. ' + str(mlinje + 1)) if mlinje is not None else 'FINDES IKKE'}, læst som {len(retter)} retter ---")
+        for i, l in enumerate(lin[:25], 1):
+            ud.append(f"{i:>3}| {l[:90]}")
+        if len(lin) > 25:
+            ud.append(f"    … og {len(lin) - 25} linjer mere")
+    return "\n".join(ud)
 
 
 def opbygning(svar):

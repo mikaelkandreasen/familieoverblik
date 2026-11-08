@@ -181,6 +181,15 @@ def hent_kantine():
     return None
 
 
+def kantinetekst() -> int:
+    """Viser de nyeste kantine-breve linje for linje, så man kan se, hvorfor menuen ikke findes (kantinens tekst står der, ikke afsenderen)."""
+    try:
+        print(kantine.tekstvisning(aula_json("messages", "--search", "Kantine", delvist=True)))
+    except Exception as exc:
+        print(f"fejlede: {exc}")
+    return 0
+
+
 def placer_kantine(weeks, kant) -> str:
     """Lægger menuen på den hentede uge, den handler om (ugenummeret står i beskedens emne). Returnerer en logtekst."""
     uge = kant.get("uge")
@@ -1001,6 +1010,8 @@ def main() -> int:
         return brevform()
     if "--kantineform" in sys.argv:
         return kantineform()
+    if "--kantinetekst" in sys.argv:
+        return kantinetekst()
     today = date.today()
     monday = today - timedelta(days=today.weekday())
 

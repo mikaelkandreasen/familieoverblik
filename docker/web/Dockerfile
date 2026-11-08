@@ -14,7 +14,7 @@ COPY ugeplan-lib /opt/familieoverblik/skabelon/lib
 COPY ugeplan-data /opt/familieoverblik/skabelon/data
 COPY docker/aula/config-skabelon.py /opt/familieoverblik/skabelon/aula-config.py
 COPY CHANGELOG.md VERSION /opt/familieoverblik/skabelon/
-COPY docker/web/bootstrap.py docker/web/entrypoint.sh /opt/familieoverblik/
+COPY docker/web/bootstrap.py docker/web/ics.py docker/web/entrypoint.sh /opt/familieoverblik/
 RUN chmod +x /opt/familieoverblik/entrypoint.sh
 # Alt, der er dit (data, billeder, nøgler, indstillinger), ligger i dette ene volume
 VOLUME /var/www/ugeplan-data
