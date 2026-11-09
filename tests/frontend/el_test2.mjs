@@ -84,8 +84,9 @@ const nu = new Date(2026,10,5,12,16);
   knap.h.click();
   t("et tryk mere viser detaljerne igen (klassen væk, «Kun søjler», gemt som 0)", !kort.classList.contains("el-enkel") && knap.attrs["aria-pressed"] === "false" && knap.textContent === "Kun søjler" && lager["familieoverblik-el-enkel"] === "0");
   const src = fs.readFileSync(ROD + "public_html/overblik.html", "utf8");
-  t("CSS: i enkel visning skjules alt i kortet undtagen søjlerne og tidsaksen", /#elKort\.el-enkel #elKrop>:not\(\.el-chart\):not\(\.el-akse\)\{display:none\}/.test(src));
-  t("knappen sidder i kortets overskriftslinje og har en forklarende titel", /id="elEnkelKnap" aria-pressed="false" title="Skjul alt undtagen søjlediagrammet">Kun søjler</.test(src));
+  t("CSS: i enkel visning skjules detaljerne, men priserne (nu, laveste/højeste/gennemsnit) og søjlerne med tidsaksen bliver stående", /#elKort\.el-enkel #elKrop>:not\(\.el-nu\):not\(\.el-stats\):not\(\.el-chart\):not\(\.el-akse\)\{display:none\}/.test(src) && !/#elKort\.el-enkel #elKrop>:not\(\.el-chart\):not\(\.el-akse\)\{/.test(src));
+  t("de bevarede klasser findes i kortets indhold: «Nu» (el-nu) og tallene (el-stats) med laveste, højeste og gennemsnit, så reglen faktisk rammer noget", /class="el-nu"/.test(src) && /class="el-stats"/.test(src) && ["Laveste", "Højeste", "Gennemsnit"].every(x => src.includes(`<small>${x}</small>`)));
+  t("knappen sidder i kortets overskriftslinje og har en forklarende titel", /id="elEnkelKnap" aria-pressed="false" title="Skjul detaljerne, men behold priserne \(nu, laveste, højeste, gennemsnit\) og søjlediagrammet">Kun søjler</.test(src));
   // gemt valg ved indlæsning
   const lager2 = { "familieoverblik-el-enkel": "1" }; globalThis.localStorage = { getItem: k => lager2[k] ?? null, setItem(){} };
   const els2 = {}; const $2 = id => (els2[id] ??= { hidden: true, innerHTML: "", textContent: "", attrs: {}, _cls: new Set(), classList: { toggle(c, on){ on ? els2[id]._cls.add(c) : els2[id]._cls.delete(c); }, contains(c){ return els2[id]._cls.has(c); } }, setAttribute(k, v){ this.attrs[k] = v; }, addEventListener(){} });

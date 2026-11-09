@@ -16,6 +16,21 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.16.0] – 2026-11-09
+
+### Tilføjet og rettet
+- **Bladre i billederne på pauseskærmen.** To nye knapper yderst i knaprækken øverst til højre: **‹ forrige** og **› næste** (drejeknapperne ligger imellem). Piletasterne bladrer også (alle andre taster lukker stadig). Et tryk på knapperne lukker ikke pauseskærmen, og billedet bliver stående et helt interval, før diasshowet går videre derfra, hvor man er. Fra det første billede springer ‹ til det sidste.
+- **«I dag»-kortet følger temaet (mørkt tema).** Panelet var næsten uændret i det mørke tema (en mørk grøn i begge). Nu er det en mørk grå-blå, der er lidt lysere end de mørke kort, så den står frem og passer til de andre kort. Teksten er stadig tydelig (kontrast over 7:1 på hovedteksten), og personfarverne har stadig mindst 4,5:1. Standard, Varm og Høj kontrast er uændrede. **Jeg har tolket ønsket, så panelet skal ændre sig synligt i det mørke tema; siger du, at du ville have noget andet (fx et lyst panel i et lyst tema), så ret jeg det.**
+- **Elpris: «Kun søjler» beholder priserne.** Nu-prisen og laveste, højeste og gennemsnit bliver stående sammen med søjlerne og tidsaksen. Det, der skjules, er den billigste periode, noterne og prognosen for de næste dage.
+- **Vejr: «Kun i dag».** En knap i vejrkortets overskrift skjuler de kommende dage og beholder dagens vejr (i dag og timerne). Valget gemmes på enheden, og knappen hedder så «Vis alle dage».
+- **Tømning: samme dag, én linje.** Fraktioner, der tømmes samme dag, står nu i én linje med alle ikonerne, alle navnene og datoen. Med din tidsplan bliver fem linjer til tre, og kortet bliver mindre.
+- **Tæt pakning af kortene (bred skærm).** «I dag» og de smalle kort er nu to CSS-kolonner, og de halve kort ligger også i to kolonner. Det betyder, at **hvert kort sidder helt op ad kortet over i sin kolonne**, så der ikke er huller under de korte kort, og at **afstanden mellem kort er den samme overalt** (16 px, samme som resten). Telefonen er uændret (én kolonne). **Forskelle, du vil lægge mærke til:** rækkefølgen er nu *ned ad første kolonne, så ned ad anden* (ikke række for række), og de to kolonner er lige brede (før var den ene lidt bredere). Brede kort er stadig hele rækken og begynder under den højeste kolonne.
+- **Tilpas layout: nemmere at se, hvilken bredde man vælger.** Den ene knap, der skiftede mellem Smal, Halv og Bred, er erstattet af tre knapper på række: **Smal · Halv · Bred**, hver med et lille billede af, hvor meget af rækken kortet fylder. **Den valgte er mørk**, og man kan trykke direkte på den bredde, man vil have (også to skridt ad gangen).
+- 98 nye prøver. **Ikke set i en rigtig browser:** layoutet (kolonnerne) er kun kontrolleret som regler og struktur, og jeg kan ikke se, hvordan kolonnerne falder ud med dine kort.
+
+### Opdatering fra 3.15.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Genindlæs forsiden to gange.
+
 ## [3.15.0] – 2026-11-09
 
 ### Rettet og tilføjet (dine backlog-punkter fra 9. november)

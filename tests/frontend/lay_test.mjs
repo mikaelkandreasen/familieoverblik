@@ -17,7 +17,7 @@ class El {
   matches(sel){ if (sel.startsWith(".")) return this._cls.has(sel.slice(1)); if (sel === "h2") return this.tag === "h2"; return false; }
   get firstChild(){ return this.children[0]; }
   set className(v){ this._cls = new Set(String(v).split(/\s+/).filter(Boolean)); }
-  set innerHTML(h){ this._html = h; this.children = []; for (const m of h.matchAll(/<button[^>]*data-lay="([^"]+)"[^>]*data-lay-id="([^"]+)"/g)){ const b = new El("button"); b.dataset.lay = m[1]; b.dataset.layId = m[2]; b.parent = this; this.children.push(b); }
+  set innerHTML(h){ this._html = h; this.children = []; for (const m of h.matchAll(/<button[^>]*data-lay="([^"]+)"(?:[^>]*data-lay-str="([^"]+)")?[^>]*data-lay-id="([^"]+)"/g)){ const b = new El("button"); b.dataset.lay = m[1]; if (m[2]) b.dataset.layStr = m[2]; b.dataset.layId = m[3]; b.parent = this; this.children.push(b); }
     for (const m of h.matchAll(/<button[^>]*data-lay-vis="([^"]+)"/g)){ const b = new El("button"); b.dataset.layVis = m[1]; b.parent = this; this.children.push(b); } }
   closest(sel){ let e = this; while (e){ if (sel === "[data-kort]" && e.dataset.kort) return e; if (sel === "[data-lay-klap]" && e.dataset.layKlap) return e; if (sel === "[data-lay]" && e.dataset.lay) return e; if (sel === "[data-lay-vis]" && e.dataset.layVis) return e; e = e.parent; } return null; }
 }
@@ -47,7 +47,7 @@ async function nyUdgave(lager, ekstra = []){
   const klik = (el) => fyr("click", { target: el });
   return { app, stak, els, api, fyr, klik, document, lager };
 }
-const knap = (u, sel) => u.app.all().find(e => (sel.lay && e.dataset.lay === sel.lay && e.dataset.layId === sel.id) || (sel.klap && e.dataset.layKlap === sel.klap));
+const knap = (u, sel) => u.app.all().find(e => (sel.lay && e.dataset.lay === sel.lay && e.dataset.layId === sel.id && (!sel.str || e.dataset.layStr === sel.str)) || (sel.klap && e.dataset.layKlap === sel.klap));
 
 // ── 1. rene funktioner ──
 {
@@ -98,30 +98,37 @@ const knap = (u, sel) => u.app.all().find(e => (sel.lay && e.dataset.lay === sel
   u.klik(knap(u, { lay: "ned", id: "vigtigt" }));
   t("▼ springer det skjulte kort (indkob) over", ids(u.stak).join() === "tom,todo,elpris,indkob,traening,vigtigt,bil", ids(u.stak).join());
   // størrelse: smal → halv → bred → smal
-  u.klik(knap(u, { lay: "storrelse", id: "bil" }));
+  u.klik(knap(u, { lay: "str", id: "bil", str: "Halv" }));
   const bil = u.app.all().find(e => e.dataset.kort === "bil");
   t("Størrelse (1. tryk): Bil bliver halv, med klassen half, i en halv-række i den brede række (forrest)", bil._cls.has("half") && !bil._cls.has("wide") && bil.parent._cls.has("halv-raekke") && bil.parent.parent === u.app && ids(u.app).slice(0, 3).join() === "bil,dage5,svar", ids(u.app).join());
-  u.klik(knap(u, { lay: "storrelse", id: "tegneserie" }));
+  u.klik(knap(u, { lay: "str", id: "tegneserie", str: "Smal" }));
   const tg = u.app.all().find(e => e.dataset.kort === "tegneserie");
   t("Størrelse: tegneserie (bred) → smal i kolonnen (wide og half fjernet)", !tg._cls.has("wide") && !tg._cls.has("half") && tg.parent === u.stak, ids(u.stak).join());
-  u.klik(knap(u, { lay: "storrelse", id: "bil" }));
+  u.klik(knap(u, { lay: "str", id: "bil", str: "Bred" }));
   t("Størrelse (2. tryk): Bil bliver bred (wide, direkte under #app, ikke i en række)", bil._cls.has("wide") && !bil._cls.has("half") && bil.parent === u.app && u.app.children.filter(e => e._cls.has("halv-raekke")).length === 0);
-  u.klik(knap(u, { lay: "storrelse", id: "bil" }));
+  u.klik(knap(u, { lay: "str", id: "bil", str: "Smal" }));
   t("Størrelse (3. tryk): Bil er tilbage i kolonnen, og der er ingen tomme halv-rækker", bil.parent === u.stak && !bil._cls.has("wide") && !bil._cls.has("half") && u.app.children.filter(e => e._cls.has("halv-raekke")).length === 0);
-  u.klik(knap(u, { lay: "storrelse", id: "bil" })); u.klik(knap(u, { lay: "storrelse", id: "elpris" }));
+  u.klik(knap(u, { lay: "str", id: "bil", str: "Halv" })); u.klik(knap(u, { lay: "str", id: "elpris", str: "Halv" }));
   const rk = () => u.app.children.filter(e => e._cls.has("halv-raekke"));
   t("to halve kort lægges i SAMME række (to side om side)", rk().length === 1 && rk()[0].children.map(e => e.dataset.kort).join() === "elpris,bil", rk().map(r => r.children.map(e => e.dataset.kort).join()).join("|"));
   const g1 = JSON.parse(lager["familieoverblik-layout-v1"]);
   t("halve gemmes i browseren", g1.halve.includes("bil") && g1.halve.includes("elpris") && g1.halve.length === 2, JSON.stringify(g1.halve));
   const u7 = await nyUdgave(lager);
   t("halve kort huskes efter genindlæsning (stadig to side om side)", u7.app.children.filter(e => e._cls.has("halv-raekke"))[0].children.map(e => e.dataset.kort).join() === "elpris,bil");
-  for (const id of ["bil", "bil", "elpris", "elpris"]) u.klik(knap(u, { lay: "storrelse", id }));
+  for (const id of ["bil", "elpris"]) u.klik(knap(u, { lay: "str", id, str: "Smal" }));
   t("tilbage til kolonnen igen: ingen halv-rækker og kortene er smalle", rk().length === 0 && ids(u.stak).includes("bil") && ids(u.stak).includes("elpris"));
   const barTekst = navn => u.app.all().find(e => e._cls.has("lay-bar") && e.dataset.navn === navn)._html;
-  t("størrelsesknappen viser den nuværende størrelse og har en forklarende aria-label", />Smal<\/button>/.test(barTekst("To-do")) && /aria-label="Skift størrelse på To-do \(nu smal\)"/.test(barTekst("To-do")), barTekst("To-do"));
-  u.klik(knap(u, { lay: "storrelse", id: "todo" }));
-  t("…og skifter til «Halv» efter et tryk", />Halv<\/button>/.test(barTekst("To-do")) && /nu halv/.test(barTekst("To-do")));
-  u.klik(knap(u, { lay: "storrelse", id: "todo" })); u.klik(knap(u, { lay: "storrelse", id: "todo" }));
+  t("bredden vælges med tre knapper på række (Smal, Halv, Bred), og den nuværende er markeret: Smal har aria-pressed=true, de to andre false, og aria-label siger «(valgt)»", (h => /data-lay-str="Smal"[^>]*aria-pressed="true"[^>]*aria-label="Bredde smal for To-do \(valgt\)"/.test(h) && /data-lay-str="Halv"[^>]*aria-pressed="false"[^>]*aria-label="Bredde halv for To-do"/.test(h) && /data-lay-str="Bred"[^>]*aria-pressed="false"[^>]*aria-label="Bredde bred for To-do"/.test(h) && /role="group" aria-label="Bredde på To-do"/.test(h))(barTekst("To-do")), barTekst("To-do"));
+  t("hver knap har et lille billede af bredden (lay-smal, lay-halv, lay-bred) og sit ord", ["smal", "halv", "bred"].every(x => barTekst("To-do").includes(`<i class="lay-ik lay-${x}" aria-hidden="true"></i>`)) && ["Smal", "Halv", "Bred"].every(x => barTekst("To-do").includes(`<span>${x}</span>`)));
+  u.klik(knap(u, { lay: "str", id: "todo", str: "Halv" }));
+  t("et tryk på «Halv» sætter kortet til halv bredde direkte (to side om side), og «Halv» er nu den markerede", /data-lay-str="Halv"[^>]*aria-pressed="true"/.test(barTekst("To-do")) && /data-lay-str="Smal"[^>]*aria-pressed="false"/.test(barTekst("To-do")) && rk().length === 1);
+  u.klik(knap(u, { lay: "str", id: "todo", str: "Bred" }));
+  t("et tryk på «Bred» fra Halv giver hele rækken, og et tryk på «Smal» fra Bred giver kolonnen igen (højst to skridt, ingen mellemstop)", /data-lay-str="Bred"[^>]*aria-pressed="true"/.test(barTekst("To-do")) && (u.klik(knap(u, { lay: "str", id: "todo", str: "Smal" })), /data-lay-str="Smal"[^>]*aria-pressed="true"/.test(barTekst("To-do")) && ids(u.stak).includes("todo")));
+  u.klik(knap(u, { lay: "str", id: "todo", str: "Bred" }));
+  t("fra Smal direkte til Bred (to skridt på én gang) virker, og et tryk på den, der allerede er valgt, ændrer intet", /data-lay-str="Bred"[^>]*aria-pressed="true"/.test(barTekst("To-do")) && (() => { const foer = JSON.stringify(JSON.parse(lager["familieoverblik-layout-v1"])); u.klik(knap(u, { lay: "str", id: "todo", str: "Bred" })); return JSON.stringify(JSON.parse(lager["familieoverblik-layout-v1"])) === foer; })());
+  u.klik(knap(u, { lay: "str", id: "todo", str: "Smal" }));
+  t("den gamle ét-knaps-cyklus (layStorrelse) findes stadig som funktion (Smal → Halv → Bred → Smal), men er ikke længere en knap i panelet", (() => { const l = { stak: ["x"], bred: [], halve: [], lukket: [], skjult: [] }; const trin = []; for (let i = 0; i < 4; i++){ u.api.layStorrelse(l, "x"); trin.push(u.api.layStr(l, "x")); } return trin.join() === "Halv,Bred,Smal,Halv" && !/data-lay="storrelse"/.test(barTekst("To-do")); })());
+  u.klik(knap(u, { lay: "str", id: "todo", str: "Smal" }));
   // skjul kort helt
   u.klik(knap(u, { lay: "skjul", id: "vigtigt" }));
   const vg = u.app.all().find(e => e.dataset.kort === "vigtigt");
