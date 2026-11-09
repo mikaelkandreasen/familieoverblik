@@ -338,6 +338,11 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .ramme-top{display:flex;align-items:center;gap:12px;padding:6px 10px;border-bottom:1px solid var(--rule);background:var(--card)}
 .ramme-top span{font-size:13px;color:var(--ink-soft);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ramme-lag iframe{flex:1;width:100%;border:0;background:var(--paper)}
+.dag-valg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:2px 0 12px}
+.dag-valg button{min-height:38px;padding:0 2px;font:inherit;font-size:12px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink-soft);cursor:pointer;overflow-wrap:anywhere}
+.dag-valg button[aria-pressed=true]{background:var(--tint-blue);color:var(--ink);font-weight:700;border-color:var(--ink-soft)}
+.dag-dato{margin:-4px 0 8px;font-size:13px;color:var(--ink-soft)}
+.today.anden-dag{outline:2px dashed var(--ink-faint);outline-offset:6px;border-radius:var(--radius)}
 .onsk-r{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0;border-top:1px solid var(--rule);color:inherit;text-decoration:none;font-size:14px}
 .onsk-r:first-child{border-top:0}
 .onsk-r:hover,.onsk-r:focus-visible{background:var(--tint-blue);outline:none}
@@ -962,8 +967,16 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
 <main class="grid" id="app" hidden>
 
   <!-- I dag -->
-  <section class="today">
-    <h2 class="serif">I dag</h2>
+  <section class="today" id="idagKort">
+    <h2 class="serif" id="idagTitel">I dag</h2>
+    <div class="dag-dato" id="idagDato" hidden></div>
+    <div class="dag-valg" id="dagValg" role="group" aria-label="Vælg dag">
+      <button type="button" data-dagfors="-2" aria-pressed="false">Forgårs</button>
+      <button type="button" data-dagfors="-1" aria-pressed="false">I går</button>
+      <button type="button" data-dagfors="0" aria-pressed="true">I dag</button>
+      <button type="button" data-dagfors="1" aria-pressed="false">I morgen</button>
+      <button type="button" data-dagfors="2" aria-pressed="false">Overmorgen</button>
+    </div>
 
     <section>
       <div class="sec-label">Kalender</div>
@@ -1437,6 +1450,8 @@ let opdateret = null;      // nyeste updatedAt blandt skole-, brev- og kalenderd
 // haeves WEEKS en dag til 3, virker skemaet med det samme uden en kodeaendring.
 let today, tomorrow, monday, wk, nextWk, nextWk2;
 let sidsteDag = 0;
+const DAGSTAT = { fors: 0 };                  // hvilken dag «I dag»-kortet viser: forskydning fra i dag, −2 til +2 (se dagvælgeren)
+const forrigeHentet = new Set();             // uger uden for de tre faste, der er hentet, fordi man trykkede sig tilbage til dem
 
 function saetDatoer(){
   today     = midnight(new Date());
@@ -1452,7 +1467,7 @@ saetDatoer();
 // Skaermen staar taendt i dagevis; WK ville ellers samle en spand pr. uge i
 // al evighed. Tre uger er alt paths() henter, saa resten kan ryddes.
 function ryddGamleUger(){
-  const beholdes = new Set([wk.id, nextWk.id, nextWk2.id]);
+  const beholdes = new Set([wk.id, nextWk.id, nextWk2.id, isoWeek(addDays(monday, -7)).id]);       // forrige uge bevares, så «I går» og «I forgårs» også virker om mandagen og tirsdagen
   for (const id of Object.keys(WK)) if (!beholdes.has(id)) delete WK[id];
 }
 
@@ -1464,7 +1479,8 @@ function tjekDatoskifte(){
   if (midnight(new Date()).getTime() === sidsteDag) return false;
   const gammelUge = wk.id;
   saetDatoer();
-  if (wk.id !== gammelUge) ryddGamleUger();
+  DAGSTAT.fors = 0;                                // et nyt døgn: tilbage til i dag
+  if (wk.id !== gammelUge){ forrigeHentet.clear(); ryddGamleUger(); }
   return true;
 }
 
@@ -1727,7 +1743,7 @@ function skemaUgeStart(d){
 /** Det vigtige, der kommer: familiens fødselsdage, tømning (påmindelserne) og Aulas vigtige datoer, sorteret efter dage. Hver: { days, date, kilde, text, ikon? }.
  *  days === 0 hører under «I dag» på forsiden (så noget, der «står til i dag», også står dér), de øvrige under «Vigtigt snart». Fejl i data giver færre punkter, aldrig en fejl. */
 function vigtigtListe(d){
-  const { fd, affald, important, today, soonDays, addDays, midnight, affIkon } = d, ud = [];
+  const { fd, affald, important, today, soonDays, addDays, midnight, affIkon } = d, ud = [], nu = d.dagOrd || "i dag";        // dagOrd: hvad «dagen» hedder, når kortet viser en anden dag («i går»)
   for (const b of fd || []){
     for (let i = 0; i <= soonDays; i++){
       const dd = addDays(today, i);
@@ -1740,7 +1756,7 @@ function vigtigtListe(d){
   }
   for (const r of affald || [])
     ud.push({ days: r.dage, date: addDays(today, r.dage), kilde: "Tømning", ikon: affIkon ? affIkon(r) : "",
-              text: `${r.fraktion} tømmes ${r.dage === 0 ? "i dag" : "i morgen"}${r.dage === 1 ? " — sæt spanden ud i aften" : ""} (${r.adresse})` });
+              text: `${r.fraktion} tømmes ${r.dage === 0 ? nu : "i morgen"}${r.dage === 1 ? " — sæt spanden ud i aften" : ""}${r.adresse ? ` (${r.adresse})` : ""}` });
   for (const x of important || []){
     if (!x || x.waiting) continue;                               // de venter står allerede under «kræver svar»
     const dt = new Date(x.date + "T00:00:00"), days = Math.round((midnight(dt) - today) / 864e5);
@@ -1769,6 +1785,35 @@ function onskTegn(){
   $("onskKrop").innerHTML = onskeHtml(l);
 }
 onskTegn();
+
+// ── Dagvælger (I dag) ──
+/** «I dag»-kortet kan vise to dage tilbage og to frem. Forskydningen fra i dag er et helt tal fra −2 (i forgårs) til +2 (i overmorgen); alt andet bliver 0. */
+const DAG_MIN = -2, DAG_MAX = 2, DAG_NULSTIL_MS = 2 * 60e3;       // en anden dag end i dag nulstilles af sig selv efter to minutter uden et tryk (væggen skal vise i dag)
+const DAG_ORD = { "-2": "i forgårs", "-1": "i går", "0": "i dag", "1": "i morgen", "2": "i overmorgen" };
+const dagForsk = n => { const x = Math.trunc(Number(n)); return Number.isFinite(x) ? Math.max(DAG_MIN, Math.min(DAG_MAX, x)) : 0; };
+/** Overskrift («I går») og datolinje («Onsdag 11. november», tom for i dag) til kortet. */
+function dagTekster(forsk, dato, dage, maaneder){
+  const f = dagForsk(forsk), ord = DAG_ORD[f];
+  return { titel: ord.charAt(0).toUpperCase() + ord.slice(1), dato: f === 0 ? "" : `${dage[(dato.getDay() + 6) % 7]} ${dato.getDate()}. ${maaneder[dato.getMonth()]}` };
+}
+/** Sætter dagvælgeren til. d: { $, doc, stat, tegn, sikr, idag, addDays, setT, clearT }. stat = { fors } er tilstanden, som tegningen læser; sikr(dato) henter data for en uge, der ikke allerede er hentet (returnerer et løfte). */
+function dagInit(d){
+  const { $, stat } = d, setT = d.setT || setTimeout, clearT = d.clearT || clearTimeout;
+  let t = 0;
+  function saet(n){
+    stat.fors = dagForsk(n);
+    clearT(t);
+    if (stat.fors !== 0) t = setT(() => saet(0), DAG_NULSTIL_MS);
+    d.tegn();                                                       // vis med det samme
+    Promise.resolve(d.sikr(d.addDays(d.idag(), stat.fors))).then(hentet => { if (hentet) d.tegn(); }).catch(() => {});
+  }
+  $("dagValg").addEventListener("click", e => {
+    const b = e.target && e.target.closest ? e.target.closest("[data-dagfors]") : null;
+    if (b) saet(b.dataset.dagfors);
+  });
+  return { saet };
+}
+// ── Slut: dagvælger ──
 
 // ── Kantine ──
 const KANT_DAGE = ["Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag"];
@@ -2578,9 +2623,17 @@ function draw(){
   // fast, ser siden ellers helt normal ud — den viser bare i gaar.
   saetTidsting();
 
+  // I dag-kortet kan vise en anden dag (dagvælgeren): idagDato er den dag, der vises. Alt i kortet bruger den, ikke today.
+  const idagDato = addDays(today, DAGSTAT.fors);
+  const dt = dagTekster(DAGSTAT.fors, idagDato, DAYS, MONTHS);
+  $("idagTitel").textContent = dt.titel;
+  $("idagDato").textContent = dt.dato; $("idagDato").hidden = !dt.dato;
+  $("idagKort").classList.toggle("anden-dag", DAGSTAT.fors !== 0);
+  document.querySelectorAll("#dagValg [data-dagfors]").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.dagfors) === DAGSTAT.fors)));
+
   // I dag: kalender. Heldagsposter faar en prik i stedet for et klokkeslaet,
   // saa tidskolonnen ikke braekker paa "hele dagen".
-  const cal = apptsOn(today);
+  const cal = apptsOn(idagDato);
   $("tCal").innerHTML = cal.length ? cal.map(a => `
     <div class="t-item">
       <time>${a.allDay ? "•" : esc(a.start)}</time>
@@ -2596,9 +2649,9 @@ function draw(){
   // I dag: skole
   // Har barnet timer i dag, er linjen en knap: tryk, og dagens timer folder
   // sig ud lige nedenunder. Uden timer er den en almindelig linje som foer.
-  const school = aulaOf(today).school[dayIdx(today)] || [];
+  const school = aulaOf(idagDato).school[dayIdx(idagDato)] || [];
   $("tSchool").innerHTML = school.length ? school.map(s => {
-    const dag = skemaDag(aulaOf(today), dayIdx(today), s.child);
+    const dag = skemaDag(aulaOf(idagDato), dayIdx(idagDato), s.child);
     const kan = dag.timer.length > 0;
     const aaben = kan && dagFoldet.has(s.child);
     const indhold = `
@@ -2608,14 +2661,14 @@ function draw(){
       <span class="hrs">${esc(s.hours)}</span>${kan ? `<span class="pil" aria-hidden="true">▾</span>` : ""}`;
     return kan
       ? `<button type="button" class="kid-row" data-dagskema="${esc(s.child)}" aria-expanded="${aaben}"
-           style="--who:${colorOf(s.child)}" title="${aaben ? "Skjul" : "Vis"} ${esc(s.child)}s timer i dag">${indhold}</button>
+           style="--who:${colorOf(s.child)}" title="${aaben ? "Skjul" : "Vis"} ${esc(s.child)}s timer ${DAG_ORD[DAGSTAT.fors]}">${indhold}</button>
          ${aaben ? dagTimerHTML({ child: s.child, ...dag }) : ""}`
       : `<div class="kid-row" style="--who:${colorOf(s.child)}">${indhold}</div>`;
   }).join("") : `<div class="empty">Ingen skema</div>`;
 
   // I dag: fritid. Samme linjeform som kalenderen ovenfor — det er stadig
   // bare noget, der sker paa et klokkeslaet.
-  const actToday = leisureOn(today);
+  const actToday = leisureOn(idagDato);
   $("tLeisure").innerHTML = actToday.length ? actToday.map(a => `
     <div class="t-item">
       <time>${a.time ? esc(a.time) : "•"}</time>
@@ -2627,11 +2680,13 @@ function draw(){
         ${a.place ? `<span class="sub">${esc(a.place)}</span>` : ""}
         ${kildeMaerke(a, "kal")}
       </div>
-    </div>`).join("") : `<div class="empty">${naesteFritid()}</div>`;
+    </div>`).join("") : `<div class="empty">${DAGSTAT.fors === 0 ? naesteFritid() : "Ingen fritidsaktiviteter"}</div>`;
 
   // I dag: vigtigt. Det, «Vigtigt snart» ville have kaldt «I dag» (fødselsdage, tømning, Aulas vigtige datoer), står her, ikke kun dér.
   const vigt = vigtigtListe({ fd: alleFd(birthdays), affald: affaldPaaminde(), important, today, soonDays: SOON_DAYS, addDays, midnight, affIkon: r => (AFF ? AFF.ikonHtml(r.fraktion, r.farve) : "") });
-  const idagVigt = vigt.filter(x => x.days === 0);
+  // Til en anden dag end i dag: samme udregning med den dag som «i dag»; tømning efter dagens tidsplan (paaDag), ikke påmindelserne (de gælder i dag og i morgen)
+  const idagVigt = DAGSTAT.fors === 0 ? vigt.filter(x => x.days === 0)
+    : vigtigtListe({ fd: alleFd(birthdays), affald: (AFF ? (() => { try { return AFF.paaDag(affald, ymd(idagDato)).map(x => ({ ...x, dage: 0 })); } catch (e){ return []; } })() : []), important, today: idagDato, soonDays: SOON_DAYS, addDays, midnight, dagOrd: DAG_ORD[DAGSTAT.fors], affIkon: r => (AFF ? AFF.ikonHtml(r.fraktion, r.farve) : "") }).filter(x => x.days === 0);
   $("tVigtigSek").hidden = !idagVigt.length;
   $("tVigtig").innerHTML = idagVigt.map(x => `
     <div class="line">
@@ -2640,7 +2695,7 @@ function draw(){
     </div>`).join("");
 
   // I dag: husk. Punkterne staar her nu, og kan krydses af her.
-  const remToday = remindersOn(today, "husk");
+  const remToday = remindersOn(idagDato, "husk");
   const venter = important.filter(i => i.waiting);
   $("tRemCount").textContent = manglerAf(remToday);
   $("tRemind").innerHTML = remToday.length
@@ -4258,6 +4313,20 @@ async function load(){
   opdateret = docs[`aula/${wk.id}`]?.updatedAt ?? null;
   if (redigerer === null) draw();     // tegn ikke om oven i en igangvaerende redigering
 }
+
+// Dagvælgeren på «I dag»-kortet. En dag i en uge uden for de tre faste (forrige uge om mandagen og tirsdagen) hentes, første gang man trykker sig dertil.
+async function sikrUge(d){
+  const id = widOf(d);
+  if (id === wk.id || id === nextWk.id || id === nextWk2.id || forrigeHentet.has(id)) return false;
+  forrigeHentet.add(id);
+  const liste = [`planner/${id}`, `aula/${id}`, `ics/${id}`];
+  try {
+    const docs = await apiGet(liste);
+    for (const sti of liste) applyDoc(sti, docs[sti] ?? null);
+    return true;
+  } catch (e){ forrigeHentet.delete(id); console.error("dag:", e); return false; }
+}
+dagInit({ $, stat: DAGSTAT, tegn: () => { if (redigerer === null) draw(); }, sikr: sikrUge, idag: () => today, addDays });
 
 document.addEventListener("click", e => {
   const vejr = e.target.closest("[data-vejr]");
