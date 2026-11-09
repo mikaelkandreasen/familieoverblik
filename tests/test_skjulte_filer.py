@@ -39,4 +39,14 @@ t("ved næste opstart skrives spærrefilerne igen (en gammel udgave bliver ikke 
 open(os.path.join(sk, "html", ".htaccess"), "w").write("FORKERT GAMMEL")
 subprocess.run([sys.executable, os.path.join(rod2, "docker", "web", "bootstrap.py"), "render"], capture_output=True, env=e)
 t("ligger både .htaccess og htaccess.txt i skabelonen, vinder htaccess.txt", "FORKERT" not in open(f"{H}/.htaccess", encoding="utf-8").read() and gate in open(f"{H}/.htaccess", encoding="utf-8").read())
+# De prøver, der læser projektets egne filer (pakning, offentlig-tjek, README, opbygning, stier), skal bestå i et repo uden filer med punktum, som en upload i browseren giver.
+# (3.13.2: test_pak og test_offentlig krævede .gitignore og .github, så hele workflowet fejlede hos en bruger, selv om alt var grønt her.)
+try:
+    import yaml  # noqa: F401
+    har_yaml = True
+except ImportError:
+    har_yaml = False
+for navn in ("test_pak", "test_offentlig", "test_praesentation", "test_stier") + (("test_opbygning",) if har_yaml else ()):
+    r = subprocess.run([sys.executable, os.path.join(rod2, "tests", navn + ".py")], capture_output=True, cwd=rod2)
+    t(f"{navn} består også i en kopi uden filer med punktum (en browser-upload)", r.returncode == 0, [l for l in r.stdout.decode().splitlines() if l.startswith("FEJL")][:2] or r.stderr.decode()[-200:])
 raise SystemExit(0 if ok_all else 1)

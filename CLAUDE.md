@@ -41,6 +41,7 @@ Det kører i Docker på familiens egen server og styres med Dockhand, uden SSH. 
 
 ## 4. Faldgruber (de har alle kostet tid)
 
+- **Prøver må ikke kræve filer med punktum** (`.gitignore`, `.github/`): de findes ikke i en browser-uploadet repo, og så fejler hele workflowet (3.13.2). `test_skjulte_filer.py` kører de prøver, der læser projektets egne filer, i en kopi uden dem.
 - **Filer og mapper, der starter med punktum, kommer ikke med, når man uploader i en browser til GitHub.** Derfor hedder spærrefilerne `htaccess.txt` (skrives ud som `.htaccess`), og der er ingen `.gitkeep`. Mappen `ugeplan-data/` skal have mindst én synlig fil. `tests/test_skjulte_filer.py` kører hele opstarten i en kopi uden skjulte filer.
 - **Browserkrav: cirka Chrome 85** (valgfri kæde `?.`, `??=`, `gap` i flex). Android 5.1 kan højst køre Chrome/WebView 95. Brug ikke `Array.at()`, `Object.hasOwn()`, `structuredClone()`, `:has()` eller `dvh` uden reserve. `crypto.randomUUID()` findes kun på https og skal have en reserve.
 - **`v in objekt` er ikke et gyldigt tjek af en nøgle** (`"constructor" in {}` er sand). Brug `Object.prototype.hasOwnProperty.call`. **`Number(null)` er 0.**
@@ -89,6 +90,8 @@ Se `CHANGELOG.md` for alt, der er bygget, og `BACKLOG.md` for ønsker (afsnittet
 **Kalendere (3.10.0):** `hent.php` kalder `docker/web/ics.py` (gentagelser, undtagelser, flyttede forekomster, tidszoner) og bruger sin gamle PHP-læser (`ics_events_php`) som reserve. Python-læseren er prøvet grundigt (`tests/test_ics.py`); PHP-kaldet er kun kontrolleret som tekst. Kalendercachen er en halv time; `?frisk=1` (`CRON_FRISK=1`) ignorerer den.
 
 **Før projektet gøres offentligt (eller en udgave deles):** kør `FO_PRIVAT_ORD="navne,på,børn,gade,by" python3 tests/test_offentlig.py`. Navne må aldrig stå i projektet. Brugerens egne filer (`backlog-status-*.json`, backlog-eksport, PDF'er med adresse, logfiler fra Aula) hører ikke hjemme i projektet. Lav hellere et NYT offentligt repo med de nuværende filer end at gøre et privat repo offentligt (historikken følger med).
+
+**Dagvælgeren på «I dag» (3.14.0):** `DAGSTAT.fors` (−2…+2) er den dag, kortet viser; `draw()` udleder `idagDato` og bruger den i hele «I dag»-blokken (aldrig `today` dér; en prøve kontrollerer det). Resten af siden bruger stadig `today`. `sikrUge` henter forrige uge ved behov, `tjekDatoskifte` nulstiller, og `dagInit` har en tidsgrænse på to minutter.
 
 **Ønskelister (3.13.0):** pr. person et valgfrit `onskeskyen`-link i `instans.json → sv` (valideres af `valider_link`: kun https), skrives som `onskeskyen: "…"` i `PEOPLE` i `config.js`, og vises af kortet `#onskKort` (kun dem med link). Ingen ny indstillingssti, og ingen Ønskeskyen-API (der er ingen åben).
 

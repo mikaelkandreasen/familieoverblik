@@ -31,6 +31,7 @@ put("aff_pdf_block.js", skær(idx, '/* ── Tømning: læs fra PDF', '/* ─�
 put("ramme_block.js", skær(ov, '// ── Sider i rammen (fuld skærm) ──', '// ── Slut: sider i rammen ──'))
 put("vigtigt_block.js", skær(ov, '// ── Vigtigt: i dag og snart ──', '// ── Slut: vigtigt ──'))
 put("onsker_block.js", skær(ov, '// ── Ønskelister ──', '// ── Slut: ønskelister ──'))
+put("dag_block.js", skær(ov, '// ── Dagvælger (I dag) ──', '// ── Slut: dagvælger ──'))
 put("kant_block.js", skær(ov, '// ── Kantine ──', '// ── Slut: kantine ──'))
 put("brev_block.js", skær(ov, '// ── Ugebrev: tekst og afsnit ──', '// ── Slut: ugebrev ──'))
 put("faner_block.js", skær(idx, '// ── Faner og links ──', '// ── Slut: faner og links ──'))

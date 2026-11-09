@@ -25,5 +25,9 @@ t("ingen data eller skrald (null, undefined, tomme lister, ikke-lister) giver en
 // siden
 const ov = fs.readFileSync(import.meta.dirname + "/../../public_html/overblik.html", "utf8");
 t("«I dag» har en sektion «Vigtigt» (skjult, til der er noget), og den ligger før «Husk»", /<section id="tVigtigSek" hidden>\s*<div class="sec-label">Vigtigt<\/div>\s*<div id="tVigtig"><\/div>/.test(ov) && ov.indexOf('id="tVigtigSek"') < ov.indexOf('id="tRemCount"') && ov.indexOf('id="tVigtigSek"') > ov.indexOf('id="tSchool"'));
-t("siden beregner listen én gang, viser dagens (days === 0) under «I dag», og lader «Vigtigt snart» nøjes med de øvrige (days > 0)", ov.includes("const vigt = vigtigtListe({ fd: alleFd(birthdays), affald: affaldPaaminde(), important, today, soonDays: SOON_DAYS,") && ov.includes("const idagVigt = vigt.filter(x => x.days === 0);") && ov.includes('$("tVigtigSek").hidden = !idagVigt.length;') && ov.includes("const soon = vigt.filter(x => x.days > 0);"));
+t("siden beregner listen én gang, viser dagens (days === 0) under «I dag», og lader «Vigtigt snart» nøjes med de øvrige (days > 0)", ov.includes("const vigt = vigtigtListe({ fd: alleFd(birthdays), affald: affaldPaaminde(), important, today, soonDays: SOON_DAYS,") && ov.includes("const idagVigt = DAGSTAT.fors === 0 ? vigt.filter(x => x.days === 0)") && ov.includes('$("tVigtigSek").hidden = !idagVigt.length;') && ov.includes("const soon = vigt.filter(x => x.days > 0);"));
+// dagOrd og adresse: når kortet viser en anden dag
+const ra = V({ today: idag, soonDays: 45, addDays, midnight, dagOrd: "i går", affald: [{ dage: 0, fraktion: "Restaffald", adresse: "" }, { dage: 0, fraktion: "Papir", adresse: "Hjemme" }] });
+t("når kortet viser en anden dag, hedder dagen det, der er valgt («tømmes i går»), og en tom adresse giver ingen tomme parenteser", ra[0].text === "Restaffald tømmes i går" && ra[1].text === "Papir tømmes i går (Hjemme)", ra.map(x => x.text));
+t("uden dagOrd hedder den stadig «i dag» (som før)", V({ today: idag, soonDays: 45, addDays, midnight, affald: [{ dage: 0, fraktion: "Glas", adresse: "A" }] })[0].text === "Glas tømmes i dag (A)");
 process.exit(T.every(Boolean) ? 0 : 1);

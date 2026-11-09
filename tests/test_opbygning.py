@@ -38,7 +38,8 @@ for sh in ("docker/web/entrypoint.sh", "docker/aula/loop.sh", "docker/cron/cron.
     t(f"{sh}: starter med #!/bin/sh, og Dockerfilen gør det kørbart eller starter det med sh (ikke afhængig af filens rettigheder)", L(sh).startswith("#!/bin/sh") and (f"chmod +x /opt/familieoverblik/{navn}" in dfil or re.search(r'"sh",\s*"[^"]*' + re.escape(navn) + '"', dfil)))
 t("entrypoint: kører bootstrap start og overlader så til Apaches egen entrypoint", "bootstrap.py start" in L("docker/web/entrypoint.sh") and 'exec docker-php-entrypoint "$@"' in L("docker/web/entrypoint.sh"))
 # workflow
-w = yaml.safe_load(L(".github/workflows/billeder.yml")); on = w.get(True, w.get("on"))
+WF = ".github/workflows/billeder.yml" if os.path.exists(os.path.join(ROD, ".github/workflows/billeder.yml")) else "github-workflow/billeder.yml"          # mappen .github kan ikke uploades i en browser
+w = yaml.safe_load(L(WF)); on = w.get(True, w.get("on"))
 t("workflow: kører ved tag v*, manuelt og hver uge (sikkerhedsrettelser i basisbillederne), og må kun læse kode og skrive pakker", on["push"]["tags"] == ["v*"] and "workflow_dispatch" in on and on["schedule"][0]["cron"] == "17 3 * * 1" and w["permissions"] == {"contents": "read", "packages": "write"})
 b = w["jobs"]["billeder"]
 t("workflow: bygger alle fem billeder, og først efter prøverne", b["strategy"]["matrix"]["billede"] == ["web", "aula", "bil", "cron", "frameo"] and b["needs"] == "proev")

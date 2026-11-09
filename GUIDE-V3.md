@@ -229,6 +229,10 @@ Kortet «Tømning» vises på forsiden.
 
 **Kantine:** Kortet «Kantine» viser skolens menu, som kantinen sender som en besked hver uge. Aula-hentningen læser den. Kortet er skjult, til der er en menu. Står den ikke, så kør `python /app/Sync-Aula.py` og se efter linjen «kantine:» i udskriften, eller `python /app/Sync-Aula.py --kantineform`. `--kantinetekst` viser de nyeste kantine-breve linje for linje.
 
+**Se i går og i morgen på «I dag»-kortet:** Tryk på **Forgårs, I går, I morgen** eller **Overmorgen** under overskriften. Kortet viser den dag (kalender, skole, fritid, vigtigt og huskepunkter) og vender selv tilbage til i dag efter to minutter. Resten af siden viser stadig i dag.
+
+**Fejler workflowet på GitHub?** Åbn Actions, tryk på den røde kørsel, og tryk på jobbet **«Prøver»**. Det røde trin viser, hvad der fejler. Kopiér de sidste 30 linjer, og send dem. Billederne bygges først, når prøverne er grønne. En upload i browseren tager ikke filer og mapper med punktum med (`.github`, `.gitignore`); workflowet ligger derfor også som `github-workflow/billeder.yml`, og du kopierer indholdet ind i `.github/workflows/billeder.yml` (GitHub: Add file, Create new file, skriv stien).
+
 **Ønskelister:** Under Opsætning → Familie og forbindelser har hver person et felt til linket til sin liste i Ønskeskyen. Åbn listen i Ønskeskyen, tryk på dele, kopiér linket (det skal starte med `https://`), og sæt det ind. På forsiden står så kortet «Ønskelister» med et link pr. person. Ingen link, ingen række.
 
 **Menuen «Sider ▾»** sidder nu på alle sider (øverst til højre), så du kan gå fra en side til en anden uden at gå via forsiden: Oversigt, Madplan, Opsætning, Gæste-wifi, Tilfældig vælger, Backlog, Tilføj billeder og Browser-tjek.
@@ -247,6 +251,6 @@ Afprøvet her (uden Docker og uden PHP, som ikke findes i min sandkasse):
 - Compose, workflow og Dockerfiles som tekst: at de peger på filer, der findes, og passer sammen. 39 prøver.
 - Guiden, indstillingerne og sikkerhedsindstillingerne mod en simuleret server (personrækker, fødselsdage, nøgler, sikkerhedskopi, QR-kode og gendannelseskoder): 94 prøver.
 - **Backlog:** hele logikken som en rigtig proces (oprettelse, ændring, stemmer, kommentarer, sletning, import, eksport, grænser, samtidige skrivninger og beskyttelse mod regnearksformler): 34 prøver, og selve siden (filtre, sortering, at alt skrevet escapes, hele forløbet): 51 prøver.
-- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1294 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
+- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1320 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
 
 **Ikke afprøvet:** selve `docker build`, GitHub-workflowet, at Dockhand kan hente fra ghcr.io og starte stakken, **al PHP** (`login.php`, `totp.php`, `instans.php`, `sikkerhedskopi.php`, `backlog.php`) og Dockhands terminal til MitID-login. For PHP er kun den logik, der ligger i Python, afprøvet. Selve PHP-filerne er gennemlæst og kontrolleret som tekst (parenteser, at de bruger samme formler som den afprøvede model, at cookien kun sættes ét sted). **Test login med totrinsbekræftelse, før du stoler på det:** slå det til, åbn siden i et privat vindue, og prøv både PIN og kode, en forkert kode, en gendannelseskode og «husk enhed».

@@ -16,6 +16,31 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.14.0] – 2026-11-09
+
+### Tilføjet
+- **«I dag»-kortet kan vise en anden dag.** Under overskriften er der fem knapper: **Forgårs · I går · I dag · I morgen · Overmorgen**. Et tryk viser den dag i hele kortet: kalender, skole (og dagens timer), fritid, **vigtigt** (fødselsdage, tømning og Aulas vigtige datoer, som står til den dag) og huskepunkter. Overskriften skifter til «I går» osv., og en linje viser ugedag og dato («Onsdag 11. november»). På en anden dag end i dag har kortet en stiplet kant, så man kan se, at man ikke kigger på i dag.
+  - **Kortet vender selv tilbage til i dag** efter to minutter uden et tryk, og ved midnat. Væggen skal ikke blive stående på i går.
+  - **Alt andet er uændret:** toppen, «Vigtigt snart», «Klar til i morgen», aftensmaden og «De næste dage» viser stadig fra i dag.
+  - Huskepunkter kan krydses af på alle fem dage.
+  - **Forrige uge hentes, når den skal bruges.** Om mandagen og tirsdagen ligger i går og i forgårs i forrige uge, som siden ikke henter til daglig. Første gang du trykker dig tilbage dertil, hentes den (planlægning, skema og kalender), og siden bevarer den resten af ugen. Er der ingen data for den uge, står der bare «Ingen aftaler» og «Ingen skema».
+  - **Hvad man ikke kan se i går:** kun det, der er gemt. Skema og ugebreve hentes for denne og næste uge, så en dag i forrige uge viser det, der blev hentet, da den uge var den nuværende. Tømning vises efter tidsplanen, også tilbage i tiden, men først fra den første dato i tidsplanen.
+- 24 + 2 nye prøver (forskydning og grænser, overskrifter og datoer, tryk og tidsgrænse, fejl i hentningen, at kortet læser fra den valgte dag og ikke fra i dag, og at resten af siden stadig regnes fra i dag). **Ikke afprøvet på en rigtig skærm.**
+
+### Opdatering fra 3.13.2
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Genindlæs forsiden to gange.
+
+## [3.13.2] – 2026-11-09
+
+### Rettet (GitHub-workflowet fejlede)
+- **Alle kørsler af «Byg billeder» fejlede i trinnet «Prøver»**, og så blev billederne aldrig bygget. Årsagen var mine to nyere prøver, `test_pak.py` og `test_offentlig.py`: de krævede filerne `.gitignore` og `.github/workflows/billeder.yml`. En upload i browseren tager **ikke** filer og mapper med punktum med, så de findes ikke i jeres repo, og prøverne fejlede, selv om alt var grønt hos mig. Billederne bygges først, når prøverne er grønne, så fejlen stoppede alt.
+- Begge prøver (og `test_opbygning.py`) bruger nu kun det, der findes: `.gitignore` og `.github` er valgfri, og den synlige kopi `github-workflow/billeder.yml` bruges, hvis den rigtige mappe mangler.
+- **Spærrevagt:** `test_skjulte_filer.py` kører nu også de prøver, der læser projektets egne filer (pakning, offentlig-tjek, README, stier, opbygning), i en kopi uden nogen filer med punktum, som en browser-upload giver. Jeg har kontrolleret, at vagten fanger fejlen, hvis den genindføres.
+- **Hvad jeg ikke kan se:** selve fejlteksten fra jeres kørsel. Jeg har gengivet fejlen ved at køre workflowets prøver i en kopi uden filer med punktum, og det er de to prøver, der fejlede. Fejler det stadig, så åbn kørslen, åbn jobbet **«Prøver»** og det røde trin, og send de sidste 30 linjer.
+
+### Opdatering fra 3.13.1
+Upload filerne til GitHub (erstat dem, der findes), og kør **Actions → Byg billeder → Run workflow**. Tjek, at din `.github/workflows/billeder.yml` er den nyeste: åbn den på GitHub (blyanten), og indholdet skal være det samme som i `github-workflow/billeder.yml`. Er det ikke, så kopiér det ind.
+
 ## [3.13.1] – 2026-11-09
 
 ### Rettet (vigtig fejl siden 3.11.0)

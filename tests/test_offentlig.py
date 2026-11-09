@@ -35,9 +35,12 @@ if ord_:
     t(f"ingen af de {len(ord_)} private ord (FO_PRIVAT_ORD) står i projektet", not hits, hits[:5])
 else:
     print("      (FO_PRIVAT_ORD er ikke sat: navne og steder er ikke kontrolleret)")
-nodv = ["LICENSE", "README.md", "README.en.md", "SECURITY.md", "THIRD_PARTY.md", ".gitignore", "CHANGELOG.md", "CLAUDE.md"]
+nodv = ["LICENSE", "README.md", "README.en.md", "SECURITY.md", "THIRD_PARTY.md", "CHANGELOG.md", "CLAUDE.md"]          # .gitignore er valgfri: en upload i browseren tager filer med punktum ikke med
 t("de filer, et offentligt projekt skal have, findes: licens, README (dansk og engelsk), sikkerhed, tredjepart, ændringslog", all(os.path.exists(os.path.join(ROD, f)) for f in nodv), [f for f in nodv if not os.path.exists(os.path.join(ROD, f))])
-gi = open(os.path.join(ROD, ".gitignore"), encoding="utf-8").read()
-t(".gitignore holder .env og cache-filer ude af repoet", ".env" in gi and "__pycache__/" in gi)
+if os.path.exists(os.path.join(ROD, ".gitignore")):
+    gi = open(os.path.join(ROD, ".gitignore"), encoding="utf-8").read()
+    t(".gitignore holder .env og cache-filer ude af repoet", ".env" in gi and "__pycache__/" in gi)
+else:
+    print("      (.gitignore findes ikke i dette repo, fx efter en upload i browseren: det er i orden, men læg ingen .env eller nøglefiler op)")
 t("README siger, at projektet er uofficielt og en tidlig udgave, og SECURITY.md peger på privat sårbarhedsmelding og siger, at siden ikke skal ud på internettet", "Uofficielt" in open(os.path.join(ROD, "README.md"), encoding="utf-8").read() and "Report a vulnerability" in open(os.path.join(ROD, "SECURITY.md"), encoding="utf-8").read() and "ikke direkte på internettet" in open(os.path.join(ROD, "SECURITY.md"), encoding="utf-8").read())
 sys.exit(0 if ok_all else 1)

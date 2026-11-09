@@ -26,6 +26,7 @@ Det kører i Docker og styres med [Dockhand](https://dockhand.pro), **uden at du
 - **Kalendere:** alle kalenderlinks (ICS), også Holdsport og DBU KampKlar, samlet pr. person.
 - **Vejr:** Open-Meteo (uden nøgle). Hver tredje time, farver efter vejrtype og vind med retning og stød.
 - **Elpris:** dagens priser og billigste periode (Energi Data Service), og et «kun søjler»-valg.
+- **I dag med dagvælger:** tryk dig to dage tilbage og to frem på «I dag»-kortet (kalender, skole, fritid, vigtigt og huskepunkter); det vender selv tilbage.
 - **Ønskelister:** et link pr. person til deres liste i Ønskeskyen (kun for dem, der har et link).
 - **Kantine:** skolens menu for ugen, fra den besked kantinen sender, med dagens ret fremhævet.
 - **Tømning:** hvornår hver skraldespand tømmes, med et ikon for hver slags affald (også på dagene i «De næste dage») og en påmindelse aftenen før. Du skriver én dato og et antal uger, eller **læser en PDF-tømmekalender ind** (den læses i din egen browser; også en kalender med kun symboler, hvor du selv navngiver grupperne).
@@ -77,7 +78,7 @@ Du skal bruge: en server med Docker (en lille mini-pc er nok) og [Dockhand](http
 
 ## Status
 
-**Tidlig udgave (version 3.x).** Det kører hos én familie siden november 2026 (Docker på en mini-pc, styret med Dockhand). Koden er afprøvet med **595 automatiske Python-prøver og 1.294 JavaScript-prøver**. Her er, hvad der er prøvet i virkeligheden, og hvad der kun er prøvet med simuleringer:
+**Tidlig udgave (version 3.x).** Det kører hos én familie siden november 2026 (Docker på en mini-pc, styret med Dockhand). Koden er afprøvet med **600 automatiske Python-prøver og 1.320 JavaScript-prøver**. Her er, hvad der er prøvet i virkeligheden, og hvad der kun er prøvet med simuleringer:
 - **Aula:** MitID-login og hentning af skema og ugebreve er **prøvet af én familie mod Aula selv**. Det bruger et uofficielt bibliotek, og Aulas login kan ændre sig, så det er den mest skrøbelige del. Skemaet læses ud af ugebrevets tabel; det er kørt, men ikke kontrolleret mod alle klassers breve. Kantinens menu er ikke bekræftet.
 - **Kun prøvet med simuleringer:** gentagne aftaler i kalendere, læsning af en tømmekalender med kun symboler, åben visning og totrinsbekræftelse. Selve PHP, Apache og Docker er ikke kørt i testmiljøet, så der kan være fejl, som prøverne ikke ser.
 - Tjenester som Hyundai, Strava og Open-Meteo kan ændre sig og dermed bryde en del af løsningen.

@@ -439,7 +439,10 @@
     "← Forsiden": "← Home",
     "Oversigt": "Overview",
     "Browser-tjek": "Browser check",
-    "Ønskelister": "Wish lists"
+    "Ønskelister": "Wish lists",
+    "Forgårs": "Day before yesterday",
+    "Overmorgen": "Day after tomorrow",
+    "Vælg dag": "Choose day"
    }
   },
   "de": {
@@ -879,7 +882,10 @@
     "← Forsiden": "← Startseite",
     "Oversigt": "Übersicht",
     "Browser-tjek": "Browser-Prüfung",
-    "Ønskelister": "Wunschlisten"
+    "Ønskelister": "Wunschlisten",
+    "Forgårs": "Vorgestern",
+    "Overmorgen": "Übermorgen",
+    "Vælg dag": "Tag wählen"
    }
   }
  }

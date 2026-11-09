@@ -26,6 +26,7 @@ It runs in Docker and is managed with [Dockhand](https://dockhand.pro), **withou
 - **Calendars:** any ICS calendar link, including Holdsport and DBU KampKlar (football), grouped per person.
 - **Weather:** Open-Meteo (no key needed). Every third hour, colours by weather type, and wind with direction and gusts.
 - **Electricity prices:** today's prices and the cheapest period (Energi Data Service), plus a "bars only" view.
+- **Today with a day selector:** tap two days back and two days forward on the Today card (calendar, school, leisure, important and reminders); it returns by itself.
 - **Wish lists:** a link per person to their list in Ønskeskyen (only for those who have a link).
 - **Canteen:** the school's menu for the week, from the message the canteen sends, with today's dish highlighted.
 - **Waste collection:** when each bin is emptied, with an icon for each waste type (also on the days in "Next days") and a reminder the evening before. You enter one date and a number of weeks, or **import a PDF collection calendar** (it is read in your own browser; also a calendar with symbols only, where you name the groups yourself).
@@ -77,7 +78,7 @@ You need: a server with Docker (a small mini PC is enough) and [Dockhand](https:
 
 ## Status
 
-**Early release (version 3.x).** It has been running at one family's home since November 2026 (Docker on a mini PC, managed with Dockhand). The code is covered by **595 automated Python tests and 1,294 JavaScript tests**. What has been tried for real, and what only against simulations:
+**Early release (version 3.x).** It has been running at one family's home since November 2026 (Docker on a mini PC, managed with Dockhand). The code is covered by **600 automated Python tests and 1,320 JavaScript tests**. What has been tried for real, and what only against simulations:
 - **Aula:** the MitID login and fetching the schedule and weekly letters have been **tried by one family against Aula itself**. It uses an unofficial library and Aula's login can change, so it is the most fragile part. The schedule is read from the letter's table; it has run, but has not been checked against every class's letters. The canteen menu is not confirmed.
 - **Only tried against simulations:** recurring events in calendars, reading a collection calendar that only shows symbols, open view and two-step verification. PHP, Apache and Docker themselves were not run in the test environment, so there may be bugs the tests cannot see.
 - Services such as Hyundai, Strava and Open-Meteo can change and break part of the solution.
