@@ -8,13 +8,19 @@
 // kun naar nettet svigter. Bump foerst CACHE, naar SHELL-LISTEN selv aendrer
 // sig — altsaa naar en fil kommer til eller falder fra — saa de gamle
 // noegler bliver ryddet af activate-handleren.
-const CACHE = "familieoverblik-shell-v4";
+const CACHE = "familieoverblik-shell-v5";
 const SHELL = [
   "./overblik.html",
   "./config.js",
   "./affald.js",
   "./tema-forvalg.js",
   "./gamlebrowser.js",
+  "./syntaks/styr.js",
+  "./syntaks/valgfri.js",
+  "./syntaks/nullish.js",
+  "./syntaks/tildeling.js",
+  "./syntaks/import.js",
+  "./syntaks/async.js",
   "./sidemenu.js",
   "./browser.html",
   "./manifest.webmanifest",

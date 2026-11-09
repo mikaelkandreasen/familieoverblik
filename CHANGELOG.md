@@ -16,6 +16,18 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.13.1] – 2026-11-09
+
+### Rettet (vigtig fejl siden 3.11.0)
+- **Den røde besked «Din browser er for gammel» (og browser-tjekket) sagde «mangler» i alle moderne browsere**, også Safari 27 på en iPhone 15. Browser-tjekket (3.11.0) prøvede ny JavaScript-syntaks ved at køre små stumper kode med `new Function`. Serverens indholdssikkerhedsregel (CSP, `script-src 'self' 'unsafe-inline'`) forbyder det med vilje, så kaldet fejlede i alle browsere, og fejlen blev læst som «browseren mangler det». Konsekvensen var, at **den røde bjælke kunne komme øverst på alle sider** (fra 3.11.0), og at `browser.html` viste «Siderne kan ikke køre i denne browser».
+- **Sådan prøves syntaksen nu:** seks små prøvefiler (`syntaks/*.js`) hentes som almindelige scripts, som CSP'en tillader. Hver indeholder ét stykke ny syntaks (`?.`, `??`, `??=`, `import()`, `async`). Kan browseren ikke læse en fil, kører intet i den, og flaget bliver ikke sat. En kontrolfil (gammel syntaks) viser, at hentningen virker. **Kan prøvefilerne ikke hentes (offline, blokeret), er resultatet «ukendt» og tæller ikke som en fejl**, så en fin browser aldrig får en besked ved en fejl. Hænger hentningen, udløber en tidsgrænse på 8 sekunder.
+- `browser.html` viser nu «Kunne ikke tjekkes» for ukendte prøver, og de seks filer ligger i service workerens skal (cache `shell-v5`).
+- **Hvorfor prøverne ikke fandt det:** de brugte en falsk browser, der ikke håndhæver CSP. Nu er der en regel, der afviser `new Function`, `eval` og tekst i `setTimeout` i alle sider og scripts, og som kontrollerer, at CSP'en ikke har `'unsafe-eval'`. De rigtige prøvefiler køres også i en sandkasse for at bekræfte, at de sætter deres flag. 33 prøver i alt.
+- **Stadig ikke afprøvet i en gammel browser**, kun med falske browsere i flere versioner.
+
+### Opdatering fra 3.13.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. **Genindlæs siderne to gange.** Åbn så `browser.html` på din iPhone: den skal sige «Alt, siderne bruger, findes i denne browser», og den røde bjælke skal være væk på alle siderne.
+
 ## [3.13.0] – 2026-11-08
 
 ### Tilføjet

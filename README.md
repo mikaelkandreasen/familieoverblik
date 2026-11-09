@@ -77,7 +77,7 @@ Du skal bruge: en server med Docker (en lille mini-pc er nok) og [Dockhand](http
 
 ## Status
 
-**Tidlig udgave (version 3.x).** Det kører hos én familie siden november 2026 (Docker på en mini-pc, styret med Dockhand). Koden er afprøvet med **595 automatiske Python-prøver og 1.283 JavaScript-prøver**. Her er, hvad der er prøvet i virkeligheden, og hvad der kun er prøvet med simuleringer:
+**Tidlig udgave (version 3.x).** Det kører hos én familie siden november 2026 (Docker på en mini-pc, styret med Dockhand). Koden er afprøvet med **595 automatiske Python-prøver og 1.294 JavaScript-prøver**. Her er, hvad der er prøvet i virkeligheden, og hvad der kun er prøvet med simuleringer:
 - **Aula:** MitID-login og hentning af skema og ugebreve er **prøvet af én familie mod Aula selv**. Det bruger et uofficielt bibliotek, og Aulas login kan ændre sig, så det er den mest skrøbelige del. Skemaet læses ud af ugebrevets tabel; det er kørt, men ikke kontrolleret mod alle klassers breve. Kantinens menu er ikke bekræftet.
 - **Kun prøvet med simuleringer:** gentagne aftaler i kalendere, læsning af en tømmekalender med kun symboler, åben visning og totrinsbekræftelse. Selve PHP, Apache og Docker er ikke kørt i testmiljøet, så der kan være fejl, som prøverne ikke ser.
 - Tjenester som Hyundai, Strava og Open-Meteo kan ændre sig og dermed bryde en del af løsningen.

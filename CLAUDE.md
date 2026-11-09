@@ -46,6 +46,7 @@ Det kører i Docker på familiens egen server og styres med Dockhand, uden SSH. 
 - **`v in objekt` er ikke et gyldigt tjek af en nøgle** (`"constructor" in {}` er sand). Brug `Object.prototype.hasOwnProperty.call`. **`Number(null)` er 0.**
 - **PHP gør et tomt array til `[]`, ikke `{}`** i JSON. Send `$b === [] ? new stdClass() : $b` videre til Python (fundet i 3.7.1: totrinsbekræftelse kunne ikke slås til; prøver, der kun sender `{}`, ser det ikke).
 - **En sidenavigation afbryder altid fuld skærm.** Derfor åbner forsiden de andre sider i en iframe (`rammeInit` i `overblik.html`), når fuld skærm er slået til, og serveren tillader det med `frame-ancestors 'self'` i `public_html/htaccess.txt` (ikke 'none'). Pas på nye links i siderne: et link til `overblik.html` inde i rammen lukker den; andre sider skal ligge i samme mappe (`^[a-z0-9_-]+\.html`).
+- **Serverens CSP forbyder `eval` og `new Function`** (`script-src 'self' 'unsafe-inline'`, ingen `'unsafe-eval'`). Brug dem aldrig i siderne. Fundet i 3.13.1: browser-tjekket prøvede ny syntaks med `new Function` og meldte «mangler» i alle moderne browsere. Syntaks prøves i stedet med små prøvefiler (`public_html/syntaks/`). Prøver med falske browsere håndhæver ikke CSP; `browser_test.mjs` har en regel mod eval.
 - **Chrome går ud af fuld skærm** ved genindlæsning, og en side må kun gå i fuld skærm efter et tryk.
 - **Python i webbilledet er antaget at være 3.11** (Debian; ikke bekræftet): brug ingen 3.12-syntaks (samme anførselstegn inde i en f-streng). Aula- og bil-billederne bygges på 3.15 og ellers 3.14.
 - **ZIP:** pak med `vaerktoej/pak.py`, ikke i hånden (rækkefølge, `__pycache__`, skabeloner til sprog og top-mappen `familieoverblik/` ordnes der).
@@ -93,7 +94,7 @@ Se `CHANGELOG.md` for alt, der er bygget, og `BACKLOG.md` for ønsker (afsnittet
 
 **Menuen «Sider ▾» (3.12.0):** forsiden har sin egen i bunden (`#siderListe` i `overblik.html`); alle andre sider med en overskrift henter `public_html/sidemenu.js`, der sætter menuen ind i `header` (eller `.bar-r1` på opsætningen). Ny side: tilføj punktet BÅDE i `sidemenu.js` og i forsidens liste (en prøve sammenligner), og henter scriptet i den nye side lige efter `gamlebrowser.js`.
 
-**Browsere (3.11.0):** `public_html/gamlebrowser.js` er et KLASSISK script i gammel JavaScript (prøven `browser_test.mjs` afviser pile, let/const, ?. m.m.), som alle sider henter FØR deres første modul-script, og som viser en rød besked i en browser, der ikke kan det, siderne kræver. Brug aldrig moderne syntaks i den fil. `browser.html` viser hele tjekket.
+**Browsere (3.11.0):** `public_html/gamlebrowser.js` er et KLASSISK script i gammel JavaScript (prøven `browser_test.mjs` afviser pile, let/const, ?. m.m.), som alle sider henter FØR deres første modul-script, og som viser en rød besked i en browser, der ikke kan det, siderne kræver. Brug aldrig moderne syntaks i den fil, og aldrig `eval`/`new Function` (CSP). `browser.html` viser hele tjekket.
 
 ## 7b. Licens og tredjepart
 

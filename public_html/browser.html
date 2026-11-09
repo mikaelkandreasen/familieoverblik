@@ -28,22 +28,27 @@
 <script src="gamlebrowser.js"></script>
 <script>
 (function () {
-  var B = window.FO_BROWSER, r = B.koer(), v = B.version(navigator.userAgent), tb = document.getElementById("tab").getElementsByTagName("tbody")[0], i, tr, td, ord;
+  var B = window.FO_BROWSER, v = B.version(navigator.userAgent), tb = document.getElementById("tab").getElementsByTagName("tbody")[0], d = document.getElementById("dom");
   document.getElementById("ua").getElementsByTagName("small")[0].appendChild(document.createTextNode(v ? v.navn + " " + v.nr : "Ukendt browser"));
-  for (i = 0; i < r.resultater.length; i++) {
-    tr = document.createElement("tr");
-    td = document.createElement("td"); td.appendChild(document.createTextNode(r.resultater[i].navn)); tr.appendChild(td);
-    td = document.createElement("td");
-    td.className = r.resultater[i].ok ? "ja" : (r.resultater[i].kritisk ? "nej" : "valgfri");
-    ord = r.resultater[i].ok ? "Ja" : (r.resultater[i].kritisk ? "Mangler (skal være)" : (r.resultater[i].valgfri ? "Mangler (valgfri)" : "Mangler (pænere med)"));
-    td.appendChild(document.createTextNode(ord)); tr.appendChild(td);
-    td = document.createElement("td"); td.appendChild(document.createTextNode(r.resultater[i].krav)); tr.appendChild(td);
-    tb.appendChild(tr);
-  }
-  var d = document.getElementById("dom");
-  if (!r.ok) { d.className = "dom daarlig"; d.appendChild(document.createTextNode("Siderne kan ikke køre i denne browser. Mangler: " + r.mangler.join(", ") + ".")); }
-  else if (r.tilbage.length) { d.className = "dom halv"; d.appendChild(document.createTextNode("Siderne kan køre, men kan se anderledes ud. Mangler: " + r.tilbage.join(", ") + ".")); }
-  else { d.className = "dom god"; d.appendChild(document.createTextNode("Alt, siderne bruger, findes i denne browser.")); }
+  d.className = "dom"; d.appendChild(document.createTextNode("Tjekker …"));
+  B.koer(null, function (r) {
+    var i, tr, td, ord;
+    for (i = 0; i < r.resultater.length; i++) {
+      tr = document.createElement("tr");
+      td = document.createElement("td"); td.appendChild(document.createTextNode(r.resultater[i].navn)); tr.appendChild(td);
+      td = document.createElement("td");
+      if (r.resultater[i].ok === null) { td.className = "valgfri"; ord = "Kunne ikke tjekkes"; }
+      else { td.className = r.resultater[i].ok ? "ja" : (r.resultater[i].kritisk ? "nej" : "valgfri"); ord = r.resultater[i].ok ? "Ja" : (r.resultater[i].kritisk ? "Mangler (skal være)" : (r.resultater[i].valgfri ? "Mangler (valgfri)" : "Mangler (pænere med)")); }
+      td.appendChild(document.createTextNode(ord)); tr.appendChild(td);
+      td = document.createElement("td"); td.appendChild(document.createTextNode(r.resultater[i].krav)); tr.appendChild(td);
+      tb.appendChild(tr);
+    }
+    d.removeChild(d.firstChild);
+    if (!r.ok) { d.className = "dom daarlig"; d.appendChild(document.createTextNode("Siderne kan ikke køre i denne browser. Mangler: " + r.mangler.join(", ") + ".")); }
+    else if (r.ukendt.length) { d.className = "dom halv"; d.appendChild(document.createTextNode("Det meste er i orden, men den nye JavaScript kunne ikke tjekkes (prøvefilerne blev ikke hentet). Prøv igen med forbindelse til siden.")); }
+    else if (r.tilbage.length) { d.className = "dom halv"; d.appendChild(document.createTextNode("Siderne kan køre, men kan se anderledes ud. Mangler: " + r.tilbage.join(", ") + ".")); }
+    else { d.className = "dom god"; d.appendChild(document.createTextNode("Alt, siderne bruger, findes i denne browser.")); }
+  });
 })();
 </script>
 </body>
