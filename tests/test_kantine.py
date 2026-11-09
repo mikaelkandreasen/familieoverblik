@@ -50,9 +50,9 @@ t("to mærkede linjer uden «Menu:» er ikke nok (kunne være en tilfældig sæt
 # diagnosen
 svar = {"items": [{"subject": "Kantinen uge 45", "content_html": "<p>Hej</p><p>Ingen liste her</p>", "send_datetime": "2026-11-02T08:00:00+01:00", "sender_name": "Navn Efternavn"}, {"subject": "Kantinen uge 46", "content_html": "<p>Menu:</p>" + "".join(f"<p>Ret nummer {i}</p>" for i in range(30)), "send_datetime": "2026-11-09T08:00:00+01:00", "sender_name": "Navn Efternavn"}, {"subject": "Skolefest", "content_html": "<p>x</p>"}]}
 v = K.tekstvisning(svar)
-t("diagnosen viser antal kantine-breve, de nyeste først (uge 46 før uge 45), linjerne nummereret og afkortet til 25 med en note om resten, og om «Menu»-linjen findes og hvor mange retter, der blev læst", v.startswith("2 breve handler om kantinen. De 2 nyeste:") and v.index("uge 46") < v.index("uge 45") and "  1| Menu:" in v and " 25| Ret nummer 23" in v and "Ret nummer 24" not in v and "og 6 linjer mere" in v and "«Menu»-linje: nr. 1" in v and "læst som 7 retter" in v and "«Menu»-linje: FINDES IKKE" in v and "læst som 0 retter" in v, v[:400])
+t("diagnosen viser antal kantine-breve, de nyeste først (uge 46 før uge 45), linjerne nummereret og afkortet til 25 med en note om resten, og om «Menu»-linjen findes og hvor mange retter, der blev læst", v.startswith("=== svar: 3 poster med tekst, 2 handler om kantinen, 0 af dem uden læsbar dato. De 2 nyeste: ===") and v.index("uge 46") < v.index("uge 45") and "  1| Menu:" in v and " 25| Ret nummer 23" in v and "Ret nummer 24" not in v and "og 6 linjer mere" in v and "«Menu»-linje: nr. 1" in v and "læst som 7 retter" in v and "«Menu»-linje: FINDES IKKE" in v and "læst som 0 retter" in v, v[:400])
 t("diagnosen viser ikke afsenderens navn", "Efternavn" not in v and "sender" not in v.lower())
-t("uden kantine-breve siger den det i stedet for at fejle", K.tekstvisning([{"subject": "x", "text": "y"}]).startswith("0 breve handler om kantinen") and K.tekstvisning(None).startswith("0 breve"))
+t("uden kantine-breve siger den det i stedet for at fejle", "0 handler om kantinen" in K.tekstvisning([{"subject": "x", "text": "y"}]) and "0 handler om kantinen" in K.tekstvisning(None))
 # ── Sync-Aula.py ──
 os.environ["AULA_STATE_DIR"] = tempfile.mkdtemp(prefix="fo-kant-")
 cfg = types.ModuleType("config"); cfg.ANTHROPIC_API_KEY = ""; cfg.ANTHROPIC_MODEL = "x"; cfg.API_BASE = "https://x"; cfg.MITID_USERNAME = "x"; cfg.WRITE_TOKEN = "x"; cfg.CHILDREN = [{"name": "Barn", "calendar_id": 1}]
@@ -67,22 +67,59 @@ kald = []
 def faelles(sv):
     def aj(*args, delvist=False): kald.append((args, delvist)); return sv(args)
     return aj
-S.aula_json = faelles(lambda a: {"items": [{"subject": "Kantinen uge 46", "text": EKSEMPEL}]})
-k, log = stille(S.hent_kantine)
-t("hent_kantine søger efter «Kantine» (med --search, og delvist svar tilladt) og finder menuen", k and k["dage"] == DAGE5 and kald[0] == (("messages", "--search", "Kantine"), True), kald)
+# ── opslag (kantinens ugemenu er et opslag, ikke en besked) ──
+OBS = "O.B.S. Husk at være opmærksom på om jeres barn har penge på deres kantine kort hvis de skal købe. Vi og skolens øvrige personale bruger meget tid på det. Og børne bliver ked af ikke at have penge på."
+OPSLAG46 = {"id": 101, "title": "Kantinen uge 46", "timestamp": "2026-11-03T10:30:00+01:00", "owner": "Navn Efternavn", "content": "<p>Menu:</p><p><br></p><p>Kartoffel/ porre suppe<br>Frikadeller, rugbrød og rødkål<br>Pasta salat m. Kyllingelår<br>Efterårsgrød m. Æblemos<br>Kylling i karry m. Ris</p><p><br></p><p>" + OBS + "</p><p>Kantinen har åbent i den lille og store pause. Man må gå i kantinen når man har fået lov af sin lærer.</p><p>Vh Kantinen</p>"}
+OPSLAG45 = {"id": 100, "title": "Kantinen uge 45", "timestamp": "2026-10-29T19:57:00+01:00", "edited_at": "2026-11-03T10:17:00+01:00", "content": "<p>Ugens menu:<br>Gulerodssuppe m. brød<br>Fiskefrikadelle m. ovnbagte kartofler<br>Lasagnette<br>Tarteletter<br>Pitabrød</p><p>" + OBS + "</p>"}
+ANDET = {"id": 99, "title": "Skolefoto", "timestamp": "2026-11-02T08:00:00+01:00", "content": "<p>Husk skolefoto på torsdag. Mød op i pænt tøj, og husk at aflevere sedlen i tide til klasselæreren.</p>"}
+GAMMEL = {"subject": "Kantinen genåbner", "send_datetime": "2026-08-28T09:00:00+01:00", "content_html": "<p>Kære alle</p><p>Så er kantinen åben igen på mandag.</p>"}
+uger = K.find_kantiner([OPSLAG45, OPSLAG46, ANDET])
+t("OPSLAG: begge ugers menu findes (uge 45 og uge 46), sorteret efter uge, med de rigtige retter, og «O.B.S.»-afsnittet er ikke en ret", [u["uge"] for u in uger] == [45, 46] and uger[1]["dage"] == DAGE5 and uger[0]["dage"] == {"1": "Gulerodssuppe m. brød", "2": "Fiskefrikadelle m. ovnbagte kartofler", "3": "Lasagnette", "4": "Tarteletter", "5": "Pitabrød"}, uger)
+t("kun fire retter (en uge med fridag) og så «O.B.S.»-afsnittet: fire retter, ikke fem (afsnittet er brødtekst)", (lambda f: f and len(f["dage"]) == 4 and "O.B.S." not in " ".join(f["dage"].values()))(K.find_kantine([{"title": "Kantinen uge 47", "content": "<p>Menu:<br>Suppe<br>Pizza<br>Fisk<br>Ris</p><p>" + OBS + "</p>"}])))
+t("afsnit, der begynder med «O.B.S.» (med og uden punktummer), «Vh» og lange linjer (over 90 tegn) afslutter menuen", all(len(K.find_kantine([{"title": "Kantinen uge 5", "content": f"<p>Menu:<br>A<br>B<br>C<br>{x}<br>D</p>"}])["dage"]) == 3 for x in ("OBS husk penge", "O.B.S. husk", "o. b. s. husk", "Vh Kantinen", "x" * 91)))
+t("er en menu rettet (to udgaver af samme uge), vinder den nyeste, og de to uger forbliver to", (lambda l: len(l) == 2 and l[0]["uge"] == 45 and l[0]["dage"]["1"] == "Ny suppe")(K.find_kantiner([OPSLAG45, {**OPSLAG45, "id": 102, "timestamp": "2026-11-04T09:00:00+01:00", "content": OPSLAG45["content"].replace("Gulerodssuppe m. brød", "Ny suppe")}, OPSLAG46])))
+t("opslag og beskeder lægges sammen: en gammel besked uden menu forstyrrer ikke, og samme uge i begge kilder giver den nyeste", [u["uge"] for u in K.find_kantiner([OPSLAG46, ANDET], [GAMMEL])] == [46])
+t("ukendte feltnavne i et opslag (overskrift, indhold) virker også: emnet læses af første linje, og den længste tekst er brødteksten", (lambda f: f and f["uge"] == 46 and f["dage"] == DAGE5)(K.find_kantine([{"id": 5, "overskrift": "x", "indhold": "Kantinen uge 46\n\nMenu:\n" + "\n".join(DAGE5.values()) + "\n\n" + OBS, "oprettet": "i går"}])))
+t("opslag uden dato og uden ugenummer i emnet findes stadig (uge ukendt), men placeres ikke", (lambda f: f and f["uge"] is None and f["dato"] is None)(K.find_kantine([{"title": "Kantinen", "content": "Menu:\nA\nB\nC"}])))
+# ── Sync: hent_kantine ──
+def sv_opslag(a):
+    if a[0] == "posts": return [OPSLAG46, OPSLAG45, ANDET]
+    return [GAMMEL]
+S.aula_json = faelles(sv_opslag)
+liste, log = stille(S.hent_kantine)
+t("hent_kantine læser OPSLAG først (aula posts --limit 40, delvist svar tilladt), derefter beskeder, og finder begge ugers menu", [x["uge"] for x in liste] == [45, 46] and liste[1]["dage"] == DAGE5 and kald[0] == (("posts", "--limit", "40"), True) and [a[0][0] for a in kald] == ["posts", "messages", "messages"], [a[0] for a in kald])
 kald.clear()
-def kun_liste(a):
-    if "--search" in a: raise RuntimeError("no such option: --search")
+def uden_limit(a):
+    if a == ("posts", "--limit", "40"): raise RuntimeError("no such option: --limit")
+    return sv_opslag(a)
+S.aula_json = faelles(uden_limit)
+liste, log = stille(S.hent_kantine)
+t("kender kommandoen ikke --limit, prøves «aula posts» uden, og fejlen er en advarsel, ikke et stop", [x["uge"] for x in liste] == [45, 46] and [a[0] for a in kald][:2] == [("posts", "--limit", "40"), ("posts",)] and "advarsel: kantinens menu kunne ikke hentes fra opslag" in log, (kald, log))
+kald.clear()
+S.aula_json = faelles(sv_opslag); stille(S.hent_kantine)
+t("lykkes første opslags-kald, prøves «aula posts» uden grænse ikke (ingen overflødige kald): posts, derefter to beskedkald", [a[0] for a in kald] == [("posts", "--limit", "40"), ("messages", "--search", "Kantine"), ("messages", "--limit", "40")], [a[0] for a in kald])
+def kun_beskeder(a):
+    if a[0] == "posts": raise RuntimeError("opslag kunne ikke hentes")
     return [{"subject": "Kantinen uge 46", "text": EKSEMPEL}]
-S.aula_json = faelles(kun_liste)
-k, log = stille(S.hent_kantine)
-t("kender kommandoen ikke --search, prøves en almindelig liste af beskeder i stedet, og fejlen er en advarsel, ikke et stop", k and k["uge"] == 46 and len(kald) == 2 and "advarsel: kantinens menu" in log, (kald, log))
+S.aula_json = faelles(kun_beskeder)
+liste, log = stille(S.hent_kantine)
+t("fejler opslag helt, men beskeder virker, findes menuen i en besked (som før 3.14.1)", [x["uge"] for x in liste] == [46] and "advarsel" in log)
 S.aula_json = faelles(lambda a: (_ for _ in ()).throw(RuntimeError("Aula svarer ikke")))
-k, log = stille(S.hent_kantine)
-t("fejler begge kald, er svaret None, og loggen peger på --kantineform", k is None and "--kantineform" in log, log)
+liste, log = stille(S.hent_kantine)
+t("fejler alle kald, er svaret en tom liste, og loggen peger på --kantinetekst", liste == [] and "--kantinetekst" in log, log)
 S.aula_json = faelles(lambda a: [{"subject": "Skolefest", "text": "Hej"}])
-k, log = stille(S.hent_kantine)
-t("er der ingen kantine-besked, er svaret None, og loggen siger det", k is None and "ingen besked med en menu" in log)
+liste, log = stille(S.hent_kantine)
+t("er der ingen menu i opslag eller beskeder, er svaret tomt, og loggen siger det", liste == [] and "ingen opslag eller beskeder med en menu" in log)
+uger2 = [{"id": "2026-W46", "monday": __import__("datetime").date(2026, 11, 9)}, {"id": "2026-W47", "monday": __import__("datetime").date(2026, 11, 16)}]
+uger2 = [{"id": "2026-W45", "monday": __import__("datetime").date(2026, 11, 2)}, {"id": "2026-W46", "monday": __import__("datetime").date(2026, 11, 9)}]
+for k_ in K.find_kantiner([OPSLAG45, OPSLAG46]): S.placer_kantine(uger2, k_)
+t("begge uger placeres på hver sin uge (uge 45 og uge 46), så «I dag» og næste uge begge har en menu", uger2[0].get("kantine", {}).get("dage", {}).get("1") == "Gulerodssuppe m. brød" and uger2[1].get("kantine", {}).get("dage") == DAGE5)
+# diagnosen over flere kilder
+S.aula_json = faelles(sv_opslag)
+ud1 = io.StringIO()
+with contextlib.redirect_stdout(ud1): S.kantinetekst()
+v1 = ud1.getvalue()
+t("--kantinetekst viser opslag og beskeder hver for sig, med antal, hvor mange der mangler dato, og linjerne; ikke afsenderen", "=== opslag: 3 poster med tekst, 2 handler om kantinen, 0 af dem uden læsbar dato" in v1 and "=== beskeder, søgning:" in v1 and "Kartoffel/ porre suppe" in v1 and "Efternavn" not in v1 and "læst som 5 retter" in v1, v1[:300])
 # delvist: aula messages --search giver kode 1 (ikke nået til ende), men skriver resultater
 class R:
     def __init__(s, rc, out, err=b""): s.returncode, s.stdout, s.stderr = rc, out, err
@@ -112,7 +149,7 @@ ud = io.StringIO()
 S.aula_json = faelles(lambda a: {"items": [{"subject": "Kantinen uge 46", "text": EKSEMPEL, "forfatter": "Navn"}]})
 ud0 = io.StringIO()
 with contextlib.redirect_stdout(ud0): S.kantinetekst()
-t("--kantinetekst viser den nyeste kantine-besked linje for linje (og ikke andet)", "1 breve handler om kantinen" in ud0.getvalue() and "Kartoffel/ porre suppe" in ud0.getvalue() and "læst som 5 retter" in ud0.getvalue(), ud0.getvalue()[:300])
+t("--kantinetekst viser den nyeste kantine-besked linje for linje (og ikke andet)", "1 handler om kantinen" in ud0.getvalue() and "Kartoffel/ porre suppe" in ud0.getvalue() and "læst som 5 retter" in ud0.getvalue(), ud0.getvalue()[:300])
 with contextlib.redirect_stdout(ud): S.kantineform()
 v = ud.getvalue()
 t("--kantineform viser opbygningen og om menuen blev fundet, men intet af indholdet", "kantine-besked fundet: uge 46, 5 retter" in v and not any(x in v for x in ("Kartoffel", "Frikadeller", "Navn", "Kylling")), v[:200])

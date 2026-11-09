@@ -14,7 +14,7 @@ const advance = ms => { const slut = nu + ms; for(;;){ let n = null; for (const 
 const els = {};
 const mk = id => ({ id, hidden:false, textContent:"", src:"", complete:false, naturalWidth:0, cls:new Set(), attrs:{},
   classList:{ add(c){ this._e.cls.add(c); }, remove(c){ this._e.cls.delete(c); }, toggle(c,on){ on ? this._e.cls.add(c) : this._e.cls.delete(c); } },
-  removeAttribute(a){ if (a === "src") this.src = ""; } });
+  removeAttribute(a){ if (a === "src") this.src = ""; }, addEventListener(t, f){ (this._h ??= {})[t] = f; } });
 const el = id => { if (!els[id]){ const e = mk(id); e.classList._e = e; els[id] = e; } return els[id]; };
 const $ = id => el(id);
 const handlers = {}; let dialogOpen = false;

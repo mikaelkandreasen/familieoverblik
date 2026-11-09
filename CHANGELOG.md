@@ -16,6 +16,28 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.15.0] – 2026-11-09
+
+### Rettet og tilføjet (dine backlog-punkter fra 9. november)
+- **Kantinens menu (#19): den står i et OPSLAG, ikke i en besked.** Skærmbilledet viste «Delt med Hele skolen»: det er et opslag i Aula. Hentningen søgte kun i beskeder, hvor kun de gamle kantinebeskeder fra august ligger. Nu hentes **`aula posts --limit 40`** først (og `aula posts` uden grænse, hvis den fejler), derefter beskederne, og **alle ugers menuer** lægges på hver sin uge: kantinen lægger næste uges menu op ugen før (uge 46 den 3. nov., og uge 45 den 29. okt.), så både denne og næste uges menu er med. Er en menu rettet, vinder den nyeste udgave.
+  - Menuen læses efter «Menu:» eller «Ugens menu:». Den slutter ved **«O.B.S. …»-afsnittet**, ved «Vh» og ved enhver linje over 90 tegn (en ret er kort), så en uge med fire retter ikke får afsnittet som femte ret.
+  - Ukendte feltnavne i opslag klares: emnet læses også af første linje, og den længste tekst er brødteksten.
+  - `--kantinetekst` og `--kantineform` viser nu også opslagene (antal, hvor mange der mangler dato, og linjerne).
+  - **Jeg kender ikke opslagenes feltnavne** (kun beskedernes), og Aula-kommandoen er prøvet med opdigtede opslag formet efter dit skærmbillede, ikke mod Aula. Står kortet «Kantine» stadig tomt, så send udskriften fra `python /app/Sync-Aula.py --kantinetekst`.
+- **Kilden til kalenderposter er forkert (#21 og #26).** «I morgen» og «De næste dage» tabte kilde-teksten og gættede ud fra ikonet (⚽ blev til «DBU KampKlar»). Nu følger kilden med dem, og **ikonet bruges aldrig mere til at gætte kilden**: først teksten fra «Navn og kilde», så tjenesten i linket (DBU vises som «DBU KampKlar», Holdsport, FotMob …; Google, Outlook og iCloud siger intet), ellers personens kalender.
+- **Aftensmaden følger den valgte dag (#22).** Den lå inde i «I dag»-kortet, men læste altid i dag.
+- **Dagknapperne (#23):** de ikke valgte er mindre (30 px, 11 px skrift), den valgte har samme størrelse som før.
+- **Automatisk fuld skærm pr. enhed (#24).** Ny side i opsætningen, **System → Denne enhed**, med afkrydsningsfeltet «Gå automatisk i fuld skærm på forsiden». Valget gemmes i enhedens browser og er det samme som «Fuld skærm»-knappen på forsiden. **En browser kræver et tryk:** første tryk på forsiden går i fuld skærm. En iPhone kan ikke gå i fuld skærm på en side; feltet er slået fra dér og peger på hjemmeskærmen.
+- **Kalenderikoner (#27):** 🏑 (floorball; der findes ingen floorball-emoji, så landhockey) er tilføjet lige efter fodbold. 🏊 (svømning) fandtes allerede. **Ridning, kampsport og skøjter er fjernet** fra valget; en kalender, der allerede har et af dem, beholder det.
+- **Drej billeder på pauseskærmen og gem (#25, variant a).** To knapper (↶ ↷) øverst til højre på pauseskærmen, dæmpede til de røres. Et tryk på dem lukker ikke pauseskærmen, og billedet bliver stående, mens man drejer. **Drejningen gemmes pr. billede** (`billeder.php?action=drej`) og vises ved visning; billedfilen ændres ikke, og den kan nulstilles ved at dreje hele vejen rundt. Opsætningens miniaturer viser drejningen. **Kræver PIN:** i åben visning uden login gælder drejningen, til siden genindlæses, og der står, at man skal logge ind.
+- 90 nye prøver (Python 16, JavaScript 74). **PHP-delen af billeder.php er kun kontrolleret som tekst**, ikke kørt.
+
+### Til din backlog
+Se `backlog-status-3.15.0.json` (læg den ind under «Læg en JSON-fil ind»): #5 Droppet, #12 Færdig, #19 I gang, og #21, #22, #23, #24, #25, #26 og #27 Færdige.
+
+### Opdatering fra 3.14.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Hent så kantinen med det samme i `aula`-containerens terminal: `python /app/Sync-Aula.py`, og se efter linjer, der starter med `kantine:`. Genindlæs forsiden to gange.
+
 ## [3.14.0] – 2026-11-09
 
 ### Tilføjet

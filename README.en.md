@@ -78,7 +78,7 @@ You need: a server with Docker (a small mini PC is enough) and [Dockhand](https:
 
 ## Status
 
-**Early release (version 3.x).** It has been running at one family's home since November 2026 (Docker on a mini PC, managed with Dockhand). The code is covered by **600 automated Python tests and 1,320 JavaScript tests**. What has been tried for real, and what only against simulations:
+**Early release (version 3.x).** It has been running at one family's home since November 2026 (Docker on a mini PC, managed with Dockhand). The code is covered by **611 automated Python tests and 1,370 JavaScript tests**. What has been tried for real, and what only against simulations:
 - **Aula:** the MitID login and fetching the schedule and weekly letters have been **tried by one family against Aula itself**. It uses an unofficial library and Aula's login can change, so it is the most fragile part. The schedule is read from the letter's table; it has run, but has not been checked against every class's letters. The canteen menu is not confirmed.
 - **Only tried against simulations:** recurring events in calendars, reading a collection calendar that only shows symbols, open view and two-step verification. PHP, Apache and Docker themselves were not run in the test environment, so there may be bugs the tests cannot see.
 - Services such as Hyundai, Strava and Open-Meteo can change and break part of the solution.

@@ -1,0 +1,13 @@
+import fs from "fs";
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const ix = fs.readFileSync(import.meta.dirname + "/../../public_html/index.html", "utf8");
+const m = /const KAL_IKONER = (\[[^\]]*\]);/.exec(ix);
+const IK = m ? JSON.parse(m[1]) : [];
+t("ikonlisten findes og har 16 ikoner uden dubletter og uden tomme", IK.length === 16 && new Set(IK).size === IK.length && IK.every(x => typeof x === "string" && x.length > 0), IK);
+t("floorball (🏑) og svømning (🏊) kan vælges", IK.includes("🏑") && IK.includes("🏊"));
+t("ridning (🏇), kampsport (🥋) og skøjter (⛸️) er fjernet fra valget", !IK.some(x => x.includes("🏇") || x.includes("🥋") || x.includes("⛸")));
+t("de øvrige er der stadig: fodbold, håndbold (begge slags), basket, volley, tennis, badminton, gymnastik, cykling, musik, teater, kunst og kalender", ["⚽", "🤾", "🤾‍♂️", "🏀", "🏐", "🎾", "🏸", "🤸", "🚴", "🎸", "🎹", "🎭", "🎨", "📅"].every(x => IK.includes(x)));
+t("floorball står lige efter fodbold (let at finde), og kalenderen står til sidst", IK[0] === "⚽" && IK[1] === "🏑" && IK.at(-1) === "📅");
+t("dialogen laver en knap pr. ikon, og intet filtrerer en gemt kalender efter listen (en kalender med et fjernet ikon, fx 🥋, beholder det og vises stadig)", ix.includes('KAL_IKONER.map(i => `<button type="button" data-kal-ikon="${i}"') && (ix.match(/KAL_IKONER/g) || []).length === 2);
+t("serveren validerer ikke ikonet mod en liste (ikonet er bare tekst), så 🏑 og gamle ikoner gemmes og læses uændret", !/icon[^\n]*in_array|icon[^\n]*KAL_|IKONER/.test(fs.readFileSync(import.meta.dirname + "/../../ugeplan-lib/feeds.php", "utf8")));
+process.exit(T.every(Boolean) ? 0 : 1);

@@ -91,6 +91,8 @@ Se `CHANGELOG.md` for alt, der er bygget, og `BACKLOG.md` for ønsker (afsnittet
 
 **Før projektet gøres offentligt (eller en udgave deles):** kør `FO_PRIVAT_ORD="navne,på,børn,gade,by" python3 tests/test_offentlig.py`. Navne må aldrig stå i projektet. Brugerens egne filer (`backlog-status-*.json`, backlog-eksport, PDF'er med adresse, logfiler fra Aula) hører ikke hjemme i projektet. Lav hellere et NYT offentligt repo med de nuværende filer end at gøre et privat repo offentligt (historikken følger med).
 
+**Kantinen (3.15.0):** ugemenuen er et Aula-OPSLAG (`aula posts`), ikke en besked; `Sync-Aula.py` læser opslag først og lægger hver uges menu (`kantine.find_kantiner`) på sin uge. Kalenderkilden er tekst → tjeneste → person, ALDRIG ikon. Pauseskærmens drejning gemmes i `private/billeder.json → drejning` (`billeder.php?action=drej`); filerne røres ikke. «Denne enhed» (opsætningen) og forsidens «Fuld skærm» deler nøglen `familieoverblik-fuldskaerm`.
+
 **Dagvælgeren på «I dag» (3.14.0):** `DAGSTAT.fors` (−2…+2) er den dag, kortet viser; `draw()` udleder `idagDato` og bruger den i hele «I dag»-blokken (aldrig `today` dér; en prøve kontrollerer det). Resten af siden bruger stadig `today`. `sikrUge` henter forrige uge ved behov, `tjekDatoskifte` nulstiller, og `dagInit` har en tidsgrænse på to minutter.
 
 **Ønskelister (3.13.0):** pr. person et valgfrit `onskeskyen`-link i `instans.json → sv` (valideres af `valider_link`: kun https), skrives som `onskeskyen: "…"` i `PEOPLE` i `config.js`, og vises af kortet `#onskKort` (kun dem med link). Ingen ny indstillingssti, og ingen Ønskeskyen-API (der er ingen åben).

@@ -1,0 +1,56 @@
+import fs from "fs";
+const T=[]; const t=(n,ok,x="")=>{T.push(ok);console.log(ok?"ok  ":"FEJL",n,ok?"":x)};
+const tick = () => new Promise(r => setImmediate(r));
+const ROD = import.meta.dirname + "/../../public_html/";
+const K = new Function(fs.readFileSync("/tmp/psdrej_block.js", "utf8") + "; return { psGrader, psDrejTil, psDrejKlasse, psDrejInit };")();
+t("gemt drejning: 90, 180 og 270 gælder; alt andet (0, 45, tekst, intet billede) er 0", K.psGrader({ drejning: 90 }) === 90 && K.psGrader({ drejning: 180 }) === 180 && K.psGrader({ drejning: 270 }) === 270 && [0, 45, 360, "90", null, undefined, {}].every(x => K.psGrader({ drejning: x }) === 0) && K.psGrader(null) === 0 && K.psGrader(undefined) === 0);
+t("med uret: 0 → 90 → 180 → 270 → 0; mod uret: 0 → 270 → 180 → 90 → 0", [[0, 1, 90], [90, 1, 180], [180, 1, 270], [270, 1, 0], [0, -1, 270], [270, -1, 180], [180, -1, 90], [90, -1, 0]].every(([nu, r, ud]) => K.psDrejTil(nu, r) === ud));
+t("fire drej med uret er tilbage ved start, og ét med og ét mod er tilbage ved start; ukendt nuværende er 0", [0, 90, 180, 270].every(n => [1, 2, 3, 4].reduce(a => K.psDrejTil(a, 1), n) === n && K.psDrejTil(K.psDrejTil(n, 1), -1) === n) && K.psDrejTil(undefined, 1) === 90 && K.psDrejTil(null, -1) === 270);
+t("klasserne: d90, d180, d270, og ingen for 0", K.psDrejKlasse(90) === "d90" && K.psDrejKlasse(180) === "d180" && K.psDrejKlasse(270) === "d270" && K.psDrejKlasse(0) === "");
+// opstarten
+function bygDom({ svar = () => ({ ok: true, status: 200 }) } = {}){
+  const els = {}, kald = { hent: [], slide: 0, timere: [] };
+  const lag = id => ({ id, cls: new Set(), classList: { add(c){ lag_(id).cls.add(c); }, remove(c){ lag_(id).cls.delete(c); } } });
+  const lag_ = id => (els[id] ??= { id, cls: new Set(), textContent: "", _h: {}, classList: { add(c){ els[id].cls.add(c); }, remove(c){ els[id].cls.delete(c); } }, addEventListener(t, f){ this._h[t] = f; } });
+  const ps = { front: true, vis: true, aktuel: { id: "a.jpg", drejning: 0 } };
+  const api = K.psDrejInit({ $: id => lag_(id), ps, hent: async (url, opt) => { kald.hent.push({ url, opt }); return svar(); }, head: { "X-Ugeplan-Key": "nøgle" }, url: "billeder.php", genstartSlide: () => { kald.slide++; }, setT: (f, ms) => { kald.timere.push({ f, ms }); return kald.timere.length; }, clearT: () => {} });
+  return { els: lag_, ps, kald, api };
+}
+let D = bygDom();
+D.els("psHoejre")._h.click(); await tick();
+t("tryk på «med uret»: drejningen går 0 → 90 med det samme, det viste lag (psA, når front er sand) får klassen d90, og slideshowets timer genstartes (billedet bliver stående)", D.ps.aktuel.drejning === 90 && D.els("psA").cls.has("d90") && !D.els("psB").cls.has("d90") && D.kald.slide === 1);
+const k = D.kald.hent[0];
+t("drejningen gemmes: POST til billeder.php?action=drej med nøglen, JSON-indhold og cookies, og kroppen er billedets id og de nye grader (tal)", k.url === "billeder.php?action=drej" && k.opt.method === "POST" && k.opt.headers["X-Ugeplan-Key"] === "nøgle" && k.opt.headers["Content-Type"] === "application/json" && k.opt.credentials === "same-origin" && JSON.parse(k.opt.body).id === "a.jpg" && JSON.parse(k.opt.body).grader === 90 && typeof JSON.parse(k.opt.body).grader === "number", k);
+t("det lykkedes: der står «Drejningen er gemt», og den forsvinder af sig selv efter 2,5 sekunder", D.els("psDrejInfo").textContent === "Drejningen er gemt" && D.kald.timere.at(-1).ms === 2500 && (D.kald.timere.at(-1).f(), D.els("psDrejInfo").textContent === ""));
+D.els("psVenstre")._h.click(); await tick(); D.els("psVenstre")._h.click(); await tick();
+t("mod uret to gange fra 90: 0 og derefter 270, og klassen følger med (d90 væk, d270 på; ved 0 ingen klasse)", D.ps.aktuel.drejning === 270 && D.els("psA").cls.has("d270") && !D.els("psA").cls.has("d90") && JSON.parse(D.kald.hent[1].opt.body).grader === 0 && JSON.parse(D.kald.hent[2].opt.body).grader === 270);
+D.ps.front = false; D.ps.aktuel = { id: "b.jpg", drejning: 90 };
+D.api.anvend(D.ps.aktuel);
+t("er det andet lag det viste (front falsk), får psB klassen, og psA røres ikke", D.els("psB").cls.has("d90") && D.els("psA").cls.has("d270") && !D.els("psA").cls.has("d90"));
+D = bygDom({ svar: () => ({ ok: false, status: 403 }) });
+D.els("psHoejre")._h.click(); await tick();
+t("uden PIN (åben visning: 403) gælder drejningen alligevel her, og der står, at den kun gælder, til siden genindlæses, og at man skal logge ind", D.ps.aktuel.drejning === 90 && D.els("psA").cls.has("d90") && /kun, til siden genindlæses/.test(D.els("psDrejInfo").textContent) && /PIN/.test(D.els("psDrejInfo").textContent) && D.kald.timere.at(-1).ms === 6000);
+D = bygDom({ svar: () => ({ ok: false, status: 401 }) });
+D.els("psHoejre")._h.click(); await tick();
+t("også 401 (ingen nøgle) giver den forklaring", /kun, til siden genindlæses/.test(D.els("psDrejInfo").textContent));
+D = bygDom({ svar: () => ({ ok: false, status: 500 }) });
+D.els("psHoejre")._h.click(); await tick();
+t("andre fejl (500) giver «kunne ikke gemmes», men drejningen står stadig på skærmen", D.els("psDrejInfo").textContent === "Drejningen kunne ikke gemmes." && D.ps.aktuel.drejning === 90);
+D = bygDom({ svar: () => { throw new Error("net nede"); } });
+t("nettet nede (hentningen kaster) går ikke galt: fejlen vises som tekst", await (async () => { try { D.els("psHoejre")._h.click(); await tick(); await tick(); return /kunne ikke gemmes/.test(D.els("psDrejInfo").textContent); } catch (e) { return false; } })());
+D = bygDom(); D.ps.vis = false;
+D.els("psHoejre")._h.click(); await tick();
+t("er pauseskærmen ikke oppe, eller er der intet billede, sker der ikke noget (ingen gem)", D.kald.hent.length === 0 && (D.ps.vis = true, D.ps.aktuel = null, D.els("psHoejre")._h.click(), await tick(), D.kald.hent.length === 0));
+// siden
+const ov = fs.readFileSync(ROD + "overblik.html", "utf8"), ph = fs.readFileSync(ROD + "billeder.php", "utf8"), ix = fs.readFileSync(ROD + "index.html", "utf8");
+t("overlayet har to drejeknapper og en statuslinje, og de står INDE i pauseskærmen", /<div class="ps" id="psOverlay"[\s\S]*?<div class="ps-knapper" id="psKnapper">\s*<button type="button" id="psVenstre" aria-label="Drej billedet mod uret">[\s\S]*?<button type="button" id="psHoejre" aria-label="Drej billedet med uret">[\s\S]*?id="psDrejInfo" role="status"><\/span>\s*<\/div>\s*<\/div>/.test(ov));
+t("et tryk på knapperne lukker ikke pauseskærmen (psAktivitet går ud tidligt, når målet er inde i .ps-knapper), mens andre tryk stadig lukker", ov.includes('if (e.target && e.target.closest && e.target.closest(".ps-knapper")) return;') && ov.indexOf('closest(".ps-knapper")') < ov.indexOf('if (e.type !== "pointermove") psStop();'));
+t("billedet, der vises, huskes (ps.aktuel) og får sin gemte drejning (psVis kalder psDrejApi.anvend), og opstarten sker før første visning", ov.includes("ps.aktuel = f;") && ov.includes("if (psDrejApi) psDrejApi.anvend(f);") && ov.indexOf("psDrejApi = psDrejInit(") > 0 && ov.indexOf("psDrejApi = psDrejInit(") < ov.indexOf("async function psLaes(){"));
+t("drejede billeder fylder skærmen: ved 90 og 270 grader byttes bredde og højde (100vh × 100vw, med dvh som forbedring), og laget centreres og drejes; 180 drejes bare", /\.ps-lag\.d90,\.ps-lag\.d270\{inset:auto;left:50%;top:50%;width:100vh;width:100dvh;height:100vw\}/.test(ov) && /\.ps-lag\.d90\{transform:translate\(-50%,-50%\) rotate\(90deg\)\}/.test(ov) && /\.ps-lag\.d270\{transform:translate\(-50%,-50%\) rotate\(270deg\)\}/.test(ov) && /\.ps-lag\.d180\{transform:rotate\(180deg\)\}/.test(ov));
+t("knapperne er mindst 44 punkter, dæmpede (opacity .4) til de røres, og mus-skjulet (cursor:none) på pauseskærmen gælder ikke dem", /\.ps-knapper\{[^}]*opacity:\.4/.test(ov) && /\.ps-knapper button\{min-width:44px;min-height:44px/.test(ov) && /\.ps-knapper\{[^}]*cursor:auto/.test(ov));
+t("SERVEREN: billeder.php har handlingen «drej» (POST), som tjekker JSON, gyldigt filnavn, grader 0/90/180/270 (strengt), at billedet findes, og skriver drejningen uden at miste de andre indstillinger", ph.includes("case 'drej': {") && ph.includes("if (!in_array($g, [0, 90, 180, 270], true)) bi_fail(400,") && ph.includes("$id = bi_id($b['id'] ?? '');") && ph.includes("if (!is_file($p) || is_link($p)) bi_fail(404, 'billedet findes ikke');") && ph.includes("$fil = bi_fil();") && ph.includes("$fil['drejning'] = $dr;"));
+t("SERVEREN: listen giver hvert billede dets drejning, og «gem» (indstillinger) bevarer drejningerne i stedet for at slette dem", ph.includes("'drejning' => $dr[$f] ?? 0") && ph.includes("$ny + ['drejning' => bi_drejning(), 'updatedAt' => date('c')]"));
+t("SERVEREN: et slettet billedes drejning slettes med det, og kun gyldige filnavne og værdier (90, 180, 270) læses ud af filen", ph.includes("unset($dr[$id]);") && ph.includes("in_array($g, [90, 180, 270], true)") && ph.includes("preg_match(BI_ID_RE, $id) === 1"));
+t("SERVEREN: «drej» kræver nøgle og PIN som de andre skrivende handlinger (kun «hent» er undtaget), og åben visning tillader kun liste og hent (ikke drej)", ph.includes("if ($action !== 'hent') {") && ph.includes("if (!gate_ok()) bi_fail(403,") && fs.readFileSync(ROD + "../ugeplan-lib/gate.php", "utf8").includes("'billeder.php' => ['liste', 'hent']"));
+t("opsætningens miniaturer viser den gemte drejning (en drejet miniature og en forklaring), uden at røre ved filen", ix.includes("[90, 180, 270].includes(f.drejning) ? ` style=\"transform:rotate(${f.drejning}deg)\" title=\"Drejet ${f.drejning}° på pauseskærmen\"`"));
+process.exit(T.every(Boolean) ? 0 : 1);

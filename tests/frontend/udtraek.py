@@ -32,6 +32,8 @@ put("ramme_block.js", skær(ov, '// ── Sider i rammen (fuld skærm) ──',
 put("vigtigt_block.js", skær(ov, '// ── Vigtigt: i dag og snart ──', '// ── Slut: vigtigt ──'))
 put("onsker_block.js", skær(ov, '// ── Ønskelister ──', '// ── Slut: ønskelister ──'))
 put("dag_block.js", skær(ov, '// ── Dagvælger (I dag) ──', '// ── Slut: dagvælger ──'))
+put("enhed_block.js", skær(idx, '// ── Denne enhed ──', '// ── Slut: denne enhed ──'))
+put("psdrej_block.js", skær(ov, '// ── Pauseskærm: drejning ──', '// ── Slut: pauseskærm drejning ──'))
 put("kant_block.js", skær(ov, '// ── Kantine ──', '// ── Slut: kantine ──'))
 put("brev_block.js", skær(ov, '// ── Ugebrev: tekst og afsnit ──', '// ── Slut: ugebrev ──'))
 put("faner_block.js", skær(idx, '// ── Faner og links ──', '// ── Slut: faner og links ──'))
