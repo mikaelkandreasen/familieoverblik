@@ -28,7 +28,7 @@ BREV2 = ('<div>Barn 1Buge 46</div>'
   + raekke("9:35 – 10:20", c2("Dansk", "stationer"), c2("UUV", "Vi arbejder med materialet", "Denne uge: PYT"), c2("Dansk", "stationer"), c2("Matematik", "Stationer"))
   + raekke("10:20 – 11:05", c2("Dansk", "samme"), c2("UUV", "Samme"), c2("Dansk", "samme"), c2("Matematik"))
   + raekke("11:05 – 11:45", TOM, TOM, TOM, TOM, TOM)
-  + raekke("11:45 – 12:30", c2("Natur og Teknik", "Årstider"), c2("Kristendom", "Daniel og de farlige løver"), c2("Kristendom", "Dengang jeg var modig"), c2("Dansk", "Ida og Emil/ PC"), TOM)
+  + raekke("11:45 – 12:30", c2("Natur og Teknik", "Årstider"), c2("Kristendom", "En fortælling"), c2("Kristendom", "Tegneopgave"), c2("Dansk", "Anna og Peter/ PC"), TOM)
   + raekke("12:30 – 13:15", TOM, TOM, TOM, TOM, TOM)
   + raekke("13:25 – 14:10", TOM, TOM, TOM, TOM, TOM)
   + "<tr><td>HUSK!</td>" + c2("Have genlæst s.24-25") + c2("Biblioteksbøger") + c2("Have genlæst s.26-27") + c2("Idrætstøj, sko og håndklæde") + TOM + "</tr>"

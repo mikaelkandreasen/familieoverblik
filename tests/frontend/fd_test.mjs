@@ -51,5 +51,5 @@ const h = fs.readFileSync(ROD + "public_html/overblik.html", "utf8");
 t("båndet er første element i <body>", /<body>\s*<div class="fd-band" id="fdBand" role="status" aria-live="polite">/.test(h));
 t("bevægelse slås fra ved «reducer bevægelse»", /prefers-reduced-motion:reduce\)\{\.fd-konfetti i,\.fd-flag svg\{animation:none\}\}/.test(h));
 t("båndet er skjult, til klassen sættes (ingen flimmer ved indlæsning)", /\.fd-band\{display:none\}/.test(h) && /body\.fd-dag \.fd-band\{display:block/.test(h));
-t("kommende fødselsdage i «Vigtigt snart» bruger egne + familiens, med kilden «Familie»", h.includes("for (const b of alleFd(birthdays))") && h.includes('kilde: b.familie ? "Familie" : "Egne fødselsdage"'));
+t("kommende fødselsdage i «Vigtigt snart» bruger egne + familiens, med kilden «Familie»", h.includes("fd: alleFd(birthdays)") && h.includes('kilde: b.familie ? "Familie" : "Egne fødselsdage"'));
 process.exit(T.every(Boolean) ? 0 : 1);

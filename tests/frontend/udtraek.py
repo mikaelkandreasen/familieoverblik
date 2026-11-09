@@ -29,6 +29,8 @@ put("vl_idx_block.js", skær(idx, '/* ── Tilfældig vælger: egne lister', '
 put("fs_block.js", skær(ov, '// ── Fuld skærm ──', '// ── Sider i rammen (fuld skærm) ──'))
 put("aff_pdf_block.js", skær(idx, '/* ── Tømning: læs fra PDF', '/* ── Slut: tømning PDF ── */'))
 put("ramme_block.js", skær(ov, '// ── Sider i rammen (fuld skærm) ──', '// ── Slut: sider i rammen ──'))
+put("vigtigt_block.js", skær(ov, '// ── Vigtigt: i dag og snart ──', '// ── Slut: vigtigt ──'))
+put("onsker_block.js", skær(ov, '// ── Ønskelister ──', '// ── Slut: ønskelister ──'))
 put("kant_block.js", skær(ov, '// ── Kantine ──', '// ── Slut: kantine ──'))
 put("brev_block.js", skær(ov, '// ── Ugebrev: tekst og afsnit ──', '// ── Slut: ugebrev ──'))
 put("faner_block.js", skær(idx, '// ── Faner og links ──', '// ── Slut: faner og links ──'))

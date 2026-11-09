@@ -10,13 +10,13 @@ const K = new Function("esc", kerne + "; return { filtrer, sorter, datoTekst, pu
 const P = (o) => ({ id: 1, titel: "T", beskrivelse: "", kategori: "andet", prioritet: "P3", status: "Idé", af: "Anna", oprettet: "2026-11-01", opdateret: "2026-11-01", stemmer: [], kommentarer: [], ...o });
 const ramme = { kategorier: ["billeder", "bil", "andet"], prioriteter: ["P1", "P2", "P3", "P4"], statusser: ["Idé", "Planlagt", "I gang", "Færdig", "Droppet"] };
 // ── filtrer ──
-const L = [P({ id: 1, titel: "Tømmekalender", beskrivelse: "Skanderborg", kategori: "kalender" }), P({ id: 2, titel: "Galleri", kategori: "billeder", prioritet: "P1", status: "Planlagt" }), P({ id: 3, titel: "Gammel idé", status: "Færdig" }), P({ id: 4, titel: "Droppet", status: "Droppet" }), P({ id: 5, titel: "Med kommentar", kommentarer: [{ af: "A", tekst: "Husk Skanderborg", tid: "2026-11-02" }] })];
+const L = [P({ id: 1, titel: "Tømmekalender", beskrivelse: "Eksempelby", kategori: "kalender" }), P({ id: 2, titel: "Galleri", kategori: "billeder", prioritet: "P1", status: "Planlagt" }), P({ id: 3, titel: "Gammel idé", status: "Færdig" }), P({ id: 4, titel: "Droppet", status: "Droppet" }), P({ id: 5, titel: "Med kommentar", kommentarer: [{ af: "A", tekst: "Husk Eksempelby", tid: "2026-11-02" }] })];
 t("filtrer: færdige og droppede skjules som standard", K.filtrer(L, {}).map(p => p.id).join() === "1,2,5");
 t("filtrer: «vis alle» viser dem", K.filtrer(L, { alle: true }).length === 5);
 t("filtrer: vælges en status, vises den, også Færdig, uden at «vis alle» skal afkrydses", K.filtrer(L, { status: "Færdig" }).map(p => p.id).join() === "3");
 t("filtrer: kategori og prioritet", K.filtrer(L, { kategori: "billeder" }).map(p => p.id).join() === "2" && K.filtrer(L, { prioritet: "P1" }).map(p => p.id).join() === "2");
-t("filtrer: søgning i titel, beskrivelse og kommentarer, uanset store/små bogstaver", K.filtrer(L, { soeg: "SKANDERBORG" }).map(p => p.id).join() === "1,5" && K.filtrer(L, { soeg: "galleri" }).length === 1 && K.filtrer(L, { soeg: "  " }).length === 3 && K.filtrer(L, { soeg: "findes ikke" }).length === 0);
-t("filtrer: flere filtre samtidig (og)", K.filtrer(L, { soeg: "skanderborg", kategori: "kalender" }).map(p => p.id).join() === "1");
+t("filtrer: søgning i titel, beskrivelse og kommentarer, uanset store/små bogstaver", K.filtrer(L, { soeg: "EKSEMPELBY" }).map(p => p.id).join() === "1,5" && K.filtrer(L, { soeg: "galleri" }).length === 1 && K.filtrer(L, { soeg: "  " }).length === 3 && K.filtrer(L, { soeg: "findes ikke" }).length === 0);
+t("filtrer: flere filtre samtidig (og)", K.filtrer(L, { soeg: "eksempelby", kategori: "kalender" }).map(p => p.id).join() === "1");
 t("filtrer ændrer ikke listen", L.length === 5);
 // ── sorter ──
 const S = [P({ id: 1, prioritet: "P3", stemmer: ["a"], oprettet: "2026-11-01", opdateret: "2026-11-05" }), P({ id: 2, prioritet: "P1", stemmer: [], oprettet: "2026-11-02", opdateret: "2026-11-02" }), P({ id: 3, prioritet: "P1", stemmer: ["a", "b"], oprettet: "2026-11-02", opdateret: "2026-11-03" }), P({ id: 4, prioritet: "P4", stemmer: ["a", "b", "c"], oprettet: "2026-11-04", opdateret: "2026-11-04" })];

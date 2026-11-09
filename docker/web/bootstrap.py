@@ -151,6 +151,17 @@ def normaliser_sv(sv):
     ud.setdefault("fodselsdagstema", True)
     return ud
 
+def valider_link(x, hvad):
+    """Et link til en ønskeliste (valgfrit): tom, eller en https-adresse uden mellemrum, citationstegn og brugernavn (højst 300 tegn). Intet andet (ikke http, ikke javascript:) kommer på forsiden."""
+    if x is None: return ""
+    if not isinstance(x, str): raise Fejl(f"{hvad} skal være tekst.")
+    s = x.strip()
+    if not s: return ""
+    if len(s) > 300 or re.search(r"[\s\x00-\x1f\x7f<>\"'`\\]", s): raise Fejl(f"{hvad} er for langt eller har ugyldige tegn.")
+    m = re.fullmatch(r"https://([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)(?::\d{1,5})?(?:[/?][^#]*)?(?:#.*)?", s)
+    if not m: raise Fejl(f"{hvad} skal være en adresse, der starter med https:// (kopiér linket fra Ønskeskyen).")
+    return s
+
 def valider_sv(sv):
     sv = normaliser_sv(sv)
     if not isinstance(sv, dict): raise Fejl("Navne mangler.")
@@ -164,6 +175,8 @@ def valider_sv(sv):
         if not isinstance(x, dict): raise Fejl("Voksne skal have et navn.")
         navn = _navn(x.get("navn"), "Voksnes fornavn")
         v.append({"navn": navn, "foedselsdag": valider_fd(x.get("foedselsdag"), f"Fødselsdag for {navn}")})
+        l = valider_link(x.get("onskeskyen"), f"Ønskeskyen-link for {navn}")
+        if l: v[-1]["onskeskyen"] = l
     b = []
     for x in boern:
         if not isinstance(x, dict): raise Fejl("Børnene skal have navn og calendar_id.")
@@ -172,6 +185,8 @@ def valider_sv(sv):
         if isinstance(cid, bool) or not isinstance(cid, int) or cid < 0 or cid > 10**12: raise Fejl("calendar_id skal være et helt tal (eller 0, hvis det udfyldes senere).")
         navn = _navn(x.get("navn"), "Børnenes fornavn")
         b.append({"navn": navn, "calendar_id": cid, "foedselsdag": valider_fd(x.get("foedselsdag"), f"Fødselsdag for {navn}")})
+        l = valider_link(x.get("onskeskyen"), f"Ønskeskyen-link for {navn}")
+        if l: b[-1]["onskeskyen"] = l
     ids = [ident(x["navn"]) for x in v] + [ident(x["navn"]) for x in b]
     if len(set(ids)) != len(ids): raise Fejl("To personer må ikke have samme navn.")
     if "alle" in ids: raise Fejl("«Alle» er forbeholdt filteret på skærmen. Vælg et andet navn.")
@@ -278,12 +293,13 @@ def sikker_visning(d):
 # ── render ───────────────────────────────────────────────────────────
 def personblok(sv):
     sv = normaliser_sv(sv)
-    raekker = [("alle", "Alle", "var(--p-alle)", "")]
-    for i, v in enumerate(sv["voksne"]): raekker.append((ident(v["navn"]), v["navn"], f"var(--p-{ADULT_SLOTS[i]})", v.get("foedselsdag", "")))
-    for i, b in enumerate(sv["boern"]): raekker.append((ident(b["navn"]), b["navn"], f"var(--p-{CHILD_SLOTS[i]})", b.get("foedselsdag", "")))
-    def linje(i, n, c, fd):
+    raekker = [("alle", "Alle", "var(--p-alle)", "", "")]
+    for i, v in enumerate(sv["voksne"]): raekker.append((ident(v["navn"]), v["navn"], f"var(--p-{ADULT_SLOTS[i]})", v.get("foedselsdag", ""), v.get("onskeskyen", "")))
+    for i, b in enumerate(sv["boern"]): raekker.append((ident(b["navn"]), b["navn"], f"var(--p-{CHILD_SLOTS[i]})", b.get("foedselsdag", ""), b.get("onskeskyen", "")))
+    def linje(i, n, c, fd, ons=""):
         fdtxt = f", birthday: {json.dumps(fd)}" if fd else ""
-        return f"  {{ id: {json.dumps(i, ensure_ascii=False)}, name: {json.dumps(n, ensure_ascii=False)}, color: \"{c}\"{fdtxt} }}"
+        onstxt = f", onskeskyen: {json.dumps(ons, ensure_ascii=False)}" if ons else ""
+        return f"  {{ id: {json.dumps(i, ensure_ascii=False)}, name: {json.dumps(n, ensure_ascii=False)}, color: \"{c}\"{fdtxt}{onstxt} }}"
     return ("export const PEOPLE = [\n" + ",\n".join(linje(*r) for r in raekker) + "\n];\n"
             "// Flag og fødselsdagstema på familiemedlemmers fødselsdag (Opsætning → Familie og forbindelser)\n"
             f"export const BIRTHDAY_THEME = {'true' if sv.get('fodselsdagstema', True) else 'false'};\n")

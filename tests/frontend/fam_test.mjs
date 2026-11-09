@@ -98,4 +98,24 @@ t("fejl ved gendannelse vises", /hverken en zip/.test(sh.el("skFejl").textConten
   const html = fs.readFileSync(import.meta.dirname + "/../../public_html/index.html", "utf8");           // (URL er byttet ud med en falsk i denne fil)
   t("valget findes i sektionen Login og sikkerhed med de to muligheder", /<label for="adgangValg">Hvem må se forsiden\?<\/label>/.test(html) && /<option value="laast">Kun med PIN-kode \(standard\)<\/option>/.test(html) && /<option value="aaben_visning">Forsiden kan ses uden PIN-kode/.test(html) && html.indexOf('id="adgSek"') < html.indexOf('id="toSek"'));
 }
+// ── Ønskeskyen-link pr. person ──
+{
+  const sv2 = JSON.parse(JSON.stringify(visning)); sv2.sv.voksne[0].onskeskyen = "https://onskeskyen.dk/share/abc123"; sv2.sv.boern[0].onskeskyen = "https://www.onskeskyen.dk/w/sofie?x=1";
+  const s = await side({ svar: post => ({ ok: true, status: 200, json: async () => (post ? { ok: true } : sv2) }) });
+  const h = s.el("famVoksne").innerHTML + s.el("famBoern").innerHTML;
+  t("hver person har et felt til linket (type=url, data-f=onsk), og et gemt link står i feltet; dem uden står tomme", (h.match(/data-f="onsk"/g) || []).length === 4 && h.includes('value="https://onskeskyen.dk/share/abc123"') && h.includes('value="https://www.onskeskyen.dk/w/sofie?x=1"') && (h.match(/type="url"/g) || []).length === 4 && /value="" placeholder="Link til Ønskeskyen-listen/.test(h));
+  t("feltet forklarer, at en person uden link ikke vises på forsiden, og har en etiket til skærmlæsere", /uden link vises den ikke på forsiden/.test(h) && /aria-label="Voksen 1, link til Ønskeskyen"/.test(h));
+  await fyr(s.els.famForm, "submit");
+  let p = s.kald.filter(k => k.m === "POST").at(-1).b.sv;
+  t("ved Gem sendes linkene, men kun for dem, der har et (de andre har intet felt, så serverens svar er det samme som før)", p.voksne[0].onskeskyen === "https://onskeskyen.dk/share/abc123" && !("onskeskyen" in p.voksne[1]) && p.boern[0].onskeskyen === "https://www.onskeskyen.dk/w/sofie?x=1" && !("onskeskyen" in p.boern[1]), JSON.stringify(p));
+  skriv(s, "voksne", 1, "onsk", "  https://gowish.com/w/peter  "); skriv(s, "voksne", 0, "onsk", "");
+  await fyr(s.els.famForm, "submit"); p = s.kald.filter(k => k.m === "POST").at(-1).b.sv;
+  t("et link kan skrives (mellemrum trimmes) og fjernes (tomt felt: feltet udelades), og de andre ændres ikke", p.voksne[1].onskeskyen === "https://gowish.com/w/peter" && !("onskeskyen" in p.voksne[0]) && p.boern[0].onskeskyen === "https://www.onskeskyen.dk/w/sofie?x=1", JSON.stringify(p.voksne));
+  await fyr(s.els.famTilfoejBarn, "click");
+  t("en nyoprettet person har et tomt linkfelt, og en person uden navn sendes slet ikke (heller ikke et link)", (s.el("famBoern").innerHTML.match(/data-f="onsk"/g) || []).length === 3 && (() => { skriv(s, "boern", 2, "onsk", "https://x.dk/a"); return true; })());
+  await fyr(s.els.famForm, "submit"); p = s.kald.filter(k => k.m === "POST").at(-1).b.sv;
+  t("(…) linket til en række uden navn forsvinder med rækken", p.boern.length === 2 && !JSON.stringify(p).includes("https://x.dk/a"));
+  const css = fs.readFileSync(import.meta.dirname + "/../../public_html/index.html", "utf8");
+  t("linkfeltet fylder hele rækken (grid-column: 1 / -1) under navn og fødselsdag", /\.fam-pers \.fam-onsk\{grid-column:1\/-1\}/.test(css));
+}
 process.exit(T.every(Boolean) ? 0 : 1);
