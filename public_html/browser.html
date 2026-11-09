@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser-tjek</title>
+<style>
+  body { margin: 0; padding: 18px; font: 16px/1.5 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1c2b2a; background: #fbfaf6; max-width: 760px; }
+  h1 { font-size: 1.4rem; margin: 0 0 6px; }
+  .dom { padding: 12px 14px; border-radius: 8px; margin: 14px 0; font-weight: 600; }
+  .god { background: #dff2e1; } .halv { background: #fff1cc; } .daarlig { background: #f9d9d6; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  td, th { text-align: left; padding: 7px 8px; border-bottom: 1px solid #dcdcd2; vertical-align: top; }
+  .ja { color: #1b7a2f; font-weight: 700; } .nej { color: #b3261e; font-weight: 700; } .valgfri { color: #7a6a00; font-weight: 700; }
+  small { color: #5d6b6a; }
+  code { background: #eee9dc; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Browser-tjek</h1>
+<p><small>Tjekker, om denne browser kan det, Familieoverblik bruger. Siden er åben uden PIN og sender intet. Åbn den på den enhed, du vil bruge (fx den gamle tablet).</small></p>
+<div id="ua"><small></small></div>
+<div id="dom" class="dom"></div>
+<table id="tab"><thead><tr><th>Funktion</th><th>Resultat</th><th>Kræver mindst</th></tr></thead><tbody></tbody></table>
+<p><small>«Skal være» betyder, at siderne ikke kan indlæses uden. «Pænere med» betyder, at siderne virker, men kan se lidt anderledes ud. «Valgfri» er ekstra funktioner (fuld skærm, offline).</small></p>
+<p><small>Sådan opdaterer du Chrome på en gammel Android: åbn Play Butik, søg efter «Chrome» og tryk Opdatér. Nyere end Chrome 95 findes ikke til Android 5. Står der «Opdatér» ikke, så er den allerede den nyeste til din enhed. Android System WebView (bruges af kioskapps) opdateres på samme måde.</small></p>
+<script>window.FO_BROWSER_STILLE = true;</script>
+<script src="gamlebrowser.js"></script>
+<script>
+(function () {
+  var B = window.FO_BROWSER, r = B.koer(), v = B.version(navigator.userAgent), tb = document.getElementById("tab").getElementsByTagName("tbody")[0], i, tr, td, ord;
+  document.getElementById("ua").getElementsByTagName("small")[0].appendChild(document.createTextNode(v ? v.navn + " " + v.nr : "Ukendt browser"));
+  for (i = 0; i < r.resultater.length; i++) {
+    tr = document.createElement("tr");
+    td = document.createElement("td"); td.appendChild(document.createTextNode(r.resultater[i].navn)); tr.appendChild(td);
+    td = document.createElement("td");
+    td.className = r.resultater[i].ok ? "ja" : (r.resultater[i].kritisk ? "nej" : "valgfri");
+    ord = r.resultater[i].ok ? "Ja" : (r.resultater[i].kritisk ? "Mangler (skal være)" : (r.resultater[i].valgfri ? "Mangler (valgfri)" : "Mangler (pænere med)"));
+    td.appendChild(document.createTextNode(ord)); tr.appendChild(td);
+    td = document.createElement("td"); td.appendChild(document.createTextNode(r.resultater[i].krav)); tr.appendChild(td);
+    tb.appendChild(tr);
+  }
+  var d = document.getElementById("dom");
+  if (!r.ok) { d.className = "dom daarlig"; d.appendChild(document.createTextNode("Siderne kan ikke køre i denne browser. Mangler: " + r.mangler.join(", ") + ".")); }
+  else if (r.tilbage.length) { d.className = "dom halv"; d.appendChild(document.createTextNode("Siderne kan køre, men kan se anderledes ud. Mangler: " + r.tilbage.join(", ") + ".")); }
+  else { d.className = "dom god"; d.appendChild(document.createTextNode("Alt, siderne bruger, findes i denne browser.")); }
+})();
+</script>
+</body>
+</html>

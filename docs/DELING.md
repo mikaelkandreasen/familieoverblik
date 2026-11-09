@@ -6,6 +6,8 @@ Billederne ligger i denne mappe: `social-preview.png` (1280×640, til GitHub) og
 ## 1. Tjekliste, før du deler
 
 - [x] **Licens: MIT er valgt** (filen `LICENSE` ligger i repoet, og `THIRD_PARTY.md` oplister bibliotekerne, som alle er MIT). Vil du hellere have, at ændringer skal deles videre, så skift `LICENSE` til **GPL-3.0** eller **AGPL-3.0** (de er forenelige med MIT-bibliotekerne) og ret «Licens» i README'erne. Ophavsretten står i navnet «Familieoverblik contributors». Vil du have dit eget navn på, så ret linjen i `LICENSE`. Vær opmærksom på, at tjenesterne, løsningen kontakter, har egne vilkår, især **GoComics** (tegneseriekortet viser billeder direkte fra deres sider og er slået til som standard): overvej at slå det fra som standard, før du anbefaler løsningen bredt.
+- [ ] **Kør `FO_PRIVAT_ORD="dine,børns,navne,gade,by" python3 tests/test_offentlig.py`** (navnene må ikke stå i projektet). Den skal være grøn.
+- [ ] **Lav et NYT offentligt repo** og upload de nuværende filer, i stedet for at gøre det private repo offentligt. Et privat repos historik (tidligere udgaver) følger ellers med.
 - [ ] **Prøv det på din egen server først**, især Aula-login, totrinsbekræftelse og åben visning. Står der i README, at det er en *tidlig udgave*, er det fint, men du skal selv vide, hvad der virker.
 - [ ] **Ingen hemmeligheder i repoet.** Der må ikke ligge `instans.json`, `totp.json`, `backlog.json`, nøgler eller `.env` (zip-filen indeholder dem ikke). Åbn repoets filliste, og kig efter.
 - [ ] **Skærmbilleder uden persondata.** Skjul børns navne, skolens navn, breve, adresser og kalenderposter, der afslører, hvor I er. Vis det hellere med en testprofil end med jeres rigtige data.
@@ -87,7 +89,7 @@ How it runs: four Docker containers (web, cron, aula, car) built by GitHub Actio
 
 Things I want to be upfront about:
 - It is unofficial and not affiliated with Aula. The Aula part uses an unofficial Python library and was tested against a simulation, not Aula itself. It is the most fragile part.
-- Early release. About 500 Python tests and 1,000+ JS tests pass, but PHP/Apache/Docker were not run in my development environment, so please expect rough edges.
+- Early release. About 580 Python tests and 1,000+ JS tests pass, but PHP/Apache/Docker were not run in my development environment, so please expect rough edges.
 - It was built together with Claude (Anthropic).
 - The UI and docs are Danish (English and German UI text exist), so it is mostly useful if you have Aula.
 

@@ -26,6 +26,7 @@ Det kører i Docker og styres med [Dockhand](https://dockhand.pro), **uden at du
 - **Kalendere:** alle kalenderlinks (ICS), også Holdsport og DBU KampKlar, samlet pr. person.
 - **Vejr:** Open-Meteo (uden nøgle). Hver tredje time, farver efter vejrtype og vind med retning og stød.
 - **Elpris:** dagens priser og billigste periode (Energi Data Service), og et «kun søjler»-valg.
+- **Ønskelister:** et link pr. person til deres liste i Ønskeskyen (kun for dem, der har et link).
 - **Kantine:** skolens menu for ugen, fra den besked kantinen sender, med dagens ret fremhævet.
 - **Tømning:** hvornår hver skraldespand tømmes, med et ikon for hver slags affald (også på dagene i «De næste dage») og en påmindelse aftenen før. Du skriver én dato og et antal uger, eller **læser en PDF-tømmekalender ind** (den læses i din egen browser; også en kalender med kun symboler, hvor du selv navngiver grupperne).
 - **Fødselsdage:** familiens fødselsdage, og **på dagen** får skærmen Dannebrog, flagguirlande og konfetti.
@@ -38,6 +39,7 @@ Det kører i Docker og styres med [Dockhand](https://dockhand.pro), **uden at du
 - **Tilpas layout:** flyt kortene, gør dem smalle, halve eller brede, og skjul dem, du ikke vil se. Valget gemmes pr. enhed.
 - **Farvetemaer:** lys, varm, mørk og høj kontrast, fælles eller **pr. enhed** (mørkt på væggen om aftenen).
 - **Dansk, engelsk og tysk**, og en knap, der oversætter resten (breve, noter).
+- **Browser-tjek (`browser.html`):** viser, om en gammel enhed kan køre siderne, og en gammel browser får en besked i stedet for en blank side.
 - **Fuld skærm-knap.** Siderne kræver Chrome 85 eller nyere, så de kan i princippet køre på ældre tablets (Android 5.1 kan få Chrome 95), men det er ikke afprøvet på rigtige enheder.
 - **Backlog-side**, hvor familien selv kan skrive ønsker, stemme og kommentere.
 - **Sikkerhedskopi og gendannelse** i browseren.
@@ -75,12 +77,12 @@ Du skal bruge: en server med Docker (en lille mini-pc er nok) og [Dockhand](http
 
 ## Status
 
-**Tidlig udgave (version 3.x).** Koden er afprøvet med **572 automatiske Python-prøver og 1.208 JavaScript-prøver**, men ikke alt er prøvet mod de rigtige tjenester:
-- **Aula-login** bruger et uofficielt bibliotek og er prøvet mod en simulering, ikke mod Aula. Det er den mest skrøbelige del.
-- **PHP, Apache og Docker** er ikke kørt i udviklingsmiljøet, så login, totrinsbekræftelse og åben visning skal prøves på en rigtig server.
+**Tidlig udgave (version 3.x).** Det kører hos én familie siden november 2026 (Docker på en mini-pc, styret med Dockhand). Koden er afprøvet med **595 automatiske Python-prøver og 1.283 JavaScript-prøver**. Her er, hvad der er prøvet i virkeligheden, og hvad der kun er prøvet med simuleringer:
+- **Aula:** MitID-login og hentning af skema og ugebreve er **prøvet af én familie mod Aula selv**. Det bruger et uofficielt bibliotek, og Aulas login kan ændre sig, så det er den mest skrøbelige del. Skemaet læses ud af ugebrevets tabel; det er kørt, men ikke kontrolleret mod alle klassers breve. Kantinens menu er ikke bekræftet.
+- **Kun prøvet med simuleringer:** gentagne aftaler i kalendere, læsning af en tømmekalender med kun symboler, åben visning og totrinsbekræftelse. Selve PHP, Apache og Docker er ikke kørt i testmiljøet, så der kan være fejl, som prøverne ikke ser.
 - Tjenester som Hyundai, Strava og Open-Meteo kan ændre sig og dermed bryde en del af løsningen.
 
-Fortæl gerne, hvad der virker og ikke virker (opret et *issue*).
+Fortæl gerne, hvad der virker og ikke virker (opret et *issue*, men læg ikke børns navne eller breve i det).
 
 ## Ansvar og begrænsninger
 

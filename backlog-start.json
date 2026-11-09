@@ -11,7 +11,7 @@
    "oprettet": "2026-11-07"
   },
   {
-   "titel": "Tømningskalender fra Renosyd (Skanderborg)",
+   "titel": "Tømningskalender fra renovationsselskabet (fx Renosyd)",
    "beskrivelse": "Vis tømning for en valgt adresse og mind om det aftenen før. Datoerne ligger bag en login-portal. Afklaring først: bruger og adgangskode eller MitID, findes en «Hent kalender»-knap (iCal), og er der en app? Er det kun MitID, laver vi en egen tidsplan (startdato og interval pr. fraktion).",
    "kategori": "kalender",
    "prioritet": "P2",

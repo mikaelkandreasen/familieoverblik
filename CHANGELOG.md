@@ -16,6 +16,67 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.13.0] – 2026-11-08
+
+### Tilføjet
+- **Kortet «Ønskelister»: et link til hver persons Ønskeskyen-liste.** Under **Opsætning → Familie og forbindelser** har hver person (voksne og børn) nu et felt **«Link til Ønskeskyen-listen»**. Kopiér linket fra Ønskeskyen (del-linket til listen), og sæt det ind. På forsiden står så kortet **«Ønskelister»** med en række pr. person: *«Annas ønskeliste ↗»*, med personens farve og forbogstav. Et tryk åbner listen i en ny fane, hvor du kan se og tilføje ønsker (og hvor Ønskeskyens reservationer stadig er skjult for ejeren).
+  - **En person uden link vises ikke**, og er der slet ingen links, er hele kortet skjult.
+  - Det er bevidst kun et link: Ønskeskyen har ingen åben adgang for private (kun et samarbejde for webshops), og at læse deres sider uden aftale kan holde op fra den ene dag til den anden. Ønskerne vises derfor ikke på forsiden, og jeres Ønskeskyen-login ligger ikke hos Familieoverblik.
+  - Linket skal være en **https-adresse** (højst 300 tegn, uden mellemrum og citationstegn). Alt andet (http, `javascript:` …) afvises af serveren med en forklaring, og kortet tjekker det en gang til. Navne på s, x og z får kun apostrof («Hans' ønskeliste»).
+  - Linkene gemmes sammen med navnene og tages med i sikkerhedskopien. De står i `config.js`, som **kan hentes uden PIN, hvis åben visning er slået til**: det er delings-links, men tænk over det, hvis I har en liste, I ikke vil have, at alle på netværket kan finde.
+  - I fuld skærm åbner linket i en ny fane, så fuld skærm kan blive afbrudt (en ny fane kan ikke ligge i rammen).
+- 12 + 7 + 15 nye prøver (link gyldige og ugyldige, kun dem med link vises, escape, indstillingsfeltet, config.js, sikkerhedskopi, og at et ugyldigt link ikke ændrer noget). Jeg har kontrolleret, at prøverne fejler, hvis http tillades, eller linket ikke kommer med i config.js.
+- **Ikke afprøvet med et rigtigt Ønskeskyen-link.** Jeg kender ikke deres adresser. Virker et link ikke, så er det sandsynligvis ikke et https-delings-link, eller også har Ønskeskyen ændret noget; skriv, hvad der står i feltet (uden at dele selve listen).
+
+### Opdatering fra 3.12.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Åbn derefter **Opsætning → Familie og forbindelser**, sæt linkene ind og tryk **Gem**. Genindlæs forsiden to gange.
+
+## [3.12.0] – 2026-11-08
+
+### Tilføjet
+- **Menuen «Sider ▾» på alle sider.** Før fandtes den kun i bunden af forsiden. Nu sidder en knap øverst til højre i overskriften på **opsætningen, backlog, gæste-wifi, den tilfældige vælger og billedsiden** (på opsætningen i den øverste række). Rullemenuen åbner nedad og indeholder: **Oversigt, Madplan, Opsætning, Gæste-wifi, Tilfældig vælger, Backlog, Tilføj billeder og Browser-tjek.** Den side, du står på, er fed. Den lukker, når du trykker udenfor eller Escape.
+  - Punkterne står ét sted (`public_html/sidemenu.js`). Forsidens egen menu er uændret (den har desuden Ændringslog og Tokyo, som kun hører hjemme dér), og en prøve sikrer, at de to ikke driver fra hinanden.
+  - Menuen følger sidens sprog (engelsk og tysk). Guiden (første opsætning) og browser-tjekket har ingen menu med vilje.
+  - **I fuld skærm** åbner siderne i rammen (3.9.0), så «Oversigt» i menuen lukker rammen og tager dig til forsiden, uden at fuld skærm afbrydes.
+- Service workerens cache er `shell-v4`. 24 nye prøver (placering, punkter, den aktuelle side, åbne og lukke, kun én kopi, sider uden overskrift, ødelagt omgivelse, cache og oversættelser).
+
+### Opdatering fra 3.11.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Genindlæs siderne to gange.
+
+## [3.11.0] – 2026-11-08
+
+### Tilføjet
+- **Browser-tjek (`browser.html`).** En side, der viser, om en browser kan det, siderne bruger: JavaScript-moduler, `?.`, `??` og `??=`, `import()`, `async`, `fetch`, CSS-variabler og grid (skal være), gap og inset (pænere med), fuld skærm og offline (valgfri). Den viser browserens navn og version og en dom: *alt findes*, *kan køre, men ser anderledes ud* eller *kan ikke køre*. Den er åben uden PIN og sender intet, så den kan åbnes på den gamle tablet, før man opsætter noget.
+- **En besked i stedet for en blank side.** Alle syv sider henter nu `gamlebrowser.js` (et script i gammel JavaScript, der selv kan køre i en gammel browser). Kan browseren ikke det, siderne kræver (cirka Chrome 85), vises en rød bjælke øverst: *«Din browser (Chrome 49) er for gammel til Familieoverblik. Det mangler: … Opdatér browseren (Chrome 85, Safari 14 eller Firefox 79 og nyere) eller brug en anden. Se hvad der mangler»*. Før så man en tom side uden forklaring. I en moderne browser sker der ingenting.
+- Service workerens cache er `shell-v3` (to nye filer). 22 nye prøver, bl.a. at scriptet selv er skrevet i gammel syntaks (ellers kan det ikke advare de browsere, det er til).
+- **Ikke afprøvet i en gammel browser.** Prøverne bruger falske browsere med de funktioner, en bestemt version har. Åbn `browser.html` på din Android 5.1-tablet, og sig, hvad den viser.
+
+### Opdatering fra 3.10.2
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Åbn `http://adressen:8085/browser.html` på tabletten.
+
+## [3.10.2] – 2026-11-08
+
+### Rettet
+- **Det, der står til i dag i «Vigtigt snart», står nu også under «I dag».** «Vigtigt snart» samler tre slags: **familiens fødselsdage**, **tømning** (påmindelserne) og **Aulas vigtige datoer**. Er et punkt dér dateret i dag, stod det kun dér, for «I dag» (Kalender, Skole, Fritid, Husk, Aftensmad) viste ikke de tre slags. Nu er der en sektion **«Vigtigt»** i «I dag» (skjult, til der er noget), og punkter dateret i dag står dér i stedet for i «Vigtigt snart». «Vigtigt snart» viser de kommende (i morgen og frem).
+- Logikken ligger nu i én ren funktion (`vigtigtListe`), der er prøvet for sig (10 nye prøver: dato i dag, i går, om 45 dage og for langt, ventende punkter, tømning i dag og i morgen, fødselsdage med alder og over årsskiftet, sortering og skrald).
+
+### Opdatering fra 3.10.1
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Genindlæs forsiden to gange.
+
+## [3.10.1] – 2026-11-08
+
+### Rettet (klar til at være offentligt)
+- **Gennemgang inden offentliggørelse.** Hele projektet er gennemsøgt for nøgler og tokens, hemmelige filer, e-mailadresser, IP-adresser og navne. Der var ingen nøgler, men:
+  - **lærernes fornavne fra et rigtigt ugebrev** stod i en prøve og i ændringsloggen. De er udskiftet med opdigtede.
+  - **fire filer med familiens egne backlog-punkter** (`backlog-status-*.json`) lå i projektet. De er fjernet (du har dem allerede som filer, du kan lægge ind på backlog-siden).
+  - **kommunens navn** stod i startbacklogen og i prøver. Det er gjort generisk.
+- **README's status** er rettet: den sagde, at Aula-login kun var prøvet mod en simulering. Den siger nu, hvad der er prøvet i virkeligheden (Aula hos én familie), og hvad der kun er prøvet med simuleringer.
+- **`SECURITY.md`:** hvordan man melder en sikkerhedsfejl privat, at siden ikke skal ud på internettet, og hvad man ikke må dele.
+- **Ny prøve `tests/test_offentlig.py`** (kører også i GitHub-workflowet): leder efter API-nøgler og tokens, lange hemmeligheder, filer, der kun hører hjemme på en kørende installation, e-mailadresser, IP-adresser og navne. **Navne lægges ikke i projektet:** sæt dem i `FO_PRIVAT_ORD` (kommasepareret), når du kører den, fx `FO_PRIVAT_ORD="fornavn,efternavn,gade" python3 tests/test_offentlig.py`. Jeg har kontrolleret, at den fanger en indsat e-mail, IP, nøgle, hemmelig fil og navn.
+
+### Opdatering fra 3.10.0
+Intet at gøre på serveren. Upload filerne, hvis du vil have det ryddede projekt i dit repo.
+
 ## [3.10.0] – 2026-11-08
 
 ### Rettet (kalendere: manglende aftaler)
@@ -57,7 +118,7 @@ Det andet barns ugeplan er bygget anderledes end det første, og læseren fra 3.
 - **Brev uden hilsen.** Brevet begynder ved «Ugen der …», når der ikke er en «Kære …», og overskriftslinjer som «Barn 1Buge 46» (hvor «uge» sidder fast i klassens navn) og «Ugeplan for uge 46» kasseres nu.
 - **Overskrifter uden kolon** («Ugen der gik», «Ugen der kommer», «Ekstra») vises nu som overskrifter, når et afsnit følger. Før var det kun overskrifter, der endte på kolon.
 - Nye prøver bygger en opdigtet klasse med den samme opbygning (sammenflettede celler, «samme», tomme pausesrækker, en «HUSK!»-række og et brev uden hilsen) og kontrollerer ugedag og tidspunkt for hver lektion. 16 nye prøver. **Ikke afprøvet med selve brevets HTML**: jeg kender kun den flade tekst. Viser Skema-vinduet stadig noget forkert, så kør `python /app/Sync-Aula.py --brevform` og send udskriften (kun opbygning, ingen tekst).
-- Noter i skemaet vises som lærerne har skrevet dem. De kan indeholde fornavne (fx «Ida og Emil/ PC»); forbogstaver i parentes fjernes stadig.
+- Noter i skemaet vises som lærerne har skrevet dem. De kan indeholde fornavne (fx «Fornavn og Fornavn/ PC»); forbogstaver i parentes fjernes stadig.
 
 ### Opdatering fra 3.8.0
 Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Hent så skema og breve med det samme: `python /app/Sync-Aula.py`.

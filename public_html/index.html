@@ -367,6 +367,7 @@ a.k-test{display:inline-flex;align-items:center;text-decoration:none;color:var(-
 .fam-pers.med-id{grid-template-columns:minmax(0,2fr) minmax(0,1.5fr) minmax(0,1.3fr) auto}
 @media (max-width:520px){.fam-pers,.fam-pers.med-id{grid-template-columns:1fr 1fr}}
 .fam-pers button{min-height:44px;min-width:44px;padding:0}
+.fam-pers .fam-onsk{grid-column:1/-1}
 .to-qr{width:min(70vw,260px);margin:8px 0}
 .to-qr svg{display:block;width:100%;height:auto;background:#fff;border-radius:6px}
 .to-koder{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);padding:10px;columns:2;margin:6px 0;white-space:pre}
@@ -921,6 +922,8 @@ textarea.st-in{font-size:14px;resize:vertical}
 <div class="boot" id="boot">Forbinder…</div>
 
 
+<script src="gamlebrowser.js"></script>
+<script src="sidemenu.js"></script>
 <script type="module">
 /* ═══════════════════════════════════════════════════════════════════
    SKAL VAERE ENS I index.html OG overblik.html
@@ -3207,7 +3210,8 @@ function famRaekker(liste, type){
     <input class="st-in" type="text" data-f="navn" maxlength="30" autocomplete="off" value="${esc(p.navn)}" placeholder="${hvad} ${i + 1}${i ? " (valgfri)" : ""}" aria-label="${hvad} ${i + 1}, fornavn">
     <input class="st-in" type="text" data-f="fd" inputmode="numeric" autocomplete="off" value="${esc(p.fd)}" placeholder="dd.mm.åååå" aria-label="${hvad} ${i + 1}, fødselsdag">
     ${type === "boern" ? `<input class="st-in" type="text" data-f="cid" inputmode="numeric" autocomplete="off" value="${esc(p.cid)}" placeholder="calendar_id" aria-label="${hvad} ${i + 1}, calendar_id">` : ""}
-    ${liste.length > 1 ? `<button type="button" class="k-test" data-fjern aria-label="Fjern ${hvad.toLowerCase()} ${i + 1}">×</button>` : "<span></span>"}</div>`).join("");
+    ${liste.length > 1 ? `<button type="button" class="k-test" data-fjern aria-label="Fjern ${hvad.toLowerCase()} ${i + 1}">×</button>` : "<span></span>"}
+    <input class="st-in fam-onsk" type="url" data-f="onsk" inputmode="url" autocomplete="off" maxlength="300" value="${esc(p.onsk || "")}" placeholder="Link til Ønskeskyen-listen (valgfrit; uden link vises den ikke på forsiden)" aria-label="${hvad} ${i + 1}, link til Ønskeskyen"></div>`).join("");
 }
 function famTegn(){
   $("famVoksne").innerHTML = famRaekker(famStat.voksne, "voksne"); $("famBoern").innerHTML = famRaekker(famStat.boern, "boern");
@@ -3221,8 +3225,8 @@ $("famTilfoejVoksen").addEventListener("click", () => { if (famStat.voksne.lengt
 $("famTilfoejBarn").addEventListener("click", () => { if (famStat.boern.length < FAM_MAX_B){ famStat.boern.push({ navn: "", fd: "", cid: "" }); famTegn(); } });
 function famFyld(d){
   const nm = x => (typeof x === "string" ? { navn: x } : x) || {};
-  famStat.voksne = (d.sv.voksne || []).map(nm).map(v => ({ navn: v.navn || "", fd: v.foedselsdag || "" }));
-  famStat.boern = (d.sv.boern || []).map(nm).map(b => ({ navn: b.navn || "", fd: b.foedselsdag || "", cid: b.calendar_id ? String(b.calendar_id) : "" }));
+  famStat.voksne = (d.sv.voksne || []).map(nm).map(v => ({ navn: v.navn || "", fd: v.foedselsdag || "", onsk: v.onskeskyen || "" }));
+  famStat.boern = (d.sv.boern || []).map(nm).map(b => ({ navn: b.navn || "", fd: b.foedselsdag || "", cid: b.calendar_id ? String(b.calendar_id) : "", onsk: b.onskeskyen || "" }));
   if (!famStat.voksne.length) famStat.voksne.push({ navn: "", fd: "" });
   if (!famStat.boern.length) famStat.boern.push({ navn: "", fd: "", cid: "" });
   famTegn();
@@ -3236,8 +3240,8 @@ function famFyld(d){
 /** Det, der sendes: personer med fødselsdag, tema, sted, PIN kun hvis skrevet, åbne forbindelser som de står, nøgler kun hvis skrevet eller «fjern». */
 function famPayload(){
   const n = x => String($(x).value || "").trim(), t = x => String(x || "").trim();
-  const p = { sv: { voksne: famStat.voksne.filter(v => t(v.navn)).map(v => ({ navn: t(v.navn), foedselsdag: t(v.fd) })),
-                    boern: famStat.boern.filter(b => t(b.navn)).map(b => ({ navn: t(b.navn), calendar_id: t(b.cid) || "0", foedselsdag: t(b.fd) })),
+  const p = { sv: { voksne: famStat.voksne.filter(v => t(v.navn)).map(v => ({ navn: t(v.navn), foedselsdag: t(v.fd), ...(t(v.onsk) ? { onskeskyen: t(v.onsk) } : {}) })),
+                    boern: famStat.boern.filter(b => t(b.navn)).map(b => ({ navn: t(b.navn), calendar_id: t(b.cid) || "0", foedselsdag: t(b.fd), ...(t(b.onsk) ? { onskeskyen: t(b.onsk) } : {}) })),
                     fodselsdagstema: $("famFdTema").checked },
               sted: { lat: n("famLat").replace(",", "."), lon: n("famLon").replace(",", "."), tidszone: n("famTz") } };
   if (n("famPin")) p.pin = n("famPin");

@@ -436,7 +436,10 @@
     "Læs teksten": "Read the text",
     "Læg de valgte ind i tidsplanen": "Add the selected ones to the schedule",
     "Se datoerne": "See the dates",
-    "← Forsiden": "← Home"
+    "← Forsiden": "← Home",
+    "Oversigt": "Overview",
+    "Browser-tjek": "Browser check",
+    "Ønskelister": "Wish lists"
    }
   },
   "de": {
@@ -873,7 +876,10 @@
     "Læs teksten": "Text lesen",
     "Læg de valgte ind i tidsplanen": "Die Ausgewählten in den Zeitplan übernehmen",
     "Se datoerne": "Daten ansehen",
-    "← Forsiden": "← Startseite"
+    "← Forsiden": "← Startseite",
+    "Oversigt": "Übersicht",
+    "Browser-tjek": "Browser-Prüfung",
+    "Ønskelister": "Wunschlisten"
    }
   }
  }

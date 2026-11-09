@@ -26,6 +26,7 @@ It runs in Docker and is managed with [Dockhand](https://dockhand.pro), **withou
 - **Calendars:** any ICS calendar link, including Holdsport and DBU KampKlar (football), grouped per person.
 - **Weather:** Open-Meteo (no key needed). Every third hour, colours by weather type, and wind with direction and gusts.
 - **Electricity prices:** today's prices and the cheapest period (Energi Data Service), plus a "bars only" view.
+- **Wish lists:** a link per person to their list in Ønskeskyen (only for those who have a link).
 - **Canteen:** the school's menu for the week, from the message the canteen sends, with today's dish highlighted.
 - **Waste collection:** when each bin is emptied, with an icon for each waste type (also on the days in "Next days") and a reminder the evening before. You enter one date and a number of weeks, or **import a PDF collection calendar** (it is read in your own browser; also a calendar with symbols only, where you name the groups yourself).
 - **Birthdays:** family birthdays, and **on the day** the screen gets the Danish flag, bunting and confetti.
@@ -38,6 +39,7 @@ It runs in Docker and is managed with [Dockhand](https://dockhand.pro), **withou
 - **Customise the layout:** move cards, make them narrow, half or wide, and hide the ones you do not want. Saved per device.
 - **Colour themes:** light, warm, dark and high contrast, shared or **per device** (dark on the wall in the evening).
 - **Danish, English and German**, and a button that translates the rest (letters, notes).
+- **Browser check (`browser.html`):** shows whether an old device can run the pages, and an old browser gets a message instead of a blank page.
 - **Full-screen button.** The pages need Chrome 85 or newer, so they should in principle run on older tablets (Android 5.1 can get Chrome 95), but this has not been tried on real devices.
 - **A backlog page** where the family writes wishes, votes and comments.
 - **Backup and restore** in the browser.
@@ -75,12 +77,12 @@ You need: a server with Docker (a small mini PC is enough) and [Dockhand](https:
 
 ## Status
 
-**Early release (version 3.x).** The code is covered by **572 automated Python tests and 1,208 JavaScript tests**, but not everything has been tried against the real services:
-- **The Aula login** uses an unofficial library and was tested against a simulation, not Aula itself. It is the most fragile part.
-- **PHP, Apache and Docker** were not run in the development environment, so login, two-step verification and open view must be tried on a real server.
+**Early release (version 3.x).** It has been running at one family's home since November 2026 (Docker on a mini PC, managed with Dockhand). The code is covered by **595 automated Python tests and 1,283 JavaScript tests**. What has been tried for real, and what only against simulations:
+- **Aula:** the MitID login and fetching the schedule and weekly letters have been **tried by one family against Aula itself**. It uses an unofficial library and Aula's login can change, so it is the most fragile part. The schedule is read from the letter's table; it has run, but has not been checked against every class's letters. The canteen menu is not confirmed.
+- **Only tried against simulations:** recurring events in calendars, reading a collection calendar that only shows symbols, open view and two-step verification. PHP, Apache and Docker themselves were not run in the test environment, so there may be bugs the tests cannot see.
 - Services such as Hyundai, Strava and Open-Meteo can change and break part of the solution.
 
-Please tell us what works and what does not (open an *issue*).
+Please tell us what works and what does not (open an *issue*, but do not put children's names or letters in it).
 
 ## Responsibility and limits
 

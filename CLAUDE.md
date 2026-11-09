@@ -87,6 +87,14 @@ Se `CHANGELOG.md` for alt, der er bygget, og `BACKLOG.md` for ønsker (afsnittet
 
 **Kalendere (3.10.0):** `hent.php` kalder `docker/web/ics.py` (gentagelser, undtagelser, flyttede forekomster, tidszoner) og bruger sin gamle PHP-læser (`ics_events_php`) som reserve. Python-læseren er prøvet grundigt (`tests/test_ics.py`); PHP-kaldet er kun kontrolleret som tekst. Kalendercachen er en halv time; `?frisk=1` (`CRON_FRISK=1`) ignorerer den.
 
+**Før projektet gøres offentligt (eller en udgave deles):** kør `FO_PRIVAT_ORD="navne,på,børn,gade,by" python3 tests/test_offentlig.py`. Navne må aldrig stå i projektet. Brugerens egne filer (`backlog-status-*.json`, backlog-eksport, PDF'er med adresse, logfiler fra Aula) hører ikke hjemme i projektet. Lav hellere et NYT offentligt repo med de nuværende filer end at gøre et privat repo offentligt (historikken følger med).
+
+**Ønskelister (3.13.0):** pr. person et valgfrit `onskeskyen`-link i `instans.json → sv` (valideres af `valider_link`: kun https), skrives som `onskeskyen: "…"` i `PEOPLE` i `config.js`, og vises af kortet `#onskKort` (kun dem med link). Ingen ny indstillingssti, og ingen Ønskeskyen-API (der er ingen åben).
+
+**Menuen «Sider ▾» (3.12.0):** forsiden har sin egen i bunden (`#siderListe` i `overblik.html`); alle andre sider med en overskrift henter `public_html/sidemenu.js`, der sætter menuen ind i `header` (eller `.bar-r1` på opsætningen). Ny side: tilføj punktet BÅDE i `sidemenu.js` og i forsidens liste (en prøve sammenligner), og henter scriptet i den nye side lige efter `gamlebrowser.js`.
+
+**Browsere (3.11.0):** `public_html/gamlebrowser.js` er et KLASSISK script i gammel JavaScript (prøven `browser_test.mjs` afviser pile, let/const, ?. m.m.), som alle sider henter FØR deres første modul-script, og som viser en rød besked i en browser, der ikke kan det, siderne kræver. Brug aldrig moderne syntaks i den fil. `browser.html` viser hele tjekket.
+
 ## 7b. Licens og tredjepart
 
 Projektet er udgivet under **MIT** (`LICENSE`, ophavsret «Familieoverblik contributors»). Der er ingen tredjepartskode kopieret ind; biblioteker, der installeres i billederne, og vilkårene hos de tjenester, løsningen kontakter, står i `THIRD_PARTY.md`. **Kopiér aldrig kode ind fra andre projekter uden at kontrollere licensen** og tilføje den i `THIRD_PARTY.md`. Tegneseriekortet (GoComics) er slået til som standard og viser billeder direkte fra GoComics: overvej, om det skal være valgfrit, hvis projektet anbefales bredt. `aula`-biblioteket nævner en bot-kontrol hos STIL (`security-check.stil.dk`) for logins uden for Danmark; den kan give en side uden formular, som vores tilføjelse ikke kan komme forbi.

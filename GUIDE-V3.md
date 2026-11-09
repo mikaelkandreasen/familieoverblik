@@ -229,6 +229,12 @@ Kortet «Tømning» vises på forsiden.
 
 **Kantine:** Kortet «Kantine» viser skolens menu, som kantinen sender som en besked hver uge. Aula-hentningen læser den. Kortet er skjult, til der er en menu. Står den ikke, så kør `python /app/Sync-Aula.py` og se efter linjen «kantine:» i udskriften, eller `python /app/Sync-Aula.py --kantineform`. `--kantinetekst` viser de nyeste kantine-breve linje for linje.
 
+**Ønskelister:** Under Opsætning → Familie og forbindelser har hver person et felt til linket til sin liste i Ønskeskyen. Åbn listen i Ønskeskyen, tryk på dele, kopiér linket (det skal starte med `https://`), og sæt det ind. På forsiden står så kortet «Ønskelister» med et link pr. person. Ingen link, ingen række.
+
+**Menuen «Sider ▾»** sidder nu på alle sider (øverst til højre), så du kan gå fra en side til en anden uden at gå via forsiden: Oversigt, Madplan, Opsætning, Gæste-wifi, Tilfældig vælger, Backlog, Tilføj billeder og Browser-tjek.
+
+**Browser-tjek:** Åbn `browser.html` (fx `http://adressen:8085/browser.html`) på en gammel enhed. Siden viser, om browseren kan det, siderne bruger, og hvad der mangler. En gammel browser får også en rød besked øverst på siderne i stedet for en blank side.
+
 **Gamle Android-enheder:** Siderne kræver cirka Chrome 85. Android 5.1 kan højst få Chrome 95 (og Android System WebView 95). Find versionen i `chrome://version`. Er den under 85, skal siderne bygges om (se BACKLOG.md).
 
 ## 10. Hvad der er afprøvet, og hvad der ikke er
@@ -241,6 +247,6 @@ Afprøvet her (uden Docker og uden PHP, som ikke findes i min sandkasse):
 - Compose, workflow og Dockerfiles som tekst: at de peger på filer, der findes, og passer sammen. 39 prøver.
 - Guiden, indstillingerne og sikkerhedsindstillingerne mod en simuleret server (personrækker, fødselsdage, nøgler, sikkerhedskopi, QR-kode og gendannelseskoder): 94 prøver.
 - **Backlog:** hele logikken som en rigtig proces (oprettelse, ændring, stemmer, kommentarer, sletning, import, eksport, grænser, samtidige skrivninger og beskyttelse mod regnearksformler): 34 prøver, og selve siden (filtre, sortering, at alt skrevet escapes, hele forløbet): 51 prøver.
-- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1208 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
+- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1283 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
 
 **Ikke afprøvet:** selve `docker build`, GitHub-workflowet, at Dockhand kan hente fra ghcr.io og starte stakken, **al PHP** (`login.php`, `totp.php`, `instans.php`, `sikkerhedskopi.php`, `backlog.php`) og Dockhands terminal til MitID-login. For PHP er kun den logik, der ligger i Python, afprøvet. Selve PHP-filerne er gennemlæst og kontrolleret som tekst (parenteser, at de bruger samme formler som den afprøvede model, at cookien kun sættes ét sted). **Test login med totrinsbekræftelse, før du stoler på det:** slå det til, åbn siden i et privat vindue, og prøv både PIN og kode, en forkert kode, en gendannelseskode og «husk enhed».

@@ -14,7 +14,7 @@ Sidst opdateret 7. november 2026. Baseret på version **3.5.1**.
 - **Flere elbiler** er kun til fremtiden og ligger under «Fremtid».
 - **Menuen** bliver, hvor den er (nederst på forsiden). Backlog-siden kommer ind i den som et almindeligt menupunkt.
 - **Google Translate** som oversættelsesmotor er droppet. Claude bliver ved.
-- **Renosyd** gælder kun Skanderborg. Tømningsdatoerne ligger i dag bag en login-portal (se punkt 2).
+- **Renosyd** dækker kun sit eget område. Tømningsdatoerne ligger i dag bag en login-portal (se punkt 2).
 - **Familien bruger både iPhone og Android.** Det afgør valget, hvis billedgalleriet tages op igen.
 
 ## Overblik
@@ -22,7 +22,7 @@ Sidst opdateret 7. november 2026. Baseret på version **3.5.1**.
 | # | Punkt | Pri. | Størrelse | Risiko | Status |
 |---|---|---|---|---|---|
 | 1 | Backlog-side i appen, nået fra menuen, hvor nye tiltag kan logges | **P1** | 1 til 1,5 dag | Lav | **Færdig i 3.3.0** (afventer din test) |
-| 2 | Tømningskalender fra Renosyd (Skanderborg) for en valgt adresse eller bruger | P2 | 0,5 dag til afklaring, så 1 til 4 dage | Høj, afhænger af loginet | Afklaring |
+| 2 | Tømningskalender fra renovationsselskabet (fx Renosyd) for en valgt adresse eller bruger | P2 | 0,5 dag til afklaring, så 1 til 4 dage | Høj, afhænger af loginet | Afklaring |
 | 3 | Åben visning med PIN kun til indstillinger og sikkerhedskopi | P3 | ca. 1 dag | Lav | Idé |
 | 4 | Vejledning og færdig opsætning til https (reverse proxy) | P3 | 1 dag | Lav | Idé |
 | 5 | Login pr. enhed (kan tilbagekaldes enkeltvis) i stedet for én fælles cookie | P4 | 1 til 2 dage | Lav | Idé |
@@ -54,12 +54,12 @@ Forslag til rækkefølge: **punkt 1 er bygget** (version 3.3.0; læg `backlog-st
 
 ---
 
-## 2. Tømningskalender fra Renosyd, Skanderborg (P2)
+## 2. Tømningskalender fra Renosyd (P2)
 
 **Mål:** Vis, hvornår skraldespandene tømmes, for en valgt adresse (og evt. flere: din egen og fx en slægtnings), og mind om det aftenen før.
 
 **Hvad jeg ved, og hvad jeg ikke ved**
-- **Renosyd dækker Skanderborg og Odder.** Du bruger kun Skanderborg.
+- **Renosyd dækker Skanderborg og Odder kommuner.** Familien bruger kun ét af områderne.
 - Du siger, at datoerne i dag ligger **bag en login-portal («Mit Renosyd»)**. Så findes der ingen åben adresse, vi bare kan spørge.
 - Det community-vedligeholdte projekt «affalddk» (Home Assistant) lister Skanderborg som understøttet via et **uofficielt** API. Jeg kunne **ikke** se, om det kræver login, eller hvordan det logger ind. Det skal undersøges.
 - **Alt afhænger af, hvordan portalens login virker.** Er det bruger og adgangskode, kan en tjeneste logge ind for dig (adgangskoden gemmes i `private/instans.json`, og portalen kan ændre sig). Er det **MitID**, kan det **ikke** automatiseres.
@@ -192,3 +192,23 @@ Familiens egne punkter i appens backlog (de 12, I selv har lagt ind), og hvad de
 
 - **Browser-tjek (`browser.html`)** og en venlig besked på siderne, hvis browseren er for gammel («Din browser er for gammel»), i stedet for en blank side. Ca. et par timer.
 - **Støtte under Chrome 85** (ældre Android-enheder, fx 4.4): oversættelse af `?.`, `??` og `??=` samt reserver til `gap` i fleksible rækker (2 til 3 dage). Under Chrome 61 mangler `<script type="module">`, og så skal alle sider bygges som almindeligt, ældre JavaScript med reserver til `grid` (1 til 2 uger, frarådes). Se spørgsmålet om Android 5.1.
+
+
+## Estimater (8. november 2026)
+
+Seneste backlog fra appen: 19 punkter. Færdige 12, droppede 4, åbne 3.
+
+| Punkt | Status | Estimat | Kan laves nu? |
+|---|---|---|---|
+| #12 Rotering af billeder | Bygget i 3.5.0 (knapper på hver miniature) | 0, kun status | Ja: sæt til Færdig |
+| #19 Aula kantine menu | Bygget i 3.7.0, gjort tolerant i 3.10.0 | 0,5 til 1 time, når jeg ser kantinens tekst (`--kantinetekst`) | Nej: mangler data |
+| #5 Login pr. enhed | Idé (P4) | 2 til 3 dage plus test på en rigtig server | Ikke uden risiko (se nedenfor) |
+| #11 Kilder på kalender | Står som Droppet, men bygget i 3.4.0 («Navn og kilde») | 0 | Status kan sættes til Færdig |
+| Browser-tjek og besked i gamle browsere | Bygget i 3.11.0 | 3 timer | Færdig |
+| Støtte til browsere under Chrome 85 | Idé | 2 til 3 dage (oversætte ?., ??, ??= og reserver til gap); under Chrome 61 1 til 2 uger | Kun hvis en enhed ikke kan opdateres |
+| Renosyd: automatisk hentning | Idé | 1 til 2 dage, hvis der findes et fast kalender-link; ellers dækker PDF-importen | Nej: mangler et link |
+| Billedgalleri fra skyen (Immich) | Droppet | 2 til 3 dage | Nej |
+| Flere elbiler | Droppet | 0,5 til 3 dage pr. mærke | Nej |
+| Aula-login i browseren | Droppet | usikkert | Nej |
+
+**Hvorfor «Login pr. enhed» ikke er sikkert at lave nu:** I dag er adgangen én fælles cookie, som både PHP og webserverens regler (`.htaccess`) sammenligner med en fast værdi. En cookie pr. enhed kan `.htaccess` ikke kontrollere (den kan ikke slå op i en liste), så alle sider skulle serveres gennem PHP, og en fejl dér låser hele familien ude, uden at jeg kan prøve det her. «Log alle enheder ud» (Opsætning → Login og sikkerhed) dækker en tabt tablet i dag, og alle skal så logge ind igen.
