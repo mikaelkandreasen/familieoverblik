@@ -7,6 +7,7 @@
  *   POST billeder.php?action=gem              {"aktiv":true,"inaktivMin":5,"sekunder":15,…}
  *   POST billeder.php?action=upload           billedet som kroppen (image/jpeg, image/png eller image/webp)
  *   POST billeder.php?action=slet             {"id":"…"}
+ *   POST billeder.php?action=drej             {"id":"…","grader":0|90|180|270}   (gemmer en drejning pr. billede; billedet selv ændres ikke)
  *
  * ── Hvor billederne ligger ─────────────────────────────────────────────
  * DATA_DIR/billeder/ (ugeplan-data/billeder). Mappen ligger uden for webroden;
@@ -86,6 +87,26 @@ function bi_settings(): array
     return $s;
 }
 
+/** Hele indstillingsfilen, så andre nøgler end indstillingerne (fx drejning) bevares, når den skrives igen. @return array<string,mixed> */
+function bi_fil(): array
+{
+    if (!is_file(BI_FILE)) return [];
+    $d = json_decode((string)@file_get_contents(BI_FILE), true);
+    return is_array($d) ? $d : [];
+}
+
+/** Gemte drejninger: filnavn → 90, 180 eller 270 grader med uret. Kun gyldige filnavne og værdier; alt andet ignoreres. @return array<string,int> */
+function bi_drejning(): array
+{
+    $d = bi_fil()['drejning'] ?? [];
+    $ud = [];
+    if (!is_array($d)) return $ud;
+    foreach ($d as $id => $g) {
+        if (is_string($id) && preg_match(BI_ID_RE, $id) === 1 && in_array($g, [90, 180, 270], true)) $ud[$id] = $g;
+    }
+    return $ud;
+}
+
 function bi_int(mixed $v, string $navn, int $min, int $max): int
 {
     if (is_string($v)) $v = str_replace(',', '.', trim($v));
@@ -121,15 +142,16 @@ function bi_id(mixed $v): string
     return $s;
 }
 
-/** @return list<array{id:string, tid:int, bytes:int}>  nyeste først */
+/** @return list<array{id:string, tid:int, bytes:int, drejning:int}>  nyeste først */
 function bi_filer(): array
 {
     $ud = [];
+    $dr = bi_drejning();
     foreach (@scandir(BI_DIR) ?: [] as $f) {
         if (preg_match(BI_ID_RE, $f) !== 1) continue;
         $p = BI_DIR . '/' . $f;
         if (!is_file($p) || is_link($p)) continue;
-        $ud[] = ['id' => $f, 'tid' => (int)@filemtime($p), 'bytes' => (int)@filesize($p)];
+        $ud[] = ['id' => $f, 'tid' => (int)@filemtime($p), 'bytes' => (int)@filesize($p), 'drejning' => $dr[$f] ?? 0];
     }
     usort($ud, fn($a, $b) => $b['tid'] <=> $a['tid'] ?: strcmp($a['id'], $b['id']));
     return $ud;
@@ -167,7 +189,7 @@ try {
                 'ur'              => (bool)($b['ur'] ?? false),
                 'startVedAabning' => (bool)($b['startVedAabning'] ?? false),
             ];
-            try { feeds_write_json(BI_FILE, $ny + ['updatedAt' => date('c')]); }
+            try { feeds_write_json(BI_FILE, $ny + ['drejning' => bi_drejning(), 'updatedAt' => date('c')]); }
             catch (Throwable $e) { bi_fail(500, $e->getMessage()); }
             bi_out(['indstillinger' => bi_settings()]);
         }
@@ -192,7 +214,34 @@ try {
             $id = bi_id(is_array($b) ? ($b['id'] ?? '') : '');
             $p = BI_DIR . '/' . $id;
             if (is_file($p) && !is_link($p) && !@unlink($p)) bi_fail(500, 'Kunne ikke slette billedet.');
+            $dr = bi_drejning();
+            if (isset($dr[$id])) {                       // drejningen hører til billedet og slettes med det
+                unset($dr[$id]);
+                $fil = bi_fil();
+                $fil['drejning'] = $dr;
+                $fil['updatedAt'] = date('c');
+                try { feeds_write_json(BI_FILE, $fil); } catch (Throwable $e) { /* billedet er slettet; en rest i indstillingerne er harmløs */ }
+            }
             bi_out(['ok' => true, 'id' => $id]);
+        }
+
+        case 'drej': {
+            $raw = file_get_contents('php://input');
+            $b = ($raw !== false && $raw !== '' && strlen($raw) < 2000) ? json_decode($raw, true) : null;
+            if (!is_array($b)) bi_fail(400, 'kroppen skal være JSON');
+            $id = bi_id($b['id'] ?? '');
+            $g = $b['grader'] ?? null;
+            if (!in_array($g, [0, 90, 180, 270], true)) bi_fail(400, 'grader skal være 0, 90, 180 eller 270');
+            $p = BI_DIR . '/' . $id;
+            if (!is_file($p) || is_link($p)) bi_fail(404, 'billedet findes ikke');
+            $dr = bi_drejning();
+            if ($g === 0) unset($dr[$id]); else $dr[$id] = $g;
+            $fil = bi_fil();
+            $fil['drejning'] = $dr;
+            $fil['updatedAt'] = date('c');
+            try { feeds_write_json(BI_FILE, $fil); }
+            catch (Throwable $e) { bi_fail(500, $e->getMessage()); }
+            bi_out(['ok' => true, 'id' => $id, 'drejning' => $g]);
         }
     }
     bi_fail(400, 'ukendt handling');

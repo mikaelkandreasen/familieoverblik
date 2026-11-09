@@ -17,12 +17,13 @@ import html as _html
 import re
 from datetime import datetime
 
-EMNE_NOEGLER = ("subject", "title", "thread_subject", "headline", "name")
-TEKST_NOEGLER = ("text", "content", "content_html", "body", "html", "message", "preview", "description", "raw_text", "plain_text")
-DATO_NOEGLER = ("send_datetime", "sent_datetime", "sent_at", "sent", "created", "created_at", "date", "timestamp", "start_datetime", "last_message_date", "latest_message_date", "updated_at")
+EMNE_NOEGLER = ("subject", "title", "thread_subject", "headline", "name", "post_title", "heading")
+TEKST_NOEGLER = ("text", "content", "content_html", "body", "html", "message", "preview", "description", "raw_text", "plain_text", "text_html", "body_html", "html_content", "content_text")
+DATO_NOEGLER = ("send_datetime", "sent_datetime", "sent_at", "sent", "created", "created_at", "createdAt", "date", "timestamp", "published", "published_at", "publish_date", "start_datetime", "last_message_date", "latest_message_date", "updated_at", "edited_at", "modified")
 KANTINE = re.compile(r"^\W*kantine[nr]?\b", re.I)
 MENU = re.compile(r"^\W*(?:ugens\s+|dagens\s+|uge)?menu(?:en)?(?:\s+(?:for\s+)?uge\s*\d{1,2})?\s*(?::\s*(?P<rest>.*))?$", re.I)
-SLUT = re.compile(r"^(mvh|med venlig|venlig hilsen|hilsen|kærlig hilsen|de bedste|god appetit|bemærk|obs\b|husk\b|p\.?s\b)", re.I)
+SLUT = re.compile(r"^(mvh|vh\b|med venlig|venlig hilsen|hilsen|kærlig hilsen|de bedste|god appetit|bemærk|o\.?\s?b\.?\s?s\b|husk\b|p\.?s\b)", re.I)
+LANG_LINJE = 90                                                # en ret er kort; en længere linje er brødtekst («O.B.S. Husk at …»), og så er menuen slut
 DAGE = ("mandag", "tirsdag", "onsdag", "torsdag", "fredag")
 DAGMAERKE = re.compile(r"^\W*(?P<dag>man(?:dag)?|tir(?:s(?:dag)?)?|ons(?:dag)?|tor(?:s(?:dag)?)?|fre(?:dag)?)\b\.?\s*[:\-–—]?\s*(?P<rest>.*)$", re.I)
 KUGLE = re.compile(r"^\s*(?:[-–—•*·▪●]+|\d+[.)])\s+")
@@ -68,7 +69,7 @@ def parse_menu(tekst):
     while i < len(efter):
         l = efter[i]
         i += 1
-        if SLUT.match(l) or (l.endswith(":") and len(l) <= 40 and not DAGMAERKE.match(l)):
+        if SLUT.match(l) or len(l) > LANG_LINJE or (l.endswith(":") and len(l) <= 40 and not DAGMAERKE.match(l)):
             if start == -1:
                 continue
             break
@@ -119,6 +120,10 @@ def _poster(x, arvet_emne="", arvet_dato=None):
     emne = next((str(x[k]) for k in EMNE_NOEGLER if isinstance(x.get(k), str) and x[k].strip()), "") or arvet_emne
     dato = next((d for d in (_dato(x[k]) for k in DATO_NOEGLER if isinstance(x.get(k), str)) if d), None) or arvet_dato
     tekster = [x[k] for k in TEKST_NOEGLER if isinstance(x.get(k), str) and x[k].strip()]
+    if not tekster:                                              # ukendt feltnavn (fx i et opslag): den længste tekst i posten er brødteksten
+        lange = sorted((v for k, v in x.items() if isinstance(v, str) and len(v.strip()) >= 20 and k not in EMNE_NOEGLER and k not in DATO_NOEGLER and not re.match(r"^(https?:|[0-9a-f-]{20,}$)", v.strip())), key=len, reverse=True)
+        if lange:
+            tekster = [lange[0]]
     # felter, der er en liste/ordbog (fx text: {"html": …}), lader vi rekursionen om
     if tekster:
         yield {"emne": emne, "tekst": "\n".join(tekster), "dato": dato}
@@ -127,11 +132,10 @@ def _poster(x, arvet_emne="", arvet_dato=None):
             yield from _poster(v, emne, dato)
 
 
-def find_kantine(svar):
-    """Den nyeste besked, der handler om kantinen og har en menu: {"uge": 46 eller None, "dage": {"1": …}, "dato": datetime eller None}. Ellers None."""
+def _kandidater(svar):
     if isinstance(svar, dict) and isinstance(svar.get("items"), list):
         svar = svar["items"]
-    kandidater = []
+    ud = []
     for p in _poster(svar):
         forste = (_linjer(p["tekst"]) or [""])[0]
         if not (KANTINE.match(p["emne"]) or KANTINE.match(forste)):
@@ -140,23 +144,43 @@ def find_kantine(svar):
         if len(dage) < 3:
             continue
         m = re.search(r"\buge\s*(\d{1,2})\b", p["emne"] + " " + forste, re.I)
-        kandidater.append({"uge": int(m.group(1)) if m and 1 <= int(m.group(1)) <= 53 else None, "dage": dage, "dato": p["dato"]})
+        ud.append({"uge": int(m.group(1)) if m and 1 <= int(m.group(1)) <= 53 else None, "dage": dage, "dato": p["dato"]})
+    return ud
+
+
+def find_kantiner(*svar):
+    """Alle ugemenuer i svarene (opslag og beskeder), nyeste først pr. uge: en liste af {"uge", "dage", "dato"}, sorteret efter ugenummer (uden ugenummer sidst). Er en menu rettet, vinder den nyeste udgave af samme uge."""
+    pr = {}
+    for sv in svar:
+        for k in _kandidater(sv):
+            n = pr.get(k["uge"])
+            if n is None or (k["dato"].timestamp() if k["dato"] else 0) >= (n["dato"].timestamp() if n["dato"] else 0):
+                pr[k["uge"]] = k
+    return sorted(pr.values(), key=lambda k: (k["uge"] is None, k["uge"] or 0))
+
+
+def find_kantine(svar):
+    """Den nyeste besked, der handler om kantinen og har en menu: {"uge": 46 eller None, "dage": {"1": …}, "dato": datetime eller None}. Ellers None."""
+    kandidater = _kandidater(svar)
     if not kandidater:
         return None
     return max(kandidater, key=lambda k: (k["dato"].timestamp() if k["dato"] else 0, k["uge"] or 0))
 
 
-def tekstvisning(svar, maks=3):
-    """De nyeste kantine-breve linje for linje (emne, dato og de første 25 linjer, hver højst 90 tegn), og hvordan menuen blev læst. Til at se, hvorfor en menu ikke findes. Viser ikke afsenderen."""
+def tekstvisning(svar, maks=3, navn="svar"):
+    """De nyeste kantine-breve eller -opslag linje for linje (emne, dato og de første 25 linjer, hver højst 90 tegn), og hvordan menuen blev læst. Viser ikke afsenderen. Er svaret en liste af (navn, svar), vises hver kilde for sig."""
+    if isinstance(svar, list) and svar and all(isinstance(x, tuple) and len(x) == 2 for x in svar):
+        return "\n\n".join(tekstvisning(sv, maks, n) for n, sv in svar)
     if isinstance(svar, dict) and isinstance(svar.get("items"), list):
         svar = svar["items"]
+    poster = list(_poster(svar))
     kandidater = []
-    for p in _poster(svar):
+    for p in poster:
         lin = _linjer(p["tekst"])
         if KANTINE.match(p["emne"]) or KANTINE.match(lin[0] if lin else ""):
             kandidater.append((p["dato"].timestamp() if p["dato"] else 0, p, lin))
     kandidater.sort(key=lambda x: -x[0])
-    ud = [f"{len(kandidater)} breve handler om kantinen. De {min(maks, len(kandidater))} nyeste:"]
+    ud = [f"=== {navn}: {len(poster)} poster med tekst, {len(kandidater)} handler om kantinen, {sum(1 for _, p, _ in kandidater if p['dato'] is None)} af dem uden læsbar dato. De {min(maks, len(kandidater))} nyeste: ==="]
     for nr, (_, p, lin) in enumerate(kandidater[:maks], 1):
         retter = parse_menu(p["tekst"])
         mlinje = next((i for i, l in enumerate(lin) if MENU.match(l)), None)

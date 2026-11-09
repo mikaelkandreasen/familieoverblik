@@ -642,6 +642,13 @@ textarea.st-in{font-size:14px;resize:vertical}
       <p class="f-note" id="toInfo"></p>
     </div>
 
+    <h2 class="f-over">Denne enhed</h2>
+    <p class="f-note">Indstillinger, der kun gælder den enhed og den browser, du sidder ved. De gemmes i browseren og ikke på serveren, så hver enhed har sit eget valg.</p>
+    <div id="enhedSek">
+      <label class="check"><input type="checkbox" id="enhedFuld"> Gå automatisk i fuld skærm på forsiden</label>
+      <p class="f-note" id="enhedFuldNote"></p>
+    </div>
+
     <h2 class="f-over">Sprog</h2>
     <p class="f-note">Vælg sprog for hele løsningen. Hver enhed husker sit eget valg (her, eller under <i>Sider ▾</i> på forsiden). <b>Standardsproget</b> bruges på enheder, der ikke har valgt noget. Alle sprog ligger i <b>én fil</b>, så de er nemme at opdatere og udvide. <b>Oversæt siden</b> maskinoversætter resten (skolebreve, noter, aftaler, jokes). Browserens egen oversætter (Chrome og Edge på computer) kræver https, så over almindelig http i dit lokale net sendes teksten via serveren til Claude (Anthropic).</p>
     <div id="sprogSek" hidden>
@@ -1102,17 +1109,13 @@ function remKey(day, child, text){
 // Skaermen skal kunne staa inde for det, den viser. Kilden er ikke gemt som
 // et felt, men kan udledes: kalenderposter baerer feedets ikon og hvem de
 // hoerer til, og huskepunkter baerer barnets navn.
-// ⚽ er DBU KampKlar, 🤾 er Holdsport, intet ikon er en privat Google-kalender.
+// Kilden til en kalenderpost: egen tekst, ellers tjenesten i linket, ellers personens kalender. Ikonet bruges aldrig (samme regel som overblik.html).
 function kalenderKilde(x){
-  // Nyere poster bærer selve kilden (x.src, sat af hent.php). Ikonet er kun
-  // en pejling for ældre poster uden — et ⚽ kan lige så godt være FotMob.
-  const s = x.src || "";
-  if (s === "DBU")       return "DBU KampKlar";
-  if (s === "Holdsport") return "Holdsport";
-  if (s && !["Google Kalender","Outlook","iCloud"].includes(s)) return s;
-  const i = s ? "" : (x.icon || "");
-  if (i.includes("⚽")) return "DBU KampKlar";
-  if (i.includes("🤾")) return "Holdsport";
+  const egen = typeof x.kilde === "string" ? x.kilde.trim() : "";
+  if (egen) return egen;
+  const s = typeof x.src === "string" ? x.src.trim() : "";
+  if (s === "DBU") return "DBU KampKlar";
+  if (s && !["Google Kalender", "Outlook", "iCloud"].includes(s)) return s;
   const navn = whoOf(x.who)?.name;
   return navn && navn !== "Alle" ? navn + "s kalender" : "Kalender";
 }
@@ -1929,7 +1932,8 @@ $("fdForm").addEventListener("submit", async e => {
 // ny kalender staar i ugeskemaet, naar dialogen lukkes — ikke om en time.
 const kDlg = $("kDlg");
 const KAL = "kalendere.php";
-const KAL_IKONER = ["⚽","🤾","🤾‍♂️","🏊","🏀","🏐","🎾","🏸","🥋","🤸","🚴","⛸️","🏇","🎸","🎹","🎭","🎨","📅"];
+// Ikonerne, man kan vælge til en kalender. 🏑 er floorball (der findes ingen floorball-emoji; landhockey er den nærmeste), 🏊 er svømning. Ridning, kampsport og skøjter er fjernet (3.14.1): en kalender, der allerede har et af dem, beholder det.
+const KAL_IKONER = ["⚽","🏑","🤾","🤾‍♂️","🏊","🏀","🏐","🎾","🏸","🤸","🚴","🎸","🎹","🎭","🎨","📅"];
 // Hurtigvalg til "Tilføj kalender". Et valg udfylder navn, ikon og "Alle" —
 // linket skal du stadig selv hente, for ingen af kilderne har et fast link,
 // jeg kan gætte. Tilføj egne hold ved at kopiere en linje.
@@ -2884,7 +2888,7 @@ function biTegnGrid(){
     ? `${n} billede${n === 1 ? "" : "r"} i pauseskærmen${n > BI_VIS_MAX ? ` (de ${BI_VIS_MAX} nyeste vises her)` : ""}. Højst ${bi.max}.`
     : "Der er ingen billeder endnu. Tilføj nogle herover, så starter pauseskærmen.";
   $("biGrid").innerHTML = bi.filer.slice(0, BI_VIS_MAX).map(f =>
-    `<div class="bi-tile"><img loading="lazy" alt="" src="${BI}?action=hent&amp;id=${encodeURIComponent(f.id)}">
+    `<div class="bi-tile"><img loading="lazy" alt="" src="${BI}?action=hent&amp;id=${encodeURIComponent(f.id)}"${[90, 180, 270].includes(f.drejning) ? ` style="transform:rotate(${f.drejning}deg)" title="Drejet ${f.drejning}° på pauseskærmen"` : ""}>
        <button type="button" data-bi-slet="${esc(f.id)}" aria-label="Slet billedet">&times;</button>
        <div class="bi-drej"><button type="button" data-bi-drej="270" data-bi-id="${esc(f.id)}" aria-label="Drej billedet mod uret">&#8630;</button><button type="button" data-bi-drej="90" data-bi-id="${esc(f.id)}" aria-label="Drej billedet med uret">&#8631;</button></div></div>`).join("");
 }
@@ -4042,7 +4046,7 @@ const OPS_GRUPPER = [
   ["Kort på oversigten", ["Kalendere", "Vejr", "Elpris", "Tømning", "Dagens joke", "Tegneserie", "Indkøbsseddel", "Pauseskærm"]],
   ["Tjenester", ["Bil (Hyundai Ioniq 6)", "Strava"]],
   ["Sider", ["Tilfældig vælger"]],
-  ["System", ["Login og sikkerhed", "Sikkerhedskopi", "Om"]],
+  ["System", ["Denne enhed", "Login og sikkerhed", "Sikkerhedskopi", "Om"]],
 ];
 const OPS_NOEGLE = "familieoverblik-ops-side";
 
@@ -4132,6 +4136,34 @@ if (!API_KEY || String(API_KEY).includes("UDFYLD")){
     })
     .catch(err => { $("boot").textContent = `Kunne ikke hente data: ${err.message}`; });
 }
+
+// ── Denne enhed ──
+// Automatisk fuld skærm pr. enhed. Samme nøgle som forsiden (FS_NOEGLE i overblik.html): står den på «1», går forsiden i fuld skærm ved første tryk efter, at siden er åbnet (en browser kræver et tryk).
+const ENHED_FS_NOEGLE = "familieoverblik-fuldskaerm";
+const enhedFuldLaes = () => { try { return localStorage.getItem(ENHED_FS_NOEGLE) === "1"; } catch { return false; } };
+const enhedFuldSkriv = til => { try { localStorage.setItem(ENHED_FS_NOEGLE, til ? "1" : "0"); return localStorage.getItem(ENHED_FS_NOEGLE) === (til ? "1" : "0"); } catch { return false; } };
+const enhedFuldMulig = () => { const h = document.documentElement; return !!(h && (h.requestFullscreen || h.webkitRequestFullscreen)); };
+/** Sætter afkrydsningsfeltet til: d = { $, laes, skriv, mulig }. Kan browseren ikke gå i fuld skærm (fx en iPhone), er feltet slået fra og forklaret; kan valget ikke gemmes (privat fane), rulles det tilbage. */
+function enhedInit(d){
+  const { $ } = d, felt = $("enhedFuld"), note = $("enhedFuldNote");
+  const forklar = () => {
+    note.textContent = !d.mulig()
+      ? "Denne browser kan ikke gå i fuld skærm (det kan en iPhone ikke på en side). Tilføj i stedet siden til hjemmeskærmen, så åbner den uden browserens rammer."
+      : felt.checked
+        ? "Slået til: første tryk et vilkårligt sted på forsiden går i fuld skærm. En browser kræver et tryk, så det sker ikke helt af sig selv. «Afslut fuld skærm» på forsiden slår det fra igen."
+        : "Slået fra: forsiden går kun i fuld skærm, når du trykker på knappen «Fuld skærm» nederst.";
+  };
+  felt.checked = !!d.laes();
+  felt.disabled = !d.mulig();
+  forklar();
+  felt.addEventListener("change", () => {
+    if (!d.skriv(felt.checked)){ felt.checked = !felt.checked; note.textContent = "Valget kunne ikke gemmes i browseren (en privat fane?)."; return; }
+    forklar();
+  });
+  return { forklar };
+}
+// ── Slut: denne enhed ──
+enhedInit({ $, laes: enhedFuldLaes, skriv: enhedFuldSkriv, mulig: enhedFuldMulig });
 </script>
 </body>
 </html>

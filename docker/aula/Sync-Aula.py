@@ -167,31 +167,60 @@ def tjek_ugeplan(ugeplan):
     return ugeplan
 
 
+KANTINE_KILDER = (
+    ("opslag", ("posts", "--limit", "40")),                 # kantinens ugemenu er et OPSLAG («Delt med hele skolen»), ikke en besked
+    ("opslag (uden grænse)", ("posts",)),
+    ("beskeder, søgning", ("messages", "--search", "Kantine")),
+    ("beskeder", ("messages", "--limit", "40")),
+)
+
+
 def hent_kantine():
-    """Kantinens ugemenu: den nyeste besked, hvis emne (eller første linje) starter med «Kantine» og har en liste efter «Menu:». Returnerer {"uge", "dage", "dato"} eller None. Fejl er en advarsel, aldrig et stop."""
-    for args in (("messages", "--search", "Kantine"), ("messages", "--limit", "40")):
-        try:
-            k = kantine.find_kantine(aula_json(*args, delvist=True))
-        except Exception as exc:
-            log(f"advarsel: kantinens menu kunne ikke hentes med «aula {' '.join(args)}» ({exc})")
+    """Kantinens ugemenuer: alle uger, der findes i opslag og beskeder (emnet eller første linje starter med «Kantine» og har en liste efter «Menu:»), nyeste udgave pr. uge. Returnerer en liste af {"uge", "dage", "dato"}.
+    Hver kilde prøves for sig, og en fejl i en af dem er en advarsel, aldrig et stop. «opslag (uden grænse)» prøves kun, hvis kommandoen med --limit fejlede."""
+    svar, opslag_ok = [], False
+    for navn, args in KANTINE_KILDER:
+        if navn == "opslag (uden grænse)" and opslag_ok:
             continue
-        if k:
-            return k
-    log("kantine: ingen besked med en menu fundet. Kør Sync-Aula.py --kantineform for at se svarets opbygning (uden indhold).")
-    return None
+        try:
+            sv = aula_json(*args, delvist=True)
+        except Exception as exc:
+            log(f"advarsel: kantinens menu kunne ikke hentes fra {navn} («aula {' '.join(args)}»): {exc}")
+            continue
+        if navn.startswith("opslag"):
+            opslag_ok = True
+        svar.append(sv)
+    liste = kantine.find_kantiner(*svar)
+    if not liste:
+        log("kantine: ingen opslag eller beskeder med en menu fundet. Kør Sync-Aula.py --kantinetekst for at se, hvad der står (uden afsender).")
+    return liste
+
+
+def kantineform() -> int:
+    """Viser opbygningen af det, aula svarer (opslag og beskeder), UDEN indhold: feltnavne, antal, og om en kantine-menu blev fundet."""
+    for navn, args in KANTINE_KILDER[:1] + KANTINE_KILDER[2:]:
+        print(f"== {navn}: aula {' '.join(args)}")
+        try:
+            print(kantine.opbygning(aula_json(*args, delvist=True)))
+        except Exception as exc:
+            print(f"fejlede: {exc}")
+    return 0
 
 
 def kantinetekst() -> int:
-    """Viser de nyeste kantine-breve linje for linje, så man kan se, hvorfor menuen ikke findes (kantinens tekst står der, ikke afsenderen)."""
-    try:
-        print(kantine.tekstvisning(aula_json("messages", "--search", "Kantine", delvist=True)))
-    except Exception as exc:
-        print(f"fejlede: {exc}")
+    """Viser de nyeste kantine-opslag og -beskeder linje for linje (kantinens tekst; ikke afsenderen), så man kan se, hvorfor en menu ikke findes."""
+    kilder = []
+    for navn, args in KANTINE_KILDER[:1] + KANTINE_KILDER[2:]:
+        try:
+            kilder.append((navn, aula_json(*args, delvist=True)))
+        except Exception as exc:
+            print(f"=== {navn}: fejlede: {exc}")
+    print(kantine.tekstvisning(kilder))
     return 0
 
 
 def placer_kantine(weeks, kant) -> str:
-    """Lægger menuen på den hentede uge, den handler om (ugenummeret står i beskedens emne). Returnerer en logtekst."""
+    """Lægger menuen på den hentede uge, den handler om (ugenummeret står i emnet). Returnerer en logtekst."""
     uge = kant.get("uge")
     mal = next((w for w in weeks if w["monday"].isocalendar().week == uge), None) if uge else None
     if mal is None:
@@ -199,17 +228,6 @@ def placer_kantine(weeks, kant) -> str:
         return f"kantine: menuen er for uge {uge or 'ukendt (ugenummeret kunne ikke læses)'}, og der hentes kun uge {hentet}. Gemmes ikke."
     mal["kantine"] = {"dage": kant["dage"]}
     return f"kantine: menuen for uge {uge} ({len(kant['dage'])} retter) gemmes på {mal['id']}"
-
-
-def kantineform() -> int:
-    """Viser opbygningen af det, aula messages svarer, UDEN indhold (feltnavne, antal, og om en kantine-besked blev fundet)."""
-    for args in (("messages", "--search", "Kantine"), ("messages", "--limit", "40")):
-        print("== aula " + " ".join(args))
-        try:
-            print(kantine.opbygning(aula_json(*args, delvist=True)))
-        except Exception as exc:
-            print(f"fejlede: {exc}")
-    return 0
 
 
 def brevform() -> int:
@@ -1064,8 +1082,7 @@ def main() -> int:
             log(f"{week_id}: {fra_breve} lektioner kommer fra skemaet i ugebrevet (Aulas kalender havde dem ikke for alle børn)")
 
     # Kantinens menu kommer i en besked, ikke i kalenderen: hent den, og læg den på den uge, den handler om (ugenummeret står i emnet).
-    kant = hent_kantine()
-    if kant:
+    for kant in hent_kantine():
         log(placer_kantine(weeks, kant))
 
     # Vigtige datoer staar uden for ugerne og hentes derfor for sig. Fejler

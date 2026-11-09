@@ -232,6 +232,16 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .ps-lag{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease}
 .ps-lag.hele{object-fit:contain}
 .ps-lag.synlig{opacity:1}
+/* Drejede billeder: ved 90 og 270 grader byttes bredde og højde, så billedet fylder skærmen i den nye retning (vh før dvh, som ældre Chrome ikke kender) */
+.ps-lag.d90,.ps-lag.d270{inset:auto;left:50%;top:50%;width:100vh;width:100dvh;height:100vw}
+.ps-lag.d90{transform:translate(-50%,-50%) rotate(90deg)}
+.ps-lag.d270{transform:translate(-50%,-50%) rotate(270deg)}
+.ps-lag.d180{transform:rotate(180deg)}
+.ps-knapper{position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:10px;cursor:auto;opacity:.4;transition:opacity .2s}
+.ps-knapper:hover,.ps-knapper:focus-within{opacity:1}
+.ps-knapper button{min-width:44px;min-height:44px;border:none;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.ps-drejinfo{max-width:min(60vw,360px);padding:6px 10px;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:13px}
+.ps-drejinfo:empty{display:none}
 .ps-ur{position:absolute;left:32px;bottom:28px;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.75)}
 .ps-ur[hidden]{display:none}
 .ps-tid{font-size:min(14vw,110px);font-weight:300;line-height:1}
@@ -338,9 +348,9 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .ramme-top{display:flex;align-items:center;gap:12px;padding:6px 10px;border-bottom:1px solid var(--rule);background:var(--card)}
 .ramme-top span{font-size:13px;color:var(--ink-soft);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ramme-lag iframe{flex:1;width:100%;border:0;background:var(--paper)}
-.dag-valg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:2px 0 12px}
-.dag-valg button{min-height:38px;padding:0 2px;font:inherit;font-size:12px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink-soft);cursor:pointer;overflow-wrap:anywhere}
-.dag-valg button[aria-pressed=true]{background:var(--tint-blue);color:var(--ink);font-weight:700;border-color:var(--ink-soft)}
+.dag-valg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;align-items:center;margin:2px 0 12px}
+.dag-valg button{min-height:30px;padding:0 2px;font:inherit;font-size:11px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink-soft);cursor:pointer;overflow-wrap:anywhere}
+.dag-valg button[aria-pressed=true]{min-height:38px;font-size:12px;background:var(--tint-blue);color:var(--ink);font-weight:700;border-color:var(--ink-soft)}
 .dag-dato{margin:-4px 0 8px;font-size:13px;color:var(--ink-soft)}
 .today.anden-dag{outline:2px dashed var(--ink-faint);outline-offset:6px;border-radius:var(--radius)}
 .onsk-r{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 0;border-top:1px solid var(--rule);color:inherit;text-decoration:none;font-size:14px}
@@ -1281,6 +1291,12 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
   <img class="ps-lag" id="psB" alt="">
   <div class="ps-ur" id="psUr" hidden><div class="ps-tid" id="psTid"></div><div class="ps-dato" id="psDato"></div></div>
   <div class="ps-hint">Tryk for at gå til oversigten</div>
+  <!-- Drej billedet, der vises nu (gemmes pr. billede, og billedfilen ændres ikke). Et tryk herpå lukker ikke pauseskærmen. -->
+  <div class="ps-knapper" id="psKnapper">
+    <button type="button" id="psVenstre" aria-label="Drej billedet mod uret">&#8630;</button>
+    <button type="button" id="psHoejre" aria-label="Drej billedet med uret">&#8631;</button>
+    <span class="ps-drejinfo" id="psDrejInfo" role="status"></span>
+  </div>
 </div>
 
 <dialog class="tg-dlg" id="tgHistDlg" aria-labelledby="tgHistTitel">
@@ -1603,17 +1619,16 @@ function gruppeAf(child, wid){
   return l && l.group ? l.group : "";
 }
 
-// ⚽ er DBU KampKlar og 🤾 er Holdsport — ikonet saettes per feed i
-// config.php. Ingen ikon betyder en privat Google-kalender, og saa er den
-// personens egen.
+// Kilden til en kalenderpost, i denne rækkefølge: 1) teksten, man selv har skrevet i kalenderdialogen («Navn og kilde»), 2) tjenesten, hent.php har set i linket (x.src: «DBU» vises som
+// «DBU KampKlar»; Google, Outlook og iCloud siger ikke noget og springes over), 3) personens egen kalender. IKONET BRUGES ALDRIG: det er et udseende, ikke en kilde (før 3.14.1 blev et ⚽ til «DBU KampKlar»).
 function kalenderKilde(x){
-  const egen = typeof x.kilde === "string" ? x.kilde.trim() : "";        // teksten, man selv har skrevet i kalenderdialogen (Opsætning → Kalendere → Navn)
+  const egen = typeof x.kilde === "string" ? x.kilde.trim() : "";
   if (egen) return egen;
-  const i = x.icon || "";
-  if (i.includes("⚽")) return "DBU KampKlar";
-  if (i.includes("🤾")) return "Holdsport";
+  const s = typeof x.src === "string" ? x.src.trim() : "";
+  if (s === "DBU") return "DBU KampKlar";
+  if (s && !["Google Kalender", "Outlook", "iCloud"].includes(s)) return s;
   const navn = whoOf(x.who)?.name;
-  return navn ? `${navn}s kalender` : "Kalender";
+  return navn && navn !== "Alle" ? navn + "s kalender" : "Kalender";
 }
 
 function kildeAf(x, slags){
@@ -2546,14 +2561,14 @@ function leisureOn(d){
       && f.start === a.time && String(f.who || "") === String(a.who || ""));
     if (i === -1) return { time:a.time, text:a.text, who:a.who, icon:"", place:"" };
     brugt.add(i);
-    return { time:a.time, text:a.text, who:a.who, icon:feed[i].icon, place:feed[i].location, kilde:feed[i].kilde };
+    return { time:a.time, text:a.text, who:a.who, icon:feed[i].icon, place:feed[i].location, kilde:feed[i].kilde, src:feed[i].src };
   });
 
   // Traeninger og kampe uden en manuel makker staar for sig selv
   feed.forEach((f, i) => {
     if (brugt.has(i)) return;
     ud.push({ time:f.allDay ? "" : f.start, text:f.subject, who:f.who,
-              icon:f.icon, place:f.location, kilde:f.kilde });
+              icon:f.icon, place:f.location, kilde:f.kilde, src:f.src });
   });
 
   return ud.sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
@@ -2572,10 +2587,11 @@ function activitiesOn(d){
 // femdagesoverblikket, saa de to steder aldrig kan komme til at vise
 // forskellige ting om den samme dag.
 function dayItems(d){
+  // kilde og src følger med: uden dem faldt «I morgen» og «De næste dage» tilbage til at gætte kilden (3.14.1)
   return [...apptsOn(d).map(a => ({ time:a.allDay ? "" : a.start, text:a.subject,
-                                    place:a.location, icon:a.icon, who:a.who })),
+                                    place:a.location, icon:a.icon, who:a.who, kilde:a.kilde, src:a.src })),
           ...leisureOn(d).map(a => ({ time:a.time, text:a.text, place:a.place,
-                                      icon:a.icon, who:a.who }))]
+                                      icon:a.icon, who:a.who, kilde:a.kilde, src:a.src }))]
          .sort((a,b) => (a.time||"99").localeCompare(b.time||"99"));
 }
 
@@ -2918,7 +2934,7 @@ function draw(){
     : `<div class="empty">Ingen lektier denne uge</div>`;
 
   // Aftensmad
-  const meal = planOf(today).meals[dayIdx(today)];
+  const meal = planOf(idagDato).meals[dayIdx(idagDato)];          // aftensmad for den dag, I dag-kortet viser (dagvælgeren)
   $("dinner").innerHTML = `<div class="dish serif${meal ? "" : " none"}">${
     meal ? esc(meal) : "Ikke planlagt"}</div>`;
 
@@ -3430,7 +3446,8 @@ async function hentTegneserie(){
 // Billederne lægges i ugeplan-data/billeder (upload i index.html eller et
 // synkroniseringsværktøj), og indstillingerne rettes i index.html.
 const PS_URL = "billeder.php";
-const ps = { cfg: null, filer: [], orden: [], idx: -1, vis: false, front: false, tIdle: 0, tSlide: 0, tUr: 0, fejl: 0, lukket: 0, hentet: false };
+const ps = { cfg: null, filer: [], orden: [], idx: -1, vis: false, front: false, tIdle: 0, tSlide: 0, tUr: 0, fejl: 0, lukket: 0, hentet: false, aktuel: null };
+let psDrejApi = null;
 
 function psBland(liste, rnd = Math.random, sidste = null){
   const a = liste.slice();
@@ -3459,10 +3476,51 @@ function psUrOpdater(){
   ps.tUr = setTimeout(psUrOpdater, 10000);
 }
 
+// ── Pauseskærm: drejning ──
+/** Billedets gemte drejning: 0, 90, 180 eller 270 grader med uret. */
+const psGrader = f => ([90, 180, 270].includes(f && f.drejning) ? f.drejning : 0);
+/** Næste drejning, når man drejer med uret (retning 1) eller mod uret (−1): 0 → 90 → 180 → 270 → 0. */
+const psDrejTil = (nu, retning) => ((((nu || 0) + (retning < 0 ? -90 : 90)) % 360) + 360) % 360;
+/** CSS-klassen for et billedlag med en drejning (ingen for 0). */
+const psDrejKlasse = g => (g ? `d${g}` : "");
+/** Drejeknapperne på pauseskærmen. d = { $, ps, hent, head, url, genstartSlide, setT, clearT }. Drejningen vises med det samme og gemmes bagefter; kan den ikke gemmes (åben visning uden PIN), gælder den, til siden genindlæses. */
+function psDrejInit(d){
+  const { $, ps } = d, setT = d.setT || setTimeout, clearT = d.clearT || clearTimeout;
+  let infoT = 0;
+  const info = (tekst, ms) => { $("psDrejInfo").textContent = tekst; clearT(infoT); if (tekst) infoT = setT(() => { $("psDrejInfo").textContent = ""; }, ms); };
+  const lag = () => (ps.front ? $("psA") : $("psB"));                 // det lag, der vises nu (psVis har vendt front)
+  function anvend(f){
+    const el = lag();
+    for (const k of ["d90", "d180", "d270"]) el.classList.remove(k);
+    const g = psGrader(f);
+    if (g) el.classList.add(psDrejKlasse(g));
+  }
+  async function drej(retning){
+    const f = ps.aktuel;
+    if (!f || !ps.vis) return;
+    f.drejning = psDrejTil(psGrader(f), retning);
+    anvend(f);
+    d.genstartSlide();                                                  // billedet bliver stående, mens man drejer
+    try {
+      const r = await d.hent(`${d.url}?action=drej`, { method: "POST", headers: { ...d.head, "Content-Type": "application/json" }, body: JSON.stringify({ id: f.id, grader: f.drejning }), credentials: "same-origin" });
+      if (!r.ok) throw Object.assign(new Error("HTTP " + r.status), { status: r.status });
+      info("Drejningen er gemt", 2500);
+    } catch (e){
+      info(e && (e.status === 401 || e.status === 403) ? "Drejningen gælder kun, til siden genindlæses. Log ind med PIN-koden (Opsætning) for at gemme den." : "Drejningen kunne ikke gemmes.", 6000);
+    }
+  }
+  $("psVenstre").addEventListener("click", () => drej(-1));
+  $("psHoejre").addEventListener("click", () => drej(1));
+  return { drej, anvend };
+}
+// ── Slut: pauseskærm drejning ──
+
 function psVis(f){
   const ny = ps.front ? $("psB") : $("psA");
   const gl = ps.front ? $("psA") : $("psB");
   ps.front = !ps.front;
+  ps.aktuel = f;                                    // billedet, der vises nu (drejeknapperne gælder det)
+  if (psDrejApi) psDrejApi.anvend(f);               // dets gemte drejning
   const frem = () => { ps.fejl = 0; ny.classList.add("synlig"); gl.classList.remove("synlig"); };
   ny.onload = frem;
   ny.onerror = () => { ps.fejl++; if (ps.fejl > ps.orden.length) psStop(); else psNaeste(); };   // et billede er væk: videre
@@ -3518,6 +3576,7 @@ function psStop(){
 }
 
 function psAktivitet(e){
+  if (e.target && e.target.closest && e.target.closest(".ps-knapper")) return;     // drejeknapperne lukker ikke pauseskærmen
   if (ps.vis){
     if (e.type !== "pointermove") psStop();       // en rystet mus skal ikke lukke den
     return;
@@ -3529,6 +3588,8 @@ for (const t of ["pointerdown", "pointermove", "keydown", "touchstart", "wheel"]
 document.addEventListener("click", e => {
   if (Date.now() - ps.lukket < 600){ e.stopPropagation(); e.preventDefault(); }
 }, true);
+
+psDrejApi = psDrejInit({ $, ps, hent: (...a) => fetch(...a), head: HEAD, url: PS_URL, genstartSlide: () => { clearTimeout(ps.tSlide); if (ps.vis && ps.cfg) ps.tSlide = setTimeout(psNaeste, ps.cfg.sekunder * 1000); } });
 
 async function psLaes(){
   try {
