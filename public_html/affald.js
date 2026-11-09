@@ -119,6 +119,18 @@ export function oversigt(data, nuIso){
   })).filter(a => a.raekker.length);
 }
 
+/** Samler de rækker fra oversigt(), der tømmes SAMME dag, til én linje: [{ dato (ÅÅÅÅ-MM-DD), dage, relativ, ugedag, datoKort, fraktioner: [{ fraktion, farve }] }]. Rækkefølgen følger rækkerne (nærmeste først). */
+export function gruppeRaekker(raekker){
+  const ud = [], pr = new Map();
+  for (const r of Array.isArray(raekker) ? raekker : []){
+    if (!r || typeof r.naeste !== "string") continue;
+    let g = pr.get(r.naeste);
+    if (!g){ g = { dato: r.naeste, dage: r.dage, relativ: r.relativ, ugedag: r.ugedag, datoKort: r.dato, fraktioner: [] }; pr.set(r.naeste, g); ud.push(g); }
+    g.fraktioner.push({ fraktion: r.fraktion, farve: r.farve });
+  }
+  return ud;
+}
+
 /** Det, der skal mindes om: tømning i dag eller i morgen (så spanden kan sættes ud aftenen før). */
 export function paaminde(data, nuIso){
   const ud = [];

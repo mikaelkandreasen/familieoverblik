@@ -229,6 +229,12 @@ Kortet «Tømning» vises på forsiden.
 
 **Kantine:** Kortet «Kantine» viser skolens menu, som kantinen sender som en besked hver uge. Aula-hentningen læser den. Kortet er skjult, til der er en menu. Står den ikke, så kør `python /app/Sync-Aula.py` og se efter linjen «kantine:» i udskriften, eller `python /app/Sync-Aula.py --kantineform`. `--kantinetekst` viser de nyeste kantine-breve linje for linje.
 
+**Pauseskærmen:** ‹ og › øverst til højre bladrer i billederne (piletasterne også), og ↶ ↷ drejer billedet.
+
+**Elpris og vejr kan klappes sammen:** «Kun søjler» på elprisen beholder priserne og søjlerne, og «Kun i dag» på vejret skjuler de kommende dage. Begge huskes på enheden.
+
+**Tilpas layout:** vælg bredden med de tre knapper Smal, Halv og Bred. Den valgte er mørk. Kortene sidder tæt i to kolonner; rækkefølgen er ned ad første kolonne, så ned ad anden.
+
 **Automatisk fuld skærm:** Opsætning → System → Denne enhed → «Gå automatisk i fuld skærm på forsiden». Det gælder kun den enhed, du sidder ved. Første tryk på forsiden går i fuld skærm (en browser kræver et tryk).
 
 **Drej et billede på pauseskærmen:** tryk på ↶ eller ↷ øverst til højre. Drejningen gemmes (kræver PIN-login; ellers gælder den, til siden genindlæses).
@@ -257,6 +263,6 @@ Afprøvet her (uden Docker og uden PHP, som ikke findes i min sandkasse):
 - Compose, workflow og Dockerfiles som tekst: at de peger på filer, der findes, og passer sammen. 39 prøver.
 - Guiden, indstillingerne og sikkerhedsindstillingerne mod en simuleret server (personrækker, fødselsdage, nøgler, sikkerhedskopi, QR-kode og gendannelseskoder): 94 prøver.
 - **Backlog:** hele logikken som en rigtig proces (oprettelse, ændring, stemmer, kommentarer, sletning, import, eksport, grænser, samtidige skrivninger og beskyttelse mod regnearksformler): 34 prøver, og selve siden (filtre, sortering, at alt skrevet escapes, hele forløbet): 51 prøver.
-- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1370 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
+- **Alle sidernes JavaScript** (layout, opsætningstræ, tømning, vejr, joke, vælger, tema, backlog, elpris, pauseskærm, guide, fødselsdage, farver og meget mere): 1433 prøver. De kører også i GitHub-workflowet og er afprøvet i fem tidszoner.
 
 **Ikke afprøvet:** selve `docker build`, GitHub-workflowet, at Dockhand kan hente fra ghcr.io og starte stakken, **al PHP** (`login.php`, `totp.php`, `instans.php`, `sikkerhedskopi.php`, `backlog.php`) og Dockhands terminal til MitID-login. For PHP er kun den logik, der ligger i Python, afprøvet. Selve PHP-filerne er gennemlæst og kontrolleret som tekst (parenteser, at de bruger samme formler som den afprøvede model, at cookien kun sættes ét sted). **Test login med totrinsbekræftelse, før du stoler på det:** slå det til, åbn siden i et privat vindue, og prøv både PIN og kode, en forkert kode, en gendannelseskode og «husk enhed».

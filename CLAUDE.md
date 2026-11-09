@@ -91,6 +91,8 @@ Se `CHANGELOG.md` for alt, der er bygget, og `BACKLOG.md` for ønsker (afsnittet
 
 **Før projektet gøres offentligt (eller en udgave deles):** kør `FO_PRIVAT_ORD="navne,på,børn,gade,by" python3 tests/test_offentlig.py`. Navne må aldrig stå i projektet. Brugerens egne filer (`backlog-status-*.json`, backlog-eksport, PDF'er med adresse, logfiler fra Aula) hører ikke hjemme i projektet. Lav hellere et NYT offentligt repo med de nuværende filer end at gøre et privat repo offentligt (historikken følger med).
 
+**Layout (3.16.0):** «I dag» er første barn i `#stak`, som på bred skærm (≥ 901 px) er to CSS-kolonner (`column-count:2`, `break-inside:avoid`, `margin-bottom:var(--gap)`, negativ margin på beholderen); halv-rækkerne er det samme. Gæt ikke på rækkefølge: den er ned ad første kolonne, så ned ad anden. Bredden i «Tilpas layout» vælges direkte (`laySaetStr`). Elpris og vejr har «Kun søjler» og «Kun i dag» (klasserne `el-enkel` og `vejr-enkel`).
+
 **Kantinen (3.15.0):** ugemenuen er et Aula-OPSLAG (`aula posts`), ikke en besked; `Sync-Aula.py` læser opslag først og lægger hver uges menu (`kantine.find_kantiner`) på sin uge. Kalenderkilden er tekst → tjeneste → person, ALDRIG ikon. Pauseskærmens drejning gemmes i `private/billeder.json → drejning` (`billeder.php?action=drej`); filerne røres ikke. «Denne enhed» (opsætningen) og forsidens «Fuld skærm» deler nøglen `familieoverblik-fuldskaerm`.
 
 **Dagvælgeren på «I dag» (3.14.0):** `DAGSTAT.fors` (−2…+2) er den dag, kortet viser; `draw()` udleder `idagDato` og bruger den i hele «I dag»-blokken (aldrig `today` dér; en prøve kontrollerer det). Resten af siden bruger stadig `today`. `sikrUge` henter forrige uge ved behov, `tjekDatoskifte` nulstiller, og `dagInit` har en tidsgrænse på to minutter.

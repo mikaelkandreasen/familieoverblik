@@ -94,7 +94,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    det laengstes hoejde, og saa staar der et stort tomt hul i bunden af det. */
 .grid{display:grid;gap:var(--gap);align-items:start;
       grid-template-columns:minmax(280px,1fr) minmax(320px,1.35fr)}
-.stack{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
+.stack{display:flex;flex-direction:column;gap:var(--gap);min-width:0;grid-column:1/-1}
 .row2{display:grid;gap:var(--gap);grid-template-columns:repeat(2,1fr);grid-column:1/-1}
 .wide{grid-column:1/-1}
 
@@ -200,7 +200,8 @@ select.fod-knap{padding:0 8px;max-width:100%}
 .lay-bar b{flex:1;font-weight:600}
 .el-enkel-knap{margin-left:8px;min-height:32px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink-soft);font:inherit;font-size:12px;cursor:pointer}
 .el-enkel-knap[aria-pressed=true]{background:var(--ink);color:var(--card);border-color:var(--ink)}
-#elKort.el-enkel #elKrop>:not(.el-chart):not(.el-akse){display:none}
+#vejrKort.vejr-enkel .vk-dage{display:none}                      /* kun dagens vejr (i dag og timerne); de kommende dage skjules */
+#elKort.el-enkel #elKrop>:not(.el-nu):not(.el-stats):not(.el-chart):not(.el-akse){display:none}      /* priserne (nu, laveste, højeste, gennemsnit) bliver stående; resten skjules */
 .top-joke{max-width:1200px;margin:0 auto;padding:6px 16px 0;color:var(--ink-soft);font-size:14px;font-style:italic;line-height:1.4;overflow-wrap:anywhere}
 .top-joke[hidden]{display:none}
 .aff-raekke{align-items:center}
@@ -209,18 +210,39 @@ select.fod-knap{padding:0 8px;max-width:100%}
 .aff-dag{display:inline-flex;gap:3px;align-items:center}
 .aff-dag .aff-ikon{width:20px;height:20px}
 .aff-dag .aff-ikon svg{width:12px;height:12px}
+.aff-ikoner{flex:0 0 auto;display:inline-flex;flex-wrap:wrap;gap:3px;max-width:112px}
 .aff-navn{flex:1;min-width:0;overflow-wrap:anywhere}
 .aff-nar{flex:0 0 auto;text-align:right}
 .aff-meta{color:var(--ink-soft);font-size:12px}
 .aff-snart .aff-nar,.aff-snart .aff-navn{font-weight:700}
 .halv-raekke{grid-column:1/-1;display:grid;gap:var(--gap);grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
 @media (max-width:900px){.halv-raekke{grid-template-columns:1fr}}
+/* ── Tæt pakning (bred skærm): kort i samme kolonne sidder helt op ad hinanden, og alle kort har samme afstand (--gap) til kortet over ──
+   Kolonnebeholderen og halv-rækkerne er CSS-kolonner: indholdet løber ned ad den første kolonne og fortsætter i den næste, og ingen kort deles. Rækkefølgen er derfor ned ad første kolonne, så ned ad anden.
+   Hvert kort har afstanden under sig; den sidste i hver kolonne trækkes fra igen (negativ margin), så afstanden til næste række er den samme som overalt ellers. */
+@media (min-width:901px){
+  .stack{display:block;column-count:2;column-gap:var(--gap);margin-bottom:calc(-1 * var(--gap))}
+  .stack>.card,.stack>.today{break-inside:avoid;margin-bottom:var(--gap)}
+  .halv-raekke{display:block;column-count:2;column-gap:var(--gap);margin-bottom:calc(-1 * var(--gap))}
+  .halv-raekke>.card{break-inside:avoid;margin-bottom:var(--gap)}
+}
 .card.half{grid-column:auto}
 .er-skjult{display:none!important}
 .lay-skjulte{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
 .lay-skjulte button{min-height:36px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink);font-size:13px}
-.lay-bar button[data-lay=storrelse]{min-width:56px;font-size:12px}
 .lay-bar button{min-width:40px;min-height:40px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--card);color:var(--ink);font-size:15px}
+/* Bredden vælges med tre knapper på række (Smal · Halv · Bred), hver med et lille billede af, hvor meget af rækken kortet fylder. Den valgte er mørk, så man kan se den med et blik. */
+.lay-str{display:inline-flex}
+.lay-bar .lay-str button{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:46px;min-height:44px;padding:3px 6px;font-size:11px;border-radius:0;margin-left:-1px}
+.lay-bar .lay-str button:first-child{border-radius:var(--radius) 0 0 var(--radius);margin-left:0}
+.lay-bar .lay-str button:last-child{border-radius:0 var(--radius) var(--radius) 0}
+.lay-bar .lay-str button[aria-pressed=true]{position:relative;z-index:1;background:var(--ink);color:var(--card);border-color:var(--ink);font-weight:700}
+.lay-ik{display:block;position:relative;width:26px;height:9px;border:1.5px solid currentColor;border-radius:2px;box-sizing:border-box;opacity:.55}
+.lay-ik::after{content:"";position:absolute;left:1px;top:1px;bottom:1px;border-radius:1px;background:currentColor}
+.lay-smal::after{width:33%}
+.lay-halv::after{width:50%}
+.lay-bred::after{right:1px}
+.lay-str button[aria-pressed=true] .lay-ik{opacity:1}
 .lay-redigerer [data-kort]{outline:2px dashed rgba(127,127,127,.5);outline-offset:3px}
 .lay-redigerer [data-kort].lay-traek{opacity:.45}
 .lay-redigerer [data-kort].lay-over{outline:2px solid var(--ink)}
@@ -976,6 +998,9 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
 
 <main class="grid" id="app" hidden>
 
+  <!-- Kolonnebeholderen: «I dag» og de smalle kort. På en bred skærm er den to kolonner (CSS-kolonner), så hvert kort sidder helt oppe ved kortet over, og der ikke er huller under de korte kort. -->
+  <div class="stack" id="stak">
+
   <!-- I dag -->
   <section class="today" id="idagKort">
     <h2 class="serif" id="idagTitel">I dag</h2>
@@ -1018,8 +1043,6 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
       <div id="dinner"></div>
     </section>
   </section>
-
-  <div class="stack" id="stak">
 
     <!-- I morgen. Id'et er kortets EGET: .card.blue deles med Lektier, og
          aftenvaegtningen nedenfor maa ikke ramme det kort ogsaa. -->
@@ -1101,7 +1124,7 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
         <h2>Elpris</h2>
         <span class="spacer"></span>
         <span class="pill" id="elOmraade"></span>
-        <button type="button" class="el-enkel-knap" id="elEnkelKnap" aria-pressed="false" title="Skjul alt undtagen søjlediagrammet">Kun søjler</button>
+        <button type="button" class="el-enkel-knap" id="elEnkelKnap" aria-pressed="false" title="Skjul detaljerne, men behold priserne (nu, laveste, højeste, gennemsnit) og søjlediagrammet">Kun søjler</button>
       </div>
       <div id="elKrop"></div>
     </section>
@@ -1166,6 +1189,7 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
       <span class="ico"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M8.5 2.5v1M2.5 8h1M4.2 3.7l.7.7M12.8 3.7l-.7.7"/><path d="M9 21h8.5a3.5 3.5 0 0 0 .5-6.96A5 5 0 0 0 8.3 15 3 3 0 0 0 9 21z"/></svg></span>
       <h2>Vejr</h2>
       <span class="spacer"></span>
+      <button type="button" class="el-enkel-knap" id="vejrEnkelKnap" aria-pressed="false" title="Vis kun dagens vejr og skjul de kommende dage">Kun i dag</button>
     </div>
     <div id="vejrIndhold"></div>
   </section>
@@ -1291,10 +1315,12 @@ body.aftenvaegt #tomKort button.line:active{background:rgba(255,255,255,.1)}
   <img class="ps-lag" id="psB" alt="">
   <div class="ps-ur" id="psUr" hidden><div class="ps-tid" id="psTid"></div><div class="ps-dato" id="psDato"></div></div>
   <div class="ps-hint">Tryk for at gå til oversigten</div>
-  <!-- Drej billedet, der vises nu (gemmes pr. billede, og billedfilen ændres ikke). Et tryk herpå lukker ikke pauseskærmen. -->
+  <!-- Forrige og næste billede, og drej billedet, der vises nu (gemmes pr. billede, og billedfilen ændres ikke). Et tryk herpå lukker ikke pauseskærmen. Piletasterne bladrer også. -->
   <div class="ps-knapper" id="psKnapper">
+    <button type="button" id="psForrige" aria-label="Forrige billede">&#8249;</button>
     <button type="button" id="psVenstre" aria-label="Drej billedet mod uret">&#8630;</button>
     <button type="button" id="psHoejre" aria-label="Drej billedet med uret">&#8631;</button>
+    <button type="button" id="psNaeste" aria-label="Næste billede">&#8250;</button>
     <span class="ps-drejinfo" id="psDrejInfo" role="status"></span>
   </div>
 </div>
@@ -2987,7 +3013,8 @@ function affaldTegn(){
   if (!data.length){ $("affKrop").innerHTML = ""; return; }
   const flere = data.length > 1;
   $("affKrop").innerHTML = data.map(a => (flere ? `<div class="sub-label">${esc(a.adresse)}</div>` : "") +
-    a.raekker.map(r => `<div class="line aff-raekke${r.dage <= 1 ? " aff-snart" : ""}">${AFF.ikonHtml(r.fraktion, r.farve)}<span class="aff-navn">${esc(r.fraktion)}</span><span class="aff-nar">${esc(r.relativ)}<span class="aff-meta"> · ${esc(r.ugedag)} ${esc(r.dato)}</span></span></div>`).join("")
+    // fraktioner, der tømmes samme dag, står i én linje (ikoner og navne samlet): kortet bliver mindre
+    AFF.gruppeRaekker(a.raekker).map(g => `<div class="line aff-raekke aff-gruppe${g.dage <= 1 ? " aff-snart" : ""}"><span class="aff-ikoner">${g.fraktioner.map(x => AFF.ikonHtml(x.fraktion, x.farve)).join("")}</span><span class="aff-navn">${g.fraktioner.map(x => esc(x.fraktion)).join(", ")}</span><span class="aff-nar">${esc(g.relativ)}<span class="aff-meta"> · ${esc(g.ugedag)} ${esc(g.datoKort)}</span></span></div>`).join("")
   ).join("");
 }
 
@@ -3178,7 +3205,7 @@ function elDage(d, nu = new Date()){
   return dage;
 }
 
-// «Kun søjler» skjuler alt andet end søjlediagrammet (tal, billigste periode, noter og prognose for de næste dage). Valget gemmes på denne enhed.
+// «Kun søjler» skjuler detaljerne (billigste periode, noter og prognose for de næste dage), men beholder priserne (nu, laveste, højeste, gennemsnit) og søjlediagrammet. Valget gemmes på denne enhed.
 const EL_ENKEL_NOEGLE = "familieoverblik-el-enkel";
 function elEnkel(til, gem = true){
   $("elKort").classList.toggle("el-enkel", til);
@@ -3542,6 +3569,18 @@ function psNaeste(){
   ps.tSlide = setTimeout(psNaeste, ps.cfg.sekunder * 1000);
 }
 
+/** Forrige billede: ét skridt tilbage i rækkefølgen, og fra det første springes til det sidste. Billedet bliver stående et helt interval, før diasshowet går videre. */
+function psForrige(){
+  if (!ps.vis) return;
+  clearTimeout(ps.tSlide);
+  if (!ps.orden.length){ psStop(); return; }
+  ps.idx = ps.idx <= 0 ? ps.orden.length - 1 : ps.idx - 1;
+  psVis(ps.orden[ps.idx]);
+  ps.tSlide = setTimeout(psNaeste, ps.cfg.sekunder * 1000);
+}
+/** Næste billede på bestilling (knappen og højre piletast): samme som, når tiden er gået. */
+const psSpring = retning => { if (retning < 0) psForrige(); else psNaeste(); };
+
 /** Mens pauseskærmen er oppe, skjules sidens rullelinje (ellers ligger linjen ved siden af billedet, og det fylder ikke hele skærmen). */
 function psSkjulRullelinje(til){
   const h = document.documentElement;
@@ -3576,7 +3615,8 @@ function psStop(){
 }
 
 function psAktivitet(e){
-  if (e.target && e.target.closest && e.target.closest(".ps-knapper")) return;     // drejeknapperne lukker ikke pauseskærmen
+  if (e.target && e.target.closest && e.target.closest(".ps-knapper")) return;     // knapperne (bladre, dreje) lukker ikke pauseskærmen
+  if (ps.vis && e.type === "keydown" && (e.key === "ArrowLeft" || e.key === "ArrowRight")){ psSpring(e.key === "ArrowLeft" ? -1 : 1); return; }     // piletasterne bladrer; alle andre taster lukker
   if (ps.vis){
     if (e.type !== "pointermove") psStop();       // en rystet mus skal ikke lukke den
     return;
@@ -3590,6 +3630,9 @@ document.addEventListener("click", e => {
 }, true);
 
 psDrejApi = psDrejInit({ $, ps, hent: (...a) => fetch(...a), head: HEAD, url: PS_URL, genstartSlide: () => { clearTimeout(ps.tSlide); if (ps.vis && ps.cfg) ps.tSlide = setTimeout(psNaeste, ps.cfg.sekunder * 1000); } });
+
+$("psForrige").addEventListener("click", () => psSpring(-1));
+$("psNaeste").addEventListener("click", () => psSpring(1));
 
 async function psLaes(){
   try {
@@ -3806,6 +3849,14 @@ function layStorrelse(l, id){
   return true;
 }
 
+/** Sæt størrelsen direkte (Smal, Halv eller Bred): højst to skridt i rækken Smal → Halv → Bred → Smal. true = noget ændrede sig. */
+function laySaetStr(l, id, mal){
+  if (!LAY_STR.includes(mal) || !layStr(l, id)) return false;
+  let aendret = false;
+  for (let i = 0; i < 3 && layStr(l, id) !== mal; i++) aendret = layStorrelse(l, id) || aendret;
+  return aendret;
+}
+
 /** Skjul et kort helt (det bevarer sin plads, så det kommer tilbage samme sted), eller vis det igen. true = nu skjult. */
 function laySkjul(l, id){
   const i = l.skjult.indexOf(id);
@@ -3842,7 +3893,7 @@ function layBarHtml(bar, id, l){
   bar.innerHTML = `<b>${esc(navn)}</b>
         <button type="button" data-lay="op" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} op">▲</button>
         <button type="button" data-lay="ned" data-lay-id="${esc(id)}" aria-label="Flyt ${esc(navn)} ned">▼</button>
-        <button type="button" data-lay="storrelse" data-lay-id="${esc(id)}" aria-label="Skift størrelse på ${esc(navn)} (nu ${str.toLowerCase()})">${str}</button>
+        <span class="lay-str" role="group" aria-label="Bredde på ${esc(navn)}">${LAY_STR.map(m => `<button type="button" data-lay="str" data-lay-str="${m}" data-lay-id="${esc(id)}" aria-pressed="${m === str}" aria-label="Bredde ${m.toLowerCase()} for ${esc(navn)}${m === str ? " (valgt)" : ""}"><i class="lay-ik lay-${m.toLowerCase()}" aria-hidden="true"></i><span>${m}</span></button>`).join("")}</span>
         <button type="button" data-lay="skjul" data-lay-id="${esc(id)}" aria-label="Skjul ${esc(navn)}">✕</button>`;
 }
 
@@ -3939,7 +3990,7 @@ function layInit(){
     if (!b) return;
     const id = b.dataset.layId;
     const h = b.dataset.lay;
-    const aendret = h === "storrelse" ? layStorrelse(layNu, id) : h === "skjul" ? (laySkjul(layNu, id), true) : layFlyt(layNu, id, h, laySkjulte());
+    const aendret = h === "str" ? laySaetStr(layNu, id, b.dataset.layStr) : h === "storrelse" ? layStorrelse(layNu, id) : h === "skjul" ? (laySkjul(layNu, id), true) : layFlyt(layNu, id, h, laySkjulte());
     if (aendret){ layGem(); layAnvend(layNu); }
   });
 
@@ -4321,6 +4372,18 @@ async function hentVejr(){
     vejrData = await r.json(); vejrTegn(vejrData, vejrValgt);
   } catch (e){ console.error("vejrkort:", e); }
 }
+// ── Vejr: kun i dag ──
+// «Kun i dag» skjuler de kommende dage og beholder dagens vejr (i dag og timerne). Valget gemmes på denne enhed.
+const VEJR_ENKEL_NOEGLE = "familieoverblik-vejr-enkel";
+function vejrEnkel(til, gem = true){
+  $("vejrKort").classList.toggle("vejr-enkel", til);
+  $("vejrEnkelKnap").setAttribute("aria-pressed", String(til));
+  $("vejrEnkelKnap").textContent = til ? "Vis alle dage" : "Kun i dag";
+  if (gem){ try { localStorage.setItem(VEJR_ENKEL_NOEGLE, til ? "1" : "0"); } catch {} }
+}
+$("vejrEnkelKnap").addEventListener("click", () => vejrEnkel(!$("vejrKort").classList.contains("vejr-enkel")));
+try { if (localStorage.getItem(VEJR_ENKEL_NOEGLE) === "1") vejrEnkel(true, false); } catch {}
+// ── Slut: vejr kun i dag ──
 hentVejr(); setInterval(hentVejr, 1800000);
 
 // Sprog og «Oversæt siden» (sprog.js). Indlæses med import(), så en fejl der aldrig vælter siden.
