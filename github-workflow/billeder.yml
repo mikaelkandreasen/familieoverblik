@@ -51,6 +51,8 @@ jobs:
     name: Byg ${{ matrix.billede }}
     needs: proev
     runs-on: ubuntu-latest
+    # Frameo-billedet er valgfrit (en billedramme, der ikke er sat op endnu): en fejl i det (fx manglende adgang til pakken) gør ikke hele kørslen rød. Alle andre billeder skal lykkes.
+    continue-on-error: ${{ matrix.billede == 'frameo' }}
     strategy:
       fail-fast: false
       matrix:
