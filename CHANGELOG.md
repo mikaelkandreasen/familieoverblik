@@ -16,6 +16,20 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.16.1] – 2026-11-09
+
+### Rettet (GitHub-workflowet)
+- **Frameo-billedet er valgfrit.** Byggejobbet for `frameo` fejlede ved upload: *«denied: permission_denied: write_package»*, fordi pakken `familieoverblik-frameo` ikke giver dette repo skriveadgang (sandsynligvis fordi pakken findes i forvejen og hører til et andet repo). Billedet bruges ikke, før billedrammen sættes op, så en fejl dér gør ikke længere hele kørslen rød: `continue-on-error` gælder kun Frameo. **De andre fire billeder (web, aula, bil, cron) skal stadig lykkes**, og en fejl i dem gør kørslen rød som før.
+- Når du sætter Frameo-billedrammen op: giv repoet skriveadgang til pakken (Packages → `familieoverblik-frameo` → Package settings → Manage Actions access → Add repository → rolle Write), eller slet pakken og lad en ny kørsel oprette den.
+- Prøve i `test_skjulte_filer.py` (kører også på GitHub): kun Frameo må fejle uden at gøre kørslen rød, og de to kopier af workflowet skal være ens.
+
+### Opdatering fra 3.16.0
+Selve programmet er uændret. **Ret din egen workflow-fil på GitHub** (den kan ikke uploades med resten, fordi mappen starter med punktum): åbn `.github/workflows/billeder.yml`, tryk på blyanten, og sæt disse to linjer ind under linjen `runs-on: ubuntu-latest` i jobbet `billeder:`, lige før `strategy:`:
+```
+    continue-on-error: ${{ matrix.billede == 'frameo' }}
+```
+(eller kopiér hele filen `github-workflow/billeder.yml` ind). Kør så **Actions → Byg billeder → Run workflow**.
+
 ## [3.16.0] – 2026-11-09
 
 ### Tilføjet og rettet

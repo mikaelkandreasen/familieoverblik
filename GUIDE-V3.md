@@ -243,6 +243,8 @@ Kortet «Tømning» vises på forsiden.
 
 **Se i går og i morgen på «I dag»-kortet:** Tryk på **Forgårs, I går, I morgen** eller **Overmorgen** under overskriften. Kortet viser den dag (kalender, skole, fritid, vigtigt og huskepunkter) og vender selv tilbage til i dag efter to minutter. Resten af siden viser stadig i dag.
 
+**Frameo-billedet er valgfrit:** Bygger du ikke en Frameo-billedramme, kan billedet `familieoverblik-frameo` fejle ved upload uden, at resten påvirkes (kørslen bliver ikke rød for det). De andre billeder skal lykkes.
+
 **Fejler workflowet på GitHub?** Åbn Actions, tryk på den røde kørsel, og tryk på jobbet **«Prøver»**. Det røde trin viser, hvad der fejler. Kopiér de sidste 30 linjer, og send dem. Billederne bygges først, når prøverne er grønne. En upload i browseren tager ikke filer og mapper med punktum med (`.github`, `.gitignore`); workflowet ligger derfor også som `github-workflow/billeder.yml`, og du kopierer indholdet ind i `.github/workflows/billeder.yml` (GitHub: Add file, Create new file, skriv stien).
 
 **Ønskelister:** Under Opsætning → Familie og forbindelser har hver person et felt til linket til sin liste i Ønskeskyen. Åbn listen i Ønskeskyen, tryk på dele, kopiér linket (det skal starte med `https://`), og sæt det ind. På forsiden står så kortet «Ønskelister» med et link pr. person. Ingen link, ingen række.

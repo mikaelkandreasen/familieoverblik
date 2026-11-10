@@ -39,6 +39,11 @@ t("ved næste opstart skrives spærrefilerne igen (en gammel udgave bliver ikke 
 open(os.path.join(sk, "html", ".htaccess"), "w").write("FORKERT GAMMEL")
 subprocess.run([sys.executable, os.path.join(rod2, "docker", "web", "bootstrap.py"), "render"], capture_output=True, env=e)
 t("ligger både .htaccess og htaccess.txt i skabelonen, vinder htaccess.txt", "FORKERT" not in open(f"{H}/.htaccess", encoding="utf-8").read() and gate in open(f"{H}/.htaccess", encoding="utf-8").read())
+wf = open(os.path.join(ROD, "github-workflow", "billeder.yml"), encoding="utf-8").read()
+t("workflowet lader kun Frameo-billedet (valgfrit, ikke sat op hos alle) fejle uden at gøre kørslen rød: continue-on-error afhænger af matrixens billede, og de andre billeder skal lykkes", "continue-on-error: ${{ matrix.billede == 'frameo' }}" in wf and wf.count("continue-on-error: ${{ matrix.billede == 'frameo' }}") == 1 and "continue-on-error: true" in wf)
+import re as _re
+job = wf[wf.index("  billeder:"):]
+t("…og de to kopier af workflowet (.github og github-workflow) er ens, så en ændring ikke kun står det ene sted", (not os.path.exists(os.path.join(ROD, ".github", "workflows", "billeder.yml"))) or open(os.path.join(ROD, ".github", "workflows", "billeder.yml"), encoding="utf-8").read() == wf)
 # De prøver, der læser projektets egne filer (pakning, offentlig-tjek, README, opbygning, stier), skal bestå i et repo uden filer med punktum, som en upload i browseren giver.
 # (3.13.2: test_pak og test_offentlig krævede .gitignore og .github, så hele workflowet fejlede hos en bruger, selv om alt var grønt her.)
 try:
