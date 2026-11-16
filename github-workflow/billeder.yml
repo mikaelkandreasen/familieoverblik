@@ -34,6 +34,7 @@ jobs:
           python3 tests/test_kantine.py
           python3 tests/test_ics.py
           python3 tests/test_onsker.py
+          python3 tests/test_kalender_personer.py
           python3 tests/test_sync_breve.py
           python3 tests/test_stier.py
           python3 tests/test_aaben_visning.py
