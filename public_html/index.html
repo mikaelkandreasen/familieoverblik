@@ -883,7 +883,8 @@ textarea.st-in{font-size:14px;resize:vertical}
         <dd>Kig efter "abonnér", "iCal", "ICS" eller "tilføj til kalender". Tryk <b>Test linket</b> — så kan du se med det samme, om det er det rigtige.</dd>
       </dl>
     </details>
-    <div><label>Hvem hører den til</label><div class="who-pick" id="kWho"></div></div>
+    <div><label>Hvem hører den til</label><div class="who-pick" id="kWho"></div>
+      <p class="k-note" id="kWhoTekst" role="status" style="margin:6px 0 0"></p></div>
     <div><label>Ikon</label><div class="ikon-pick" id="kIkon"></div></div>
     <div><label for="kNavn">Navn og kilde <small style="text-transform:none;letter-spacing:0">(valgfrit — står i listen og som kilde på forsiden, fx «Holdsport» eller «Skolen»)</small></label><input type="text" id="kNavn" maxlength="60" autocomplete="off" placeholder="Fodbold, håndbold …"></div>
   </div>
@@ -1116,8 +1117,8 @@ function kalenderKilde(x){
   const s = typeof x.src === "string" ? x.src.trim() : "";
   if (s === "DBU") return "DBU KampKlar";
   if (s && !["Google Kalender", "Outlook", "iCloud"].includes(s)) return s;
-  const navn = whoOf(x.who)?.name;
-  return navn && navn !== "Alle" ? navn + "s kalender" : "Kalender";
+  const navne = String(x.who ?? "").split(",").map(w => whoOf(w.trim())?.name).filter(n => n && n !== "Alle");
+  return navne.length === 1 ? navne[0] + "s kalender" : navne.length > 1 ? "Kalender for " + navne.slice(0, -1).join(", ") + " og " + navne.at(-1) : "Kalender";
 }
 
 function kildeAf(x, slags){
@@ -2004,17 +2005,51 @@ function kalStatus(f){
   return `<small class="k-st fejl">Fejlede ${esc(kalTid(s.at))}: ${esc(s.error)}</small>`;
 }
 
+// ── Kalender: flere personer ──
+/** En kalenders personer som liste: «lars,emma» → ["lars","emma"]. «alle» og tom giver en liste uden personer. */
+const kalPersoner = p => (typeof p === "string" ? [...new Set(p.split(",").map(x => x.trim().toLowerCase()).filter(x => x && x !== "alle"))] : []);
+/** Et tryk på en person i dialogen: personen lægges til eller fjernes. «Alle» står alene (vælges den, fjernes personerne, og vælges en person, fjernes «alle»). Resultatet er den tekst, der gemmes («alle», «lars,emma» eller «» = ingen), ordnet som personerne i opsætningen. */
+function kalVaelgPerson(nu, id, raekkefoelge){
+  const k = String(id ?? "").trim().toLowerCase();
+  if (!k) return kalPersoner(nu).join(",");
+  if (k === "alle") return String(nu ?? "").toLowerCase().trim() === "alle" ? "" : "alle";
+  const liste = kalPersoner(nu);
+  const i = liste.indexOf(k);
+  if (i >= 0) liste.splice(i, 1); else liste.push(k);
+  const ord = raekkefoelge || [], pers = ord.filter(x => x !== "alle");
+  if (pers.length >= 2 && pers.every(x => liste.includes(x))) return "alle";             // alle personer valgt hver for sig = «Alle» (ikke et mærke pr. person på hver eneste post)
+  return ord.filter(x => liste.includes(x)).concat(liste.filter(x => !ord.includes(x))).join(",");
+}
+/** Hvad dialogen siger, at kalenderen hører til: «Alle personer», «Anna», «Anna og Peter», eller en opfordring, hvis intet er valgt. */
+function kalWhoOpsummering(p, navnAf){
+  const t = String(p ?? "").toLowerCase().trim();
+  if (t === "alle") return "Hører til alle personer.";
+  const ids = kalPersoner(p);
+  if (!ids.length) return "Vælg en person, flere personer eller «Alle».";
+  const tekst = kalPersonTekst(p, navnAf);
+  return ids.length === 1 ? `Hører til én person: ${tekst}.` : `Hører til ${ids.length} personer: ${tekst}.`;
+}
+/** Er personen (id) valgt på kalenderen? «alle» gælder kun knappen «Alle». */
+const kalHarPerson = (p, id) => (id === "alle" ? String(p ?? "").toLowerCase().trim() === "alle" : kalPersoner(p).includes(String(id).toLowerCase()));
+/** Navne på kalenderens personer til listen: «Anna», «Lars og Emma», «Lars, Emma og Peter», «Alle». */
+function kalPersonTekst(p, navnAf){
+  const ids = kalPersoner(p), navne = ids.map(id => navnAf(id)).filter(Boolean);
+  if (!ids.length) return String(p ?? "").toLowerCase().trim() === "alle" ? "Alle" : (navnAf(p) || "");
+  return navne.length <= 1 ? (navne[0] || "") : navne.slice(0, -1).join(", ") + " og " + navne.at(-1);
+}
+// ── Slut: kalender, flere personer ──
+
 function kalTegnListe(){
   const noter = [];
   if (kal.source === "config")
     noter.push(`<p class="k-note">Listen kommer stadig fra <code>config.php</code>. Første gang du gemmer her, flytter den over — og derefter er det her, den rettes.</p>`);
   const rk = kal.feeds.map(f => {
-    const p = whoOf(f.person);
+    const ids = kalPersoner(f.person), p = whoOf(ids[0] || f.person) || { color: "var(--ink-faint)", name: "" };      // farven er den første persons
     const navn = f.label || f.service;
     return `<div class="k-row${f.enabled ? "" : " slukket"}" style="--c:${p.color}">
       <button class="k-main" data-kal-ret="${esc(f.id)}" aria-label="Ret ${esc(navn)}">
         <span class="k-ikon" aria-hidden="true">${esc(f.icon) || "📅"}</span>
-        <span class="k-txt"><b>${esc(navn)}</b> · ${esc(p.name)}
+        <span class="k-txt"><b>${esc(navn)}</b> · ${esc(kalPersonTekst(f.person, id => whoOf(id)?.name))}
           <small>${f.hint.startsWith(f.service) ? "" : esc(f.service) + " · "}${esc(f.hint)}</small>${kalStatus(f)}</span>
       </button>
       <label class="check"><input type="checkbox" data-kal-til="${esc(f.id)}"${f.enabled ? " checked" : ""}> Til</label>
@@ -2037,7 +2072,8 @@ function kalVis(){
 
   const f = kalRet;
   $("kWho").innerHTML = PEOPLE.map(p =>
-    `<button type="button" data-kal-who="${p.id}" aria-pressed="${f.person === p.id}" style="--c:${p.color}"><span class="dot"></span>${esc(p.name)}</button>`).join("");
+    `<button type="button" data-kal-who="${p.id}" aria-pressed="${kalHarPerson(f.person, p.id)}" style="--c:${p.color}"><span class="dot"></span>${esc(p.name)}</button>`).join("");
+  $("kWhoTekst").textContent = kalWhoOpsummering(f.person, id => whoOf(id)?.name);
   $("kIkon").innerHTML = [`<button type="button" class="ingen" data-kal-ikon="" aria-pressed="${!f.icon}">Intet</button>`]
     .concat(KAL_IKONER.map(i => `<button type="button" data-kal-ikon="${i}" aria-pressed="${f.icon === i}" aria-label="Ikon ${i}">${i}</button>`)).join("");
   $("kHoldBlok").hidden = !!f.id;
@@ -2154,8 +2190,9 @@ $("kListe").addEventListener("change", async e => {
 $("kWho").addEventListener("click", e => {
   const b = e.target.closest("[data-kal-who]");
   if (!b) return;
-  kalRet.person = b.dataset.kalWho;
-  $("kWho").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  kalRet.person = kalVaelgPerson(kalRet.person, b.dataset.kalWho, PEOPLE.map(p => p.id));
+  $("kWho").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(kalHarPerson(kalRet.person, x.dataset.kalWho))));
+  $("kWhoTekst").textContent = kalWhoOpsummering(kalRet.person, id => whoOf(id)?.name);
 });
 $("kHold").addEventListener("click", e => {
   const b = e.target.closest("[data-kal-hold]");

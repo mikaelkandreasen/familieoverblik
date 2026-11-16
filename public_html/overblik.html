@@ -432,9 +432,10 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .t-item{display:flex;gap:12px;padding:5px 0;font-size:14px;line-height:1.35}
 .t-item time{font-variant-numeric:tabular-nums;color:var(--panel-soft);flex:0 0 46px}
 .t-item .sub{display:block;font-size:12px;color:var(--panel-soft);margin-top:1px}
-.t-item .kid-badge{margin-top:1px}
+.t-item .kid-badge,.t-item .kid-badges{margin-top:1px}
 
 .kid-row{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:14px}
+.kid-badges{display:inline-flex;flex:0 0 auto;gap:3px;align-items:flex-start}
 .kid-badge{width:20px;height:20px;border-radius:3px;background:var(--who);color:#fff;
            font-size:11px;font-weight:600;display:grid;place-items:center;flex:0 0 auto}
 .kid-row .hrs{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--panel-soft);font-size:13px}
@@ -450,7 +451,7 @@ html.ps-aktiv::-webkit-scrollbar,html.ps-aktiv body::-webkit-scrollbar{display:n
 .tm-item{display:flex;gap:14px;padding:4px 0;font-size:14px;line-height:1.35}
 .tm-item time{font-variant-numeric:tabular-nums;color:var(--ink-soft);flex:0 0 46px}
 .tm-item .place{display:block;font-size:12px;color:var(--ink-soft);margin-top:1px}
-.tm-item .kid-badge{margin-top:1px}
+.tm-item .kid-badge,.tm-item .kid-badges{margin-top:1px}
 /* ── De næste 5 dage ──────────────────────────────────────────── */
 .days5{display:grid;gap:0;grid-template-columns:repeat(5,1fr)}
 /* Foldet ud staar der fjorten dage i et gitter med fem spalter — altsaa tre
@@ -1429,6 +1430,17 @@ const colorOf = id => (whoOf(id)?.color) || "var(--ink-faint)";
 // en ven ved siden af Barn1, skal der to bogstaver til.
 const initialOf = id => (whoOf(id)?.name || "").charAt(0).toUpperCase();
 
+// ── Hvem hører en post til ──
+/** En posts personer som liste af id'er: «lars,emma» → ["lars","emma"] (to har samme kalender). «alle», tom og ukendte personer giver ingen. */
+const whoListe = who => (typeof who === "string" ? [...new Set(who.split(",").map(x => x.trim().toLowerCase()).filter(x => x && x !== "alle" && whoOf(x)))] : []);
+/** Personmærkerne (forbogstav i personens farve) til en post: ét pr. person, eller en tom plads, så teksten står på linje, når posten gælder alle eller ingen bestemt. */
+const whoBadges = who => {
+  const ids = whoListe(who);
+  return ids.length ? `<span class="kid-badges">${ids.map(id => `<span class="kid-badge lille" style="--who:${colorOf(id)}" title="${esc(whoOf(id).name)}">${esc(initialOf(id))}</span>`).join("")}</span>`
+                     : `<span class="kid-badge lille tom" aria-hidden="true"></span>`;
+};
+// ── Slut: hvem ──
+
 function isoWeek(d){
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   t.setUTCDate(t.getUTCDate() - ((t.getUTCDay()+6)%7) + 3);
@@ -1653,8 +1665,8 @@ function kalenderKilde(x){
   const s = typeof x.src === "string" ? x.src.trim() : "";
   if (s === "DBU") return "DBU KampKlar";
   if (s && !["Google Kalender", "Outlook", "iCloud"].includes(s)) return s;
-  const navn = whoOf(x.who)?.name;
-  return navn && navn !== "Alle" ? navn + "s kalender" : "Kalender";
+  const navne = String(x.who ?? "").split(",").map(w => whoOf(w.trim())?.name).filter(n => n && n !== "Alle");
+  return navne.length === 1 ? navne[0] + "s kalender" : navne.length > 1 ? "Kalender for " + navne.slice(0, -1).join(", ") + " og " + navne.at(-1) : "Kalender";
 }
 
 function kildeAf(x, slags){
@@ -2679,9 +2691,7 @@ function draw(){
   $("tCal").innerHTML = cal.length ? cal.map(a => `
     <div class="t-item">
       <time>${a.allDay ? "•" : esc(a.start)}</time>
-      ${a.who && a.who !== "alle"
-        ? `<span class="kid-badge lille" style="--who:${colorOf(a.who)}" title="${esc(whoOf(a.who)?.name || "")}">${esc(initialOf(a.who))}</span>`
-        : `<span class="kid-badge lille tom" aria-hidden="true"></span>`}
+      ${whoBadges(a.who)}
       <div>
         ${a.icon ? esc(a.icon) + " " : ""}${esc(a.subject)}
         ${a.location ? `<span class="sub">${esc(a.location)}</span>` : ""}
@@ -2714,9 +2724,7 @@ function draw(){
   $("tLeisure").innerHTML = actToday.length ? actToday.map(a => `
     <div class="t-item">
       <time>${a.time ? esc(a.time) : "•"}</time>
-      ${a.who && a.who !== "alle"
-        ? `<span class="kid-badge lille" style="--who:${colorOf(a.who)}" title="${esc(whoOf(a.who)?.name || "")}">${esc(initialOf(a.who))}</span>`
-        : `<span class="kid-badge lille tom" aria-hidden="true"></span>`}
+      ${whoBadges(a.who)}
       <div${titelAttr(a, "kal")}>
         ${a.icon ? esc(a.icon) + " " : ""}${esc(a.text)}
         ${a.place ? `<span class="sub">${esc(a.place)}</span>` : ""}
@@ -2773,9 +2781,7 @@ function draw(){
     (tomAll.length ? tomAll.map(i => `
       <div class="tm-item">
         <time>${i.time ? esc(i.time) : "•"}</time>
-        ${i.who && i.who !== "alle"
-        ? `<span class="kid-badge lille" style="--who:${colorOf(i.who)}" title="${esc(whoOf(i.who)?.name || "")}">${esc(initialOf(i.who))}</span>`
-        : `<span class="kid-badge lille tom" aria-hidden="true"></span>`}
+        ${whoBadges(i.who)}
         <div${titelAttr(i, "kal")}>${i.icon ? esc(i.icon) + " " : ""}${esc(i.text)}
           ${i.place ? `<span class="place">${esc(i.place)}</span>` : ""}${kildeMaerke(i, "kal")}</div>
       </div>`).join("")
@@ -2842,9 +2848,7 @@ function draw(){
         ${vis.length ? vis.map(x => `
           <div class="it">
             <time>${x.time ? esc(x.time) : "•"}</time>
-            ${x.who && x.who !== "alle"
-              ? `<span class="kid-badge lille" style="--who:${colorOf(x.who)}" title="${esc(whoOf(x.who)?.name || "")}">${esc(initialOf(x.who))}</span>`
-              : `<span class="kid-badge lille tom" aria-hidden="true"></span>`}
+            ${whoBadges(x.who)}
             <div${titelAttr(x, "kal")}>${x.icon ? esc(x.icon) + " " : ""}${esc(x.text)}
               ${x.place ? `<span class="place">${esc(x.place)}</span>` : ""}${kildeMaerke(x, "kal")}</div>
           </div>`).join("") : `<div class="free">Fri</div>`}

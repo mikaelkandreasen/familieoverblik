@@ -16,6 +16,30 @@ dine data og indstillinger. Se afsnittet «Versioner og opdatering» i `LOKAL-GU
 > Udgaverne **1.0.0 til 1.8.0** blev ikke udgivet enkeltvis. De er samlet bagud ud fra rækkefølgen, funktionerne
 > blev bygget i (november 2026). Fra 2.0.0 skrives hver udgave her, når den laves.
 
+## [3.17.1] – 2026-11-10
+
+### Rettet (kalenderens personer: de tre valg gøres tydelige)
+- **En kalender kan høre til én person, flere personer eller alle personer**, og det var allerede muligt i 3.17.0, men det var ikke tydeligt. I 3.17.0 stod der, at «alle» står alene, og det kunne læses som, at «alle personer» ikke kunne vælges. Nu står der en **statuslinje under knapperne** i dialogen (Kalendere → ret kalenderen), som siger, hvad der er valgt: *«Hører til én person: Anna.»*, *«Hører til 2 personer: Anna og Peter.»*, *«Hører til alle personer.»*, eller *«Vælg en person, flere personer eller «Alle».»*, hvis intet er valgt.
+- **Alle personer valgt hver for sig bliver til «Alle».** Trykker du på hver eneste person, bliver kalenderen «Alle» (uden et mærke pr. person på hver eneste post), i stedet for en liste med alle navne. Det kræver mindst to personer i huset. Vælger du færre end alle, får du dem, du valgte.
+- Knappen **«Alle»** vælger alle personer; et tryk på en enkelt person bagefter fravælger «Alle» og vælger kun den person.
+- 4 nye prøver.
+
+### Opdatering fra 3.17.0
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Genindlæs opsætningen to gange.
+
+## [3.17.0] – 2026-11-10
+
+### Tilføjet
+- **En kalender kan høre til en eller flere personer, men ikke alle.** Før kunne en kalender kun høre til én person eller til alle. Har to samme link (her: to, der er på samme DBU KampKlar-hold, den ene som træner og den andre som spiller), kan man nu vælge **begge** på den ene kalender. I opsætningen: **Kalendere → ret kalenderen → «Hvem hører den til?»**: knapperne er nu skiftere. Tryk på en person for at vælge eller fravælge den, og vælg så mange, du vil. **«Alle» står alene**: vælger du den, fravælges personerne, og vælger du en person, fravælges «Alle».
+  - **På forsiden** står en kamp med **ét mærke pr. person** (forbogstav i personens farve) i kalender, fritid, «I morgen» og «De næste dage». Rækker uden bestemt person har stadig den tomme plads, så teksterne står på linje.
+  - **Kalenderlisten** skriver alle navnene: «Lars og Emma» (eller «Lars, Anna og Peter»). **Kilden** uden egen tekst bliver «Kalender for Lars og Emma».
+  - Linket skal stadig kun lægges ind **én gang**: serveren afviser det samme link to gange («det link er der allerede»). Har du forsøgt at lægge det ind to gange, så ret den ene kalender og vælg begge personer.
+  - **Gamle kalendere virker uændret** (én person er stadig bare ét navn). I `instans`-filerne og i kalenderlisten gemmes flere som en liste adskilt af komma (`lars,emma`). Serveren normaliserer det (små bogstaver, ingen dubletter, højst ti personer, og «alle» alene) og afviser tomme eller ugyldige valg med «vælg hvem den hører til».
+- 28 nye prøver (JavaScript 17, Python 12). **PHP-delen (`kalendere.php`) er kun kontrolleret som tekst** og mod en Python-genskrivning af reglen, ikke kørt.
+
+### Opdatering fra 3.16.1
+Upload filerne, kør **Actions → Byg billeder → Run workflow**, og tryk **Redeploy**. Genindlæs forsiden og opsætningen to gange. Åbn derefter **Opsætning → Kalendere**, ret DBU-kalenderen, vælg begge personer, og tryk **Gem**. Kampene bliver på forsiden ved næste hentning (hver time), eller hent med det samme: `CRON_START=0 CRON_ENKELT=1 CRON_FRISK=1 sh /cron.sh` i `cron`-containerens terminal.
+
 ## [3.16.1] – 2026-11-09
 
 ### Rettet (GitHub-workflowet)

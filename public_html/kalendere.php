@@ -41,6 +41,25 @@ function kal_fail(int $code, string $msg): never
     exit;
 }
 
+/**
+ * Hvem en kalender hører til: «alle» eller en eller flere personer adskilt af komma (fx «lars,emma»; to har samme link til holdet).
+ * Normaliseres: små bogstaver, ingen mellemrum eller dubletter, højst 10 personer, og «alle» står alene (er den med, bliver det «alle»).
+ * Tom streng betyder ugyldigt (ingen valgt, eller et id med ugyldige tegn).
+ */
+function kal_personer(mixed $v): string
+{
+    if (!is_string($v)) return '';                       // en liste eller et tal er ikke en person (og en liste ville ellers blive til «array»)
+    $ud = [];
+    foreach (explode(',', strtolower($v)) as $d) {
+        $d = trim($d);
+        if ($d === '') continue;
+        if (!preg_match('/^[a-z0-9æøå_-]{1,20}$/u', $d)) return '';
+        if ($d === 'alle') return 'alle';
+        if (!in_array($d, $ud, true)) $ud[] = $d;
+    }
+    return count($ud) >= 1 && count($ud) <= 10 ? implode(',', $ud) : '';
+}
+
 if ($lib === null || !is_file("$lib/gate.php")) {
     kal_fail(500, 'ugeplan-lib/feeds.php eller gate.php mangler på webhotellet');
 }
@@ -219,8 +238,8 @@ if ($action === 'save') {
         if (isset($seen[$id])) kal_fail(400, "Kalender $nr: det link er der allerede");
         $seen[$id] = true;
 
-        $person = strtolower(trim((string)($in['person'] ?? '')));
-        if (!preg_match('/^[a-z0-9æøå_-]{1,20}$/u', $person)) kal_fail(400, "Kalender $nr: vælg hvem den hører til");
+        $person = kal_personer($in['person'] ?? '');
+        if ($person === '') kal_fail(400, "Kalender $nr: vælg hvem den hører til");
 
         $icon = trim((string)($in['icon'] ?? ''));
         if (strlen($icon) > 32 || preg_match('/[<>&"\'\\\\]|[\x00-\x1F]/', $icon)) kal_fail(400, "Kalender $nr: ugyldigt ikon");
